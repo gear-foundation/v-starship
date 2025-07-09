@@ -1,0 +1,223 @@
+import { Trophy, Skull, RotateCcw, Home } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+import { Button } from '@/components/ui/button';
+
+import { GAME_CONFIG } from './game-config';
+
+interface ResultsScreenProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onReplay?: () => void;
+  isVictory: boolean;
+  ptsEarned: number;
+  playerPTS: number;
+  playerVARA: number;
+  enemiesDefeated: number;
+  asteroidsKilled: number;
+  minesKilled: number;
+}
+
+export function ResultsScreen({
+  isOpen,
+  onClose,
+  onReplay,
+  isVictory,
+  ptsEarned,
+  playerPTS,
+  playerVARA,
+  enemiesDefeated,
+  asteroidsKilled,
+  minesKilled,
+}: ResultsScreenProps) {
+  // Проигрывание звука победы только при победе
+  const victoryAudioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (isOpen && isVictory) {
+      if (!victoryAudioRef.current) {
+        victoryAudioRef.current = new Audio(GAME_CONFIG.SOUND_VICTORY);
+        victoryAudioRef.current.volume = GAME_CONFIG.VOLUME_VICTORY;
+        victoryAudioRef.current.loop = false;
+      }
+      victoryAudioRef.current.currentTime = 0;
+      victoryAudioRef.current.play().catch(() => {});
+    } else {
+      if (victoryAudioRef.current) {
+        victoryAudioRef.current.pause();
+        victoryAudioRef.current.currentTime = 0;
+      }
+    }
+  }, [isOpen, isVictory]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen min-w-full p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Results Dialog (рамка и содержимое по центру) */}
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 rounded-lg backdrop-blur-md font-['Orbitron',monospace] overflow-hidden  "
+        style={{ borderColor: isVictory ? 'rgba(34,211,238,0.5)' : 'rgba(239,68,68,0.5)' }}>
+        {/* Glow effect */}
+        <div
+          className={`
+            absolute inset-0 bg-gradient-to-b rounded-lg blur-xl -z-10
+            ${isVictory ? 'from-cyan-400/10 to-purple-600/10' : 'from-red-500/10 to-purple-600/10'}
+          `}></div>
+
+        {/* Header */}
+        <div className="flex justify-between items-center p-4">
+          <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS.toLocaleString()}</div>
+          <div className="text-gray-300 font-bold text-lg glow-white">VARA: {playerVARA.toLocaleString()}</div>
+        </div>
+
+        {/* Result Banner */}
+        <div
+          className={`
+            py-6 px-4 text-center mb-4
+            ${
+              isVictory
+                ? 'bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20'
+                : 'bg-gradient-to-r from-red-500/20 via-purple-500/20 to-red-500/20'
+            }
+          `}>
+          <div className="flex justify-center mb-2">
+            {isVictory ? (
+              <Trophy className="h-16 w-16 text-yellow-400 glow-yellow" />
+            ) : (
+              <Skull className="h-16 w-16 text-red-400 glow-red" />
+            )}
+          </div>
+          <h2
+            className={`
+              text-4xl font-bold tracking-wider
+              ${isVictory ? 'text-cyan-400 glow-blue' : 'text-red-400 glow-red'}
+            `}>
+            {isVictory ? 'VICTORY' : 'DEFEAT'}
+          </h2>
+        </div>
+
+        {/* PTS Earned */}
+        <div className="px-6 py-4 text-center flex flex-col items-center justify-center" style={{ minHeight: 180 }}>
+          <div className="text-xl text-gray-300 glow-white mb-2">PTS EARNED</div>
+          <div
+            className={`
+              text-3xl font-bold mb-4 animate-pulse
+              ${isVictory ? 'text-green-400 glow-green' : 'text-yellow-400 glow-yellow'}
+            `}
+            style={{ minWidth: 120 }}>
+            {ptsEarned.toLocaleString()}
+          </div>
+
+          {/* Total Enemies Defeated */}
+          <div className="text-lg text-cyan-300 font-bold mb-1 mt-2">ENEMIES DEFEATED = {enemiesDefeated}</div>
+          {/* Подробная строка по типам */}
+          <div className="text-base text-gray-300 mb-6">
+            Aliens: <span className="text-white font-bold">{enemiesDefeated - asteroidsKilled - minesKilled}</span>
+            {'   '}Mines: <span className="text-white font-bold">{minesKilled}</span>
+            {'   '}Asteroids: <span className="text-white font-bold">{asteroidsKilled}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="p-6 flex flex-col items-center gap-4">
+          {onReplay && (
+            <Button
+              onClick={onReplay}
+              className={`
+              w-full font-bold py-6 text-xl flex items-center justify-center gap-2 transition-all duration-300
+              bg-transparent border-2 hover:bg-opacity-10 hover:shadow-lg
+              ${
+                isVictory
+                  ? 'border-red-500 text-red-400 hover:bg-red-500/10 glow-red-border hover:shadow-red-500/25'
+                  : 'border-red-500 text-red-400 hover:bg-red-500/10 glow-red-border hover:shadow-red-500/25'
+              }
+            `}>
+              <RotateCcw className="h-5 w-5" />
+              REPLAY
+            </Button>
+          )}
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="w-3/4 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-bold py-2 text-sm glow-blue-border transition-all duration-300 flex items-center justify-center gap-2">
+            <Home className="h-4 w-4" />
+            BACK TO MENU
+          </Button>
+        </div>
+      </div>
+
+      <style>{`
+        .glow-blue {
+          text-shadow:
+            0 0 10px #00bcd4,
+            0 0 20px #00bcd4;
+        }
+
+        .glow-white {
+          text-shadow:
+            0 0 10px #ffffff,
+            0 0 20px #ffffff;
+        }
+
+        .glow-red {
+          text-shadow:
+            0 0 10px #ef4444,
+            0 0 20px #ef4444;
+        }
+
+        .glow-yellow {
+          text-shadow:
+            0 0 10px #fbbf24,
+            0 0 20px #fbbf24;
+        }
+
+        .glow-green {
+          text-shadow:
+            0 0 10px #10b981,
+            0 0 20px #10b981;
+        }
+
+        .glow-blue-border {
+          box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
+        }
+
+        .glow-red-border {
+          box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+
+        .glow-green-bg {
+          box-shadow:
+            0 0 10px #10b981,
+            0 0 20px #10b981;
+        }
+
+        .glow-yellow-bg {
+          box-shadow:
+            0 0 10px #fbbf24,
+            0 0 20px #fbbf24;
+        }
+
+        .game-viewport {
+          aspect-ratio: 20/9;
+          max-height: 100vh;
+          width: 100vw;
+          max-width: calc(100vh * 9 / 20);
+          background: transparent;
+          box-shadow:
+            0 0 32px 0 #000a,
+            0 0 0 100vmax #000a;
+          border-radius: 24px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: stretch;
+        }
+      `}</style>
+    </div>
+  );
+}

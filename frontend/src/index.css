@@ -1,0 +1,2 @@
+/* regular css file instead of scss for tailwind to work, is there a way to make scss import work? */
+@import 'tailwindcss';

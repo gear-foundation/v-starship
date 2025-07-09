@@ -1,0 +1,19 @@
+.wallet-custom-styles p {
+  font-size: 0.8rem; /* 0.85rem=14px */
+  padding-left: 0.1rem; /* 1rem=16px */
+  white-space: nowrap;
+}
+
+.wallet-custom-styles button {
+  font-size: 0.8rem; /* 14px */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+.wallet-custom-styles > div {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
