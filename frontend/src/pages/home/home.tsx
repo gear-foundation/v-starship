@@ -1,5 +1,8 @@
-import { useAccount, useApi, useBalance } from '@gear-js/react-hooks';
+import { useAccount, useAlert, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
 import { useState, useEffect } from 'react';
+
+import { useAddPoints, useConfig, usePointsBalance } from '@/api/sails';
+import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 import InGameScreen from './in-game-screen';
@@ -10,37 +13,25 @@ type Screen = 'main' | 'game' | 'results';
 function Home() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('main');
 
-  // Wallet and balance state
   const { account } = useAccount();
-  const { api } = useApi();
-  const { balance } = useBalance(account?.address);
-  const [integerBalanceDisplay, setIntegerBalanceDisplay] = useState<{
-    value?: string;
-    unit?: string;
-  }>({});
+  const { getFormattedBalance } = useBalanceFormat();
+  const alert = useAlert();
 
-  useEffect(() => {
-    if (balance && api) {
-      const decimals = api.registry.chainDecimals[0];
-      const unit = api.registry.chainTokens[0] || 'VARA';
-      const valueAsBigInt = balance.toBigInt();
-      const divisor = 10n ** BigInt(decimals);
-      const integerValue = valueAsBigInt / divisor;
-      setIntegerBalanceDisplay({
-        value: integerValue.toLocaleString(),
-        unit: unit,
-      });
-    } else {
-      setIntegerBalanceDisplay({});
-    }
-  }, [balance, api]);
+  const { data: config } = useConfig();
 
-  // === PTS, Games Available, Last Reset ===
-  const [playerPTS, setPlayerPTS] = useState<number>(0);
+  const { data: playerPTS } = usePointsBalance();
+  const { sendTransactionAsync: addPlayerPTS } = useAddPoints();
+
+  const { data: balance } = useDeriveBalancesAll({
+    address: account?.address,
+    query: { select: (data) => data.transferable?.toBigInt() },
+    watch: true,
+  });
+
   const [gamesAvailable, setGamesAvailable] = useState<number>(3);
   const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
   const [shipLevel, setShipLevel] = useState<number>(1);
-  const [playerVARA, setPlayerVARA] = useState<number>(500);
+  // const [playerVARA, setPlayerVARA] = useState<number>(500);
   const [playerName, setPlayerName] = useState<string>('User1');
   const [boosterCount, setBoosterCount] = useState<number>(GAME_CONFIG.BOOSTER_CONFIG.countPerGame);
 
@@ -49,8 +40,8 @@ function Home() {
   // Загружаем значения из localStorage только на клиенте
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const val = localStorage.getItem('playerPTS');
-      if (val) setPlayerPTS(parseInt(val, 10));
+      // const val = localStorage.getItem('playerPTS');
+      // if (val) setPlayerPTS(parseInt(val, 10));
       const games = localStorage.getItem('gamesAvailable');
       if (games) setGamesAvailable(parseInt(games, 10));
       const last = localStorage.getItem('lastResetTime');
@@ -65,9 +56,9 @@ function Home() {
   }, []);
 
   // Сохраняем параметры в localStorage при изменении
-  useEffect(() => {
-    localStorage.setItem('playerPTS', String(playerPTS));
-  }, [playerPTS]);
+  // useEffect(() => {
+  //   localStorage.setItem('playerPTS', String(playerPTS));
+  // }, [playerPTS]);
   useEffect(() => {
     localStorage.setItem('gamesAvailable', String(gamesAvailable));
   }, [gamesAvailable]);
@@ -108,9 +99,8 @@ function Home() {
   }
 
   // Кнопки сброса
-  function resetPTS() {
-    setPlayerPTS(0);
-  }
+  function resetPTS() {}
+
   function resetGames() {
     setGamesAvailable(3);
     setLastResetTime(Date.now());
@@ -124,10 +114,12 @@ function Home() {
       setCurrentScreen('game');
     }
   }
+
   // Завершение игры: возвращаемся на главную, добавляем PTS
   function handleBackToMenu(earnedPTS: number) {
-    setPlayerPTS((pts) => pts + earnedPTS);
-    setCurrentScreen('main');
+    addPlayerPTS({ args: [earnedPTS, false] })
+      .then(() => setCurrentScreen('main'))
+      .catch((error) => alert.error(getErrorMessage(error)));
   }
 
   // Повтор игры: уменьшаем gamesAvailable и перезапускаем игру
@@ -140,24 +132,22 @@ function Home() {
   }
 
   function handleUpgradeShip() {
-    setPlayerPTS((pts) => pts - 10000);
     setShipLevel((lvl) => Math.min(10, lvl + 1));
   }
 
-  function handleExchangeVARAToPTS(ptsAmount: number, varaCost: number) {
-    setPlayerPTS((prev) => prev + ptsAmount);
-    setPlayerVARA((prev) => prev - varaCost);
-  }
-
   function handleBuyExtraGame() {
-    setPlayerPTS((prev) => prev - 200);
+    // setPlayerPTS((prev) => prev - 200);
     setGamesAvailable((prev) => Math.min(3, prev + 1));
   }
 
   function handleBuyBooster() {
-    setPlayerPTS((prev) => prev - 100);
+    // setPlayerPTS((prev) => prev - 100);
     setBoosterCount((prev) => prev + 1);
   }
+
+  if (playerPTS === undefined || !config || balance === null || balance === undefined) return;
+
+  const formattedBalance = getFormattedBalance(balance);
 
   if (currentScreen === 'game') {
     return (
@@ -171,7 +161,7 @@ function Home() {
         boosterCount={boosterCount}
         setBoosterCount={setBoosterCount}
         account={account}
-        integerBalanceDisplay={integerBalanceDisplay}
+        integerBalanceDisplay={formattedBalance}
       />
     );
   }
@@ -186,16 +176,15 @@ function Home() {
       onResetGames={resetGames}
       shipLevel={shipLevel}
       onUpgradeShip={handleUpgradeShip}
-      playerVARA={playerVARA}
-      setPlayerVARA={setPlayerVARA}
-      onExchangeVARAToPTS={handleExchangeVARAToPTS}
+      playerVARA={balance}
       onBuyExtraGame={handleBuyExtraGame}
       playerName={playerName}
       setPlayerName={setPlayerName}
       boosterCount={boosterCount}
       onBuyBooster={handleBuyBooster}
       account={account}
-      integerBalanceDisplay={integerBalanceDisplay}
+      integerBalanceDisplay={formattedBalance}
+      valuePerPoint={config.onePointInValue}
     />
   );
 }

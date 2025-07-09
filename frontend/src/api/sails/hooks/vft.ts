@@ -10,7 +10,7 @@ function useVFTProgram() {
 
   return useProgram({
     library: VFTProgram,
-    id: config?.ft_contract,
+    id: config?.ftContract,
   });
 }
 
@@ -23,7 +23,7 @@ function usePointsBalance() {
     serviceName: 'vft',
     functionName: 'balanceOf',
     args: [account?.decodedAddress || ZERO_ADDRESS],
-    query: { enabled: Boolean(account) },
+    query: { enabled: Boolean(account), select: (data) => Number(data) },
     watch: true,
   });
 }

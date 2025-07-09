@@ -1,37 +1,47 @@
-'use client';
-
-import { Account } from '@gear-js/react-hooks';
+import { Account, useAlert, useApi, useBalanceFormat } from '@gear-js/react-hooks';
 import { X, Wallet, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 
+import { useBuyPoints } from '@/api/sails';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/utils';
 
 interface TokenExchangeDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  playerVARA: number;
-  onExchange: (ptsAmount: number, varaCost: number) => void;
+  playerVARA: bigint;
   account: Account | undefined;
   balanceValue: string | undefined;
   balanceUnit: string | undefined;
+  valuePerPoint: bigint;
 }
 
 export default function TokenExchangeDialog({
   isOpen,
   onClose,
   playerVARA,
-  onExchange,
   account,
   balanceValue,
   balanceUnit,
+  valuePerPoint,
 }: TokenExchangeDialogProps) {
   const [ptsAmount, setPtsAmount] = useState<string>('');
   const isWalletConnected = !!account;
 
-  // Exchange rate: 1 VARA = 10 PTS
-  const exchangeRate = 10;
-  const varaCost = ptsAmount ? Math.ceil(Number.parseInt(ptsAmount) / exchangeRate) : 0;
+  const { api } = useApi();
+  const [decimals] = api ? api.registry.chainDecimals : [12];
+  const exchangeRate = BigInt(10 ** decimals) / valuePerPoint;
+
+  const { getFormattedBalance } = useBalanceFormat();
+  const { sendTransactionAsync: buyPoints, isPending: isBuying } = useBuyPoints();
+  const alert = useAlert();
+
+  const varaCost = ptsAmount ? BigInt(ptsAmount) * valuePerPoint : 0n;
+  const formattedVaraCost = getFormattedBalance(varaCost);
+
   const remainingVARA = playerVARA - varaCost;
+  const formattedRemainingVARA = getFormattedBalance(remainingVARA);
+
   const canAfford = varaCost <= playerVARA;
   const isValidAmount = ptsAmount && Number.parseInt(ptsAmount) > 0;
 
@@ -43,9 +53,12 @@ export default function TokenExchangeDialog({
 
   const handleConfirm = () => {
     if (isValidAmount && canAfford && isWalletConnected) {
-      onExchange(Number.parseInt(ptsAmount), varaCost);
-      setPtsAmount('');
-      onClose();
+      buyPoints({ args: [ptsAmount], value: varaCost })
+        .then(() => {
+          setPtsAmount('');
+          onClose();
+        })
+        .catch((error) => alert.error(getErrorMessage(error)));
     }
   };
 
@@ -109,7 +122,7 @@ export default function TokenExchangeDialog({
           <div className="flex items-center justify-center gap-3">
             <div className="text-gray-300 font-bold glow-white">1 VARA</div>
             <ArrowRight className="h-4 w-4 text-cyan-400" />
-            <div className="text-cyan-400 font-bold glow-blue">10 PTS</div>
+            <div className="text-cyan-400 font-bold glow-blue">{exchangeRate} PTS</div>
           </div>
         </div>
 
@@ -136,7 +149,7 @@ export default function TokenExchangeDialog({
                 <span className="text-gray-400">VARA Cost:</span>
                 <span
                   className={`font-bold text-lg ${canAfford ? 'text-yellow-400 glow-yellow' : 'text-red-400 glow-red'}`}>
-                  {varaCost.toLocaleString()}
+                  {formattedVaraCost.value}
                 </span>
               </div>
 
@@ -152,7 +165,7 @@ export default function TokenExchangeDialog({
                   <span className="text-gray-400">Remaining VARA:</span>
                   <span
                     className={`font-bold text-lg ${remainingVARA >= 0 ? 'text-white glow-white' : 'text-red-400 glow-red'}`}>
-                    {remainingVARA.toLocaleString()}
+                    {formattedRemainingVARA.value}
                   </span>
                 </div>
               </div>
@@ -195,7 +208,9 @@ export default function TokenExchangeDialog({
                 ? 'ENTER PTS AMOUNT'
                 : !canAfford
                   ? 'INSUFFICIENT VARA'
-                  : 'CONFIRM EXCHANGE'}
+                  : isBuying
+                    ? 'PROCESSING...'
+                    : 'CONFIRM EXCHANGE'}
           </Button>
         </div>
       </div>

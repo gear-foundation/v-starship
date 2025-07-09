@@ -27,3 +27,5 @@ export function getShopPrices(level: number): {
     shipUpgrade: 10000 + (level - 1) * 2500, // от 10k до 32.5k
   };
 }
+
+export const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));

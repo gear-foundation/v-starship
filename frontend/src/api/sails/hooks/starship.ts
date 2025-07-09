@@ -21,6 +21,13 @@ function useConfig() {
     serviceName: 'starship',
     functionName: 'config',
     args: [],
+    query: {
+      select: (data) => ({
+        ftContract: data.ft_contract,
+        shipPrice: BigInt(data.ship_price),
+        onePointInValue: BigInt(data.one_point_in_value),
+      }),
+    },
   });
 }
 

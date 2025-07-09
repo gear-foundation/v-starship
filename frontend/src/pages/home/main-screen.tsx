@@ -28,15 +28,14 @@ interface MainScreenProps {
   onResetGames: () => void;
   shipLevel: number;
   onUpgradeShip: () => void;
-  playerVARA: number;
-  setPlayerVARA: React.Dispatch<React.SetStateAction<number>>;
-  onExchangeVARAToPTS: (ptsAmount: number, varaCost: number) => void;
+  playerVARA: bigint;
   onBuyExtraGame: () => void;
   playerName: string;
   setPlayerName: React.Dispatch<React.SetStateAction<string>>;
   boosterCount: number;
   onBuyBooster: () => void;
   account: Account | undefined;
+  valuePerPoint: bigint;
   integerBalanceDisplay: { value?: string; unit?: string };
 }
 
@@ -117,13 +116,13 @@ export default function MainScreen({
   shipLevel,
   onUpgradeShip,
   playerVARA,
-  onExchangeVARAToPTS,
   onBuyExtraGame,
   playerName,
   setPlayerName,
   boosterCount,
   onBuyBooster,
   account,
+  valuePerPoint,
   integerBalanceDisplay,
 }: MainScreenProps) {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
@@ -199,10 +198,6 @@ export default function MainScreen({
   const handleGetPTSFromShop = () => {
     setShowShop(false);
     setShowTokenExchange(true);
-  };
-
-  const handleExchange = (ptsAmount: number, varaCost: number) => {
-    onExchangeVARAToPTS(ptsAmount, varaCost);
   };
 
   // SSR-safe: если фон ещё не сгенерирован, не рендерим визуал
@@ -532,10 +527,10 @@ export default function MainScreen({
         isOpen={showTokenExchange}
         onClose={() => setShowTokenExchange(false)}
         playerVARA={playerVARA}
-        onExchange={handleExchange}
         account={account}
         balanceValue={integerBalanceDisplay.value}
         balanceUnit={integerBalanceDisplay.unit}
+        valuePerPoint={valuePerPoint}
       />
     </>
   );
