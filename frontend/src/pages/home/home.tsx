@@ -28,13 +28,13 @@ function Home() {
     watch: true,
   });
 
-  const { data: player, refetch: refetchPlayer } = usePlayer();
+  const { data: player, isPending: isPlayerFetching, refetch: refetchPlayer } = usePlayer();
+
   const { sendTransactionAsync: setPlayerName } = useSetPlayerName();
-  const playerName = player?.name || 'Player';
+  const { name: playerName, shipLevel } = player || { name: 'Player', shipLevel: 1 };
 
   const [gamesAvailable, setGamesAvailable] = useState<number>(3);
   const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
-  const [shipLevel, setShipLevel] = useState<number>(1);
   const [boosterCount, setBoosterCount] = useState<number>(GAME_CONFIG.BOOSTER_CONFIG.countPerGame);
 
   const [gameSessionId, setGameSessionId] = useState(0);
@@ -42,37 +42,22 @@ function Home() {
   // Загружаем значения из localStorage только на клиенте
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // const val = localStorage.getItem('playerPTS');
-      // if (val) setPlayerPTS(parseInt(val, 10));
       const games = localStorage.getItem('gamesAvailable');
       if (games) setGamesAvailable(parseInt(games, 10));
       const last = localStorage.getItem('lastResetTime');
       if (last) setLastResetTime(parseInt(last, 10));
-      const lvl = localStorage.getItem('shipLevel');
-      if (lvl) setShipLevel(Math.max(1, Math.min(10, parseInt(lvl, 10))));
-      // const name = localStorage.getItem('playerName');
-      // if (name) setPlayerName(name);
       const boosters = localStorage.getItem('boosterCount');
       if (boosters) setBoosterCount(parseInt(boosters, 10));
     }
   }, []);
 
   // Сохраняем параметры в localStorage при изменении
-  // useEffect(() => {
-  //   localStorage.setItem('playerPTS', String(playerPTS));
-  // }, [playerPTS]);
   useEffect(() => {
     localStorage.setItem('gamesAvailable', String(gamesAvailable));
   }, [gamesAvailable]);
   useEffect(() => {
     localStorage.setItem('lastResetTime', String(lastResetTime));
   }, [lastResetTime]);
-  useEffect(() => {
-    localStorage.setItem('shipLevel', String(shipLevel));
-  }, [shipLevel]);
-  // useEffect(() => {
-  //   localStorage.setItem('playerName', String(playerName));
-  // }, [playerName]);
   useEffect(() => {
     localStorage.setItem('boosterCount', String(boosterCount));
   }, [boosterCount]);
@@ -136,10 +121,6 @@ function Home() {
     }
   }
 
-  function handleUpgradeShip() {
-    setShipLevel((lvl) => Math.min(10, lvl + 1));
-  }
-
   function handleBuyExtraGame() {
     // setPlayerPTS((prev) => prev - 200);
     setGamesAvailable((prev) => Math.min(3, prev + 1));
@@ -161,7 +142,7 @@ function Home() {
       });
   };
 
-  if (playerPTS === undefined || !config || balance === null || balance === undefined) return;
+  if (playerPTS === undefined || !config || balance === null || balance === undefined || isPlayerFetching) return;
 
   const formattedBalance = getFormattedBalance(balance);
 
@@ -191,7 +172,6 @@ function Home() {
       onResetPTS={resetPTS}
       onResetGames={resetGames}
       shipLevel={shipLevel}
-      onUpgradeShip={handleUpgradeShip}
       playerVARA={balance}
       onBuyExtraGame={handleBuyExtraGame}
       playerName={playerName}

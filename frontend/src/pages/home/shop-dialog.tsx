@@ -1,9 +1,11 @@
+import { useAlert } from '@gear-js/react-hooks';
 import { X, Gamepad2, Zap, Rocket, Plus } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 
+import { useBuyShip, usePlayer } from '@/api/sails';
 import { Button } from '@/components/ui/button';
-import { getShopPrices } from '@/utils';
+import { getErrorMessage, getShopPrices } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -21,7 +23,6 @@ interface ShopDialogProps {
   playerPTS: number;
   onGetPTS: () => void;
   shipLevel: number;
-  onUpgradeShip: () => void;
   onBuyExtraGame: () => void;
   onBuyBooster: () => void;
 }
@@ -32,10 +33,14 @@ export default function ShopDialog({
   playerPTS,
   onGetPTS,
   shipLevel,
-  onUpgradeShip,
   onBuyExtraGame,
   onBuyBooster,
 }: ShopDialogProps) {
+  const alert = useAlert();
+
+  const player = usePlayer();
+  const { sendTransactionAsync: buyShip } = useBuyShip();
+
   const [selectedItem, setSelectedItem] = useState<string>('extra-game');
   const [gamesAvailable] = useState<number>(1);
 
@@ -89,18 +94,25 @@ export default function ShopDialog({
       onClose();
       return;
     }
+
     if (selectedItem === 'ship-upgrade' && canUpgrade && selectedItemData && playerPTS >= selectedItemData.cost) {
       playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
-      onUpgradeShip();
-      onClose();
-      return;
+
+      return buyShip({ args: [] })
+        .then(() => {
+          onClose();
+          return player.refetch();
+        })
+        .catch((error) => alert.error(getErrorMessage(error)));
     }
+
     if (selectedItem === 'booster' && selectedItemData && playerPTS >= selectedItemData.cost) {
       playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
       onBuyBooster();
       onClose();
       return;
     }
+
     if (canAfford && selectedItemData) {
       // Purchase logic would go here
       console.log(`Purchasing ${selectedItemData.name} for ${selectedItemData.cost} PTS`);
