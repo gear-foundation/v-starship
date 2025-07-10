@@ -3,7 +3,7 @@ import { X, Gamepad2, Zap, Rocket, Plus } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 
-import { useBuyShip, usePlayer } from '@/api/sails';
+import { useBuyAttempt, useBuyShip, usePlayer } from '@/api/sails';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage, getShopPrices } from '@/utils';
 
@@ -23,23 +23,15 @@ interface ShopDialogProps {
   playerPTS: number;
   onGetPTS: () => void;
   shipLevel: number;
-  onBuyExtraGame: () => void;
   onBuyBooster: () => void;
 }
 
-export default function ShopDialog({
-  isOpen,
-  onClose,
-  playerPTS,
-  onGetPTS,
-  shipLevel,
-  onBuyExtraGame,
-  onBuyBooster,
-}: ShopDialogProps) {
+export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel, onBuyBooster }: ShopDialogProps) {
   const alert = useAlert();
 
   const player = usePlayer();
   const { sendTransactionAsync: buyShip } = useBuyShip();
+  const { sendTransactionAsync: buyAttempt } = useBuyAttempt();
 
   const [selectedItem, setSelectedItem] = useState<string>('extra-game');
   const [gamesAvailable] = useState<number>(1);
@@ -90,9 +82,15 @@ export default function ShopDialog({
   const handlePurchase = () => {
     if (selectedItem === 'extra-game' && selectedItemData && playerPTS >= selectedItemData.cost && gamesAvailable < 3) {
       playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
-      onBuyExtraGame();
-      onClose();
-      return;
+
+      return buyAttempt({ args: [] })
+        .then(() => {
+          onClose();
+          return player.refetch();
+        })
+        .catch((error) => {
+          alert.error(getErrorMessage(error));
+        });
     }
 
     if (selectedItem === 'ship-upgrade' && canUpgrade && selectedItemData && playerPTS >= selectedItemData.cost) {

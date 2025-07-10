@@ -31,9 +31,12 @@ function Home() {
   const { data: player, isPending: isPlayerFetching, refetch: refetchPlayer } = usePlayer();
 
   const { sendTransactionAsync: setPlayerName } = useSetPlayerName();
-  const { name: playerName, shipLevel } = player || { name: 'Player', shipLevel: 1 };
+  const {
+    name: playerName,
+    shipLevel,
+    attemptsCount: gamesAvailable,
+  } = player || { name: 'Player', shipLevel: 1, attemptsCount: 3 };
 
-  const [gamesAvailable, setGamesAvailable] = useState<number>(3);
   const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
   const [boosterCount, setBoosterCount] = useState<number>(GAME_CONFIG.BOOSTER_CONFIG.countPerGame);
 
@@ -42,8 +45,6 @@ function Home() {
   // Загружаем значения из localStorage только на клиенте
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const games = localStorage.getItem('gamesAvailable');
-      if (games) setGamesAvailable(parseInt(games, 10));
       const last = localStorage.getItem('lastResetTime');
       if (last) setLastResetTime(parseInt(last, 10));
       const boosters = localStorage.getItem('boosterCount');
@@ -52,9 +53,7 @@ function Home() {
   }, []);
 
   // Сохраняем параметры в localStorage при изменении
-  useEffect(() => {
-    localStorage.setItem('gamesAvailable', String(gamesAvailable));
-  }, [gamesAvailable]);
+
   useEffect(() => {
     localStorage.setItem('lastResetTime', String(lastResetTime));
   }, [lastResetTime]);
@@ -68,13 +67,17 @@ function Home() {
       const now = Date.now();
       const nextReset = getNextResetTime(lastResetTime);
       if (now >= nextReset) {
-        setGamesAvailable(3);
-        setLastResetTime(nextReset);
+        refetchPlayer()
+          .then(() => setLastResetTime(nextReset))
+          .catch((error) => alert.error(getErrorMessage(error)));
       }
     };
+
     const interval = setInterval(checkReset, 60000);
     checkReset();
+
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastResetTime]);
 
   // Получить время следующего сброса (12:00 UTC)
@@ -88,15 +91,11 @@ function Home() {
   // Кнопки сброса
   function resetPTS() {}
 
-  function resetGames() {
-    setGamesAvailable(3);
-    setLastResetTime(Date.now());
-  }
+  function resetGames() {}
 
   // Старт игры: уменьшаем gamesAvailable
   function handleStartGame() {
     if (gamesAvailable > 0) {
-      setGamesAvailable((g) => g - 1);
       setGameSessionId((id) => id + 1);
       setCurrentScreen('game');
     }
@@ -115,15 +114,9 @@ function Home() {
   // Повтор игры: уменьшаем gamesAvailable и перезапускаем игру
   function handleReplayGame() {
     if (gamesAvailable > 0) {
-      setGamesAvailable((g) => g - 1);
       setGameSessionId((id) => id + 1);
       setCurrentScreen('game');
     }
-  }
-
-  function handleBuyExtraGame() {
-    // setPlayerPTS((prev) => prev - 200);
-    setGamesAvailable((prev) => Math.min(3, prev + 1));
   }
 
   function handleBuyBooster() {
@@ -173,7 +166,6 @@ function Home() {
       onResetGames={resetGames}
       shipLevel={shipLevel}
       playerVARA={balance}
-      onBuyExtraGame={handleBuyExtraGame}
       playerName={playerName}
       onSavePlayerName={handleSaveName}
       boosterCount={boosterCount}

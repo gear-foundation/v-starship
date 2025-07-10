@@ -28,7 +28,6 @@ interface MainScreenProps {
   onResetGames: () => void;
   shipLevel: number;
   playerVARA: bigint;
-  onBuyExtraGame: () => void;
   playerName: string;
   onSavePlayerName: (name: string, onSuccess: () => void) => void;
   boosterCount: number;
@@ -114,7 +113,6 @@ export default function MainScreen({
   onResetGames,
   shipLevel,
   playerVARA,
-  onBuyExtraGame,
   playerName,
   onSavePlayerName,
   boosterCount,
@@ -513,7 +511,6 @@ export default function MainScreen({
         playerPTS={playerPTS}
         onGetPTS={handleGetPTSFromShop}
         shipLevel={shipLevel}
-        onBuyExtraGame={onBuyExtraGame}
         onBuyBooster={onBuyBooster}
       />
 
