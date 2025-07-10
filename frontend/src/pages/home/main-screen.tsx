@@ -31,7 +31,7 @@ interface MainScreenProps {
   playerVARA: bigint;
   onBuyExtraGame: () => void;
   playerName: string;
-  setPlayerName: React.Dispatch<React.SetStateAction<string>>;
+  onSavePlayerName: (name: string, onSuccess: () => void) => void;
   boosterCount: number;
   onBuyBooster: () => void;
   account: Account | undefined;
@@ -118,7 +118,7 @@ export default function MainScreen({
   playerVARA,
   onBuyExtraGame,
   playerName,
-  setPlayerName,
+  onSavePlayerName,
   boosterCount,
   onBuyBooster,
   account,
@@ -180,8 +180,7 @@ export default function MainScreen({
   const handleSaveName = () => {
     const trimmed = tempName.trim();
     if (trimmed.length > 0 && trimmed.length <= 16) {
-      setPlayerName(trimmed);
-      setEditingName(false);
+      onSavePlayerName(trimmed, () => setEditingName(false));
     }
   };
 
@@ -342,7 +341,7 @@ export default function MainScreen({
                       size="sm"
                       className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
                       onClick={() => setEditingName(true)}
-                      title="Редактировать имя">
+                      title="Edit name">
                       <Edit2 className="h-3 w-3" />
                     </Button>
                   </>

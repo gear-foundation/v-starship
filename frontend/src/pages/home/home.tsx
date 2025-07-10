@@ -1,7 +1,7 @@
 import { useAccount, useAlert, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
 import { useState, useEffect } from 'react';
 
-import { useAddPoints, useConfig, usePointsBalance } from '@/api/sails';
+import { useAddPoints, useConfig, usePlayer, usePointsBalance, useSetPlayerName } from '@/api/sails';
 import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
@@ -28,11 +28,13 @@ function Home() {
     watch: true,
   });
 
+  const { data: player, refetch: refetchPlayer } = usePlayer();
+  const { sendTransactionAsync: setPlayerName } = useSetPlayerName();
+  const playerName = player?.name || 'Player';
+
   const [gamesAvailable, setGamesAvailable] = useState<number>(3);
   const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
   const [shipLevel, setShipLevel] = useState<number>(1);
-  // const [playerVARA, setPlayerVARA] = useState<number>(500);
-  const [playerName, setPlayerName] = useState<string>('User1');
   const [boosterCount, setBoosterCount] = useState<number>(GAME_CONFIG.BOOSTER_CONFIG.countPerGame);
 
   const [gameSessionId, setGameSessionId] = useState(0);
@@ -48,8 +50,8 @@ function Home() {
       if (last) setLastResetTime(parseInt(last, 10));
       const lvl = localStorage.getItem('shipLevel');
       if (lvl) setShipLevel(Math.max(1, Math.min(10, parseInt(lvl, 10))));
-      const name = localStorage.getItem('playerName');
-      if (name) setPlayerName(name);
+      // const name = localStorage.getItem('playerName');
+      // if (name) setPlayerName(name);
       const boosters = localStorage.getItem('boosterCount');
       if (boosters) setBoosterCount(parseInt(boosters, 10));
     }
@@ -68,9 +70,9 @@ function Home() {
   useEffect(() => {
     localStorage.setItem('shipLevel', String(shipLevel));
   }, [shipLevel]);
-  useEffect(() => {
-    localStorage.setItem('playerName', String(playerName));
-  }, [playerName]);
+  // useEffect(() => {
+  //   localStorage.setItem('playerName', String(playerName));
+  // }, [playerName]);
   useEffect(() => {
     localStorage.setItem('boosterCount', String(boosterCount));
   }, [boosterCount]);
@@ -148,6 +150,17 @@ function Home() {
     setBoosterCount((prev) => prev + 1);
   }
 
+  const handleSaveName = (name: string, onSuccess: () => void) => {
+    setPlayerName({ args: [name] })
+      .then(() => {
+        onSuccess();
+        return refetchPlayer();
+      })
+      .catch((error) => {
+        alert.error(getErrorMessage(error));
+      });
+  };
+
   if (playerPTS === undefined || !config || balance === null || balance === undefined) return;
 
   const formattedBalance = getFormattedBalance(balance);
@@ -182,7 +195,7 @@ function Home() {
       playerVARA={balance}
       onBuyExtraGame={handleBuyExtraGame}
       playerName={playerName}
-      setPlayerName={setPlayerName}
+      onSavePlayerName={handleSaveName}
       boosterCount={boosterCount}
       onBuyBooster={handleBuyBooster}
       account={account}
