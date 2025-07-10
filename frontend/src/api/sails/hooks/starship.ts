@@ -1,5 +1,6 @@
 import { HexString } from '@gear-js/api';
 import { useAccount, useProgram, useProgramQuery, useSendProgramTransaction } from '@gear-js/react-hooks';
+import { useEffect } from 'react';
 import { ZERO_ADDRESS } from 'sails-js';
 
 import { StartshipProgram } from '../programs';
@@ -60,14 +61,23 @@ function useTimeToFreeAttempts() {
   const { account } = useAccount();
   const { data: program } = useStarshipProgram();
 
-  return useProgramQuery({
+  const { data: player } = usePlayer();
+  const { attemptsCount } = player || {};
+
+  const query = useProgramQuery({
     program,
     serviceName: 'starship',
     functionName: 'timeToFreeAttempts',
     args: [account?.decodedAddress || ZERO_ADDRESS],
-    query: { enabled: Boolean(account) },
-    watch: true,
+    query: { enabled: Boolean(account), select: (data) => Number(data) },
   });
+
+  useEffect(() => {
+    if (attemptsCount === 0) void query.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attemptsCount]);
+
+  return query;
 }
 
 function useSetPlayerName() {

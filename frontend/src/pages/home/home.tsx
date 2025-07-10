@@ -1,7 +1,14 @@
 import { useAccount, useAlert, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-import { useAddPoints, useConfig, usePlayer, usePointsBalance, useSetPlayerName } from '@/api/sails';
+import {
+  useAddPoints,
+  useConfig,
+  usePlayer,
+  usePointsBalance,
+  useSetPlayerName,
+  useTimeToFreeAttempts,
+} from '@/api/sails';
 import { getErrorMessage } from '@/utils';
 
 import InGameScreen from './in-game-screen';
@@ -37,51 +44,12 @@ function Home() {
     boostersCount: boosterCount,
   } = player || { name: 'Player', shipLevel: 1, attemptsCount: 3, boostersCount: 2 };
 
-  const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
+  const { data: timeToFreeAttempts } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
-  // Загружаем значения из localStorage только на клиенте
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const last = localStorage.getItem('lastResetTime');
-      if (last) setLastResetTime(parseInt(last, 10));
-    }
-  }, []);
-
-  // Сохраняем параметры в localStorage при изменении
-
-  useEffect(() => {
-    localStorage.setItem('lastResetTime', String(lastResetTime));
-  }, [lastResetTime]);
-
-  // Проверка и сброс игр раз в минуту
-  useEffect(() => {
-    const checkReset = () => {
-      const now = Date.now();
-      const nextReset = getNextResetTime(lastResetTime);
-      if (now >= nextReset) {
-        setLastResetTime(nextReset);
-      }
-    };
-
-    const interval = setInterval(checkReset, 60000);
-    checkReset();
-
-    return () => clearInterval(interval);
-  }, [lastResetTime]);
-
-  // Получить время следующего сброса (12:00 UTC)
-  function getNextResetTime(last: number) {
-    const d = new Date(last);
-    d.setUTCHours(12, 0, 0, 0);
-    if (d.getTime() <= last) d.setUTCDate(d.getUTCDate() + 1);
-    return d.getTime();
-  }
-
   // Кнопки сброса
   function resetPTS() {}
-
   function resetGames() {}
 
   // Старт игры: уменьшаем gamesAvailable
@@ -115,7 +83,15 @@ function Home() {
       });
   };
 
-  if (playerPTS === undefined || !config || balance === null || balance === undefined || isPlayerFetching) return;
+  if (
+    playerPTS === undefined ||
+    !config ||
+    balance === null ||
+    balance === undefined ||
+    isPlayerFetching ||
+    timeToFreeAttempts === undefined
+  )
+    return;
 
   const formattedBalance = getFormattedBalance(balance);
 
@@ -140,7 +116,7 @@ function Home() {
       onStartGame={handleStartGame}
       playerPTS={playerPTS}
       gamesAvailable={gamesAvailable}
-      lastResetTime={lastResetTime}
+      timeToFreeAttempts={timeToFreeAttempts}
       onResetPTS={resetPTS}
       onResetGames={resetGames}
       shipLevel={shipLevel}

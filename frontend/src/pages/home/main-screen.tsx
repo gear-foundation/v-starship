@@ -18,12 +18,13 @@ import LeaderboardDialog from './leaderboard-dialog';
 import ShopDialog from './shop-dialog';
 import TokenExchangeDialog from './token-exchange-dialog';
 import './main-screen.css';
+import { useCountdown } from './use-countdown';
 
 interface MainScreenProps {
   onStartGame: () => void;
   playerPTS: number;
   gamesAvailable: number;
-  lastResetTime: number;
+  timeToFreeAttempts: number;
   onResetPTS: () => void;
   onResetGames: () => void;
   shipLevel: number;
@@ -107,7 +108,7 @@ export default function MainScreen({
   onStartGame,
   playerPTS,
   gamesAvailable,
-  lastResetTime,
+  timeToFreeAttempts,
   onResetPTS,
   onResetGames,
   shipLevel,
@@ -119,7 +120,7 @@ export default function MainScreen({
   valuePerPoint,
   integerBalanceDisplay,
 }: MainScreenProps) {
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
+  // const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showTokenExchange, setShowTokenExchange] = useState(false);
@@ -148,22 +149,13 @@ export default function MainScreen({
     };
   }, [bgParams]);
 
-  // Таймер до следующего сброса игр (12:00 UTC)
-  useEffect(() => {
-    function updateTimeLeft() {
-      const now = new Date();
-      const next = new Date(lastResetTime);
-      next.setUTCHours(12, 0, 0, 0);
-      if (next.getTime() <= lastResetTime) next.setUTCDate(next.getUTCDate() + 1);
-      const diff = next.getTime() - now.getTime();
-      const hours = Math.max(0, Math.floor(diff / 1000 / 60 / 60));
-      const minutes = Math.max(0, Math.floor((diff / 1000 / 60) % 60));
-      setTimeLeft({ hours, minutes });
-    }
-    updateTimeLeft();
-    const timer = setInterval(updateTimeLeft, 60000);
-    return () => clearInterval(timer);
-  }, [lastResetTime]);
+  // Таймер до следующего сброса игр
+  const timeLeftMs = useCountdown(timeToFreeAttempts);
+
+  const timeLeft = {
+    hours: Math.floor((timeLeftMs || 0) / 3600000),
+    minutes: Math.floor(((timeLeftMs || 0) % 3600000) / 60000),
+  };
 
   // Синхронизируем tempName при изменении playerName (например, после сброса)
   useEffect(() => {
