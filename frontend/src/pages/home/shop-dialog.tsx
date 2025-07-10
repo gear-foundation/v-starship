@@ -3,7 +3,7 @@ import { X, Gamepad2, Zap, Rocket, Plus } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 
-import { useBuyAttempt, useBuyShip, usePlayer } from '@/api/sails';
+import { useBuyAttempt, useBuyBooster, useBuyShip } from '@/api/sails';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage, getShopPrices } from '@/utils';
 
@@ -23,15 +23,14 @@ interface ShopDialogProps {
   playerPTS: number;
   onGetPTS: () => void;
   shipLevel: number;
-  onBuyBooster: () => void;
 }
 
-export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel, onBuyBooster }: ShopDialogProps) {
+export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel }: ShopDialogProps) {
   const alert = useAlert();
 
-  const player = usePlayer();
   const { sendTransactionAsync: buyShip } = useBuyShip();
   const { sendTransactionAsync: buyAttempt } = useBuyAttempt();
+  const { sendTransactionAsync: buyBooster } = useBuyBooster();
 
   const [selectedItem, setSelectedItem] = useState<string>('extra-game');
   const [gamesAvailable] = useState<number>(1);
@@ -84,10 +83,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
       playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
 
       return buyAttempt({ args: [] })
-        .then(() => {
-          onClose();
-          return player.refetch();
-        })
+        .then(() => onClose())
         .catch((error) => {
           alert.error(getErrorMessage(error));
         });
@@ -97,18 +93,16 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
       playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
 
       return buyShip({ args: [] })
-        .then(() => {
-          onClose();
-          return player.refetch();
-        })
+        .then(() => onClose())
         .catch((error) => alert.error(getErrorMessage(error)));
     }
 
     if (selectedItem === 'booster' && selectedItemData && playerPTS >= selectedItemData.cost) {
       playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
-      onBuyBooster();
-      onClose();
-      return;
+
+      return buyBooster({ args: [] })
+        .then(() => onClose())
+        .catch((error) => alert.error(getErrorMessage(error)));
     }
 
     if (canAfford && selectedItemData) {

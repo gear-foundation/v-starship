@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAddPoints, useConfig, usePlayer, usePointsBalance, useSetPlayerName } from '@/api/sails';
 import { getErrorMessage } from '@/utils';
 
-import { GAME_CONFIG } from './game-config';
 import InGameScreen from './in-game-screen';
 import MainScreen from './main-screen';
 
@@ -28,17 +27,17 @@ function Home() {
     watch: true,
   });
 
-  const { data: player, isPending: isPlayerFetching, refetch: refetchPlayer } = usePlayer();
+  const { data: player, isPending: isPlayerFetching } = usePlayer();
 
   const { sendTransactionAsync: setPlayerName } = useSetPlayerName();
   const {
     name: playerName,
     shipLevel,
     attemptsCount: gamesAvailable,
-  } = player || { name: 'Player', shipLevel: 1, attemptsCount: 3 };
+    boostersCount: boosterCount,
+  } = player || { name: 'Player', shipLevel: 1, attemptsCount: 3, boostersCount: 2 };
 
   const [lastResetTime, setLastResetTime] = useState<number>(Date.now());
-  const [boosterCount, setBoosterCount] = useState<number>(GAME_CONFIG.BOOSTER_CONFIG.countPerGame);
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
@@ -47,8 +46,6 @@ function Home() {
     if (typeof window !== 'undefined') {
       const last = localStorage.getItem('lastResetTime');
       if (last) setLastResetTime(parseInt(last, 10));
-      const boosters = localStorage.getItem('boosterCount');
-      if (boosters) setBoosterCount(parseInt(boosters, 10));
     }
   }, []);
 
@@ -57,9 +54,6 @@ function Home() {
   useEffect(() => {
     localStorage.setItem('lastResetTime', String(lastResetTime));
   }, [lastResetTime]);
-  useEffect(() => {
-    localStorage.setItem('boosterCount', String(boosterCount));
-  }, [boosterCount]);
 
   // Проверка и сброс игр раз в минуту
   useEffect(() => {
@@ -67,9 +61,7 @@ function Home() {
       const now = Date.now();
       const nextReset = getNextResetTime(lastResetTime);
       if (now >= nextReset) {
-        refetchPlayer()
-          .then(() => setLastResetTime(nextReset))
-          .catch((error) => alert.error(getErrorMessage(error)));
+        setLastResetTime(nextReset);
       }
     };
 
@@ -77,7 +69,6 @@ function Home() {
     checkReset();
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastResetTime]);
 
   // Получить время следующего сброса (12:00 UTC)
@@ -102,11 +93,8 @@ function Home() {
   }
 
   // Завершение игры: возвращаемся на главную, добавляем PTS
-  function handleBackToMenu(earnedPTS: number) {
-    // TODO: change to dynamic value
-    const spentBoostersCount = 0;
-
-    addPlayerPTS({ args: [earnedPTS, spentBoostersCount] })
+  function handleBackToMenu(earnedPTS: number, activatedBoostersCount: number) {
+    addPlayerPTS({ args: [earnedPTS, activatedBoostersCount] })
       .then(() => setCurrentScreen('main'))
       .catch((error) => alert.error(getErrorMessage(error)));
   }
@@ -119,17 +107,9 @@ function Home() {
     }
   }
 
-  function handleBuyBooster() {
-    // setPlayerPTS((prev) => prev - 100);
-    setBoosterCount((prev) => prev + 1);
-  }
-
   const handleSaveName = (name: string, onSuccess: () => void) => {
     setPlayerName({ args: [name] })
-      .then(() => {
-        onSuccess();
-        return refetchPlayer();
-      })
+      .then(() => onSuccess())
       .catch((error) => {
         alert.error(getErrorMessage(error));
       });
@@ -149,7 +129,6 @@ function Home() {
         gamesAvailable={gamesAvailable}
         shipLevel={shipLevel}
         boosterCount={boosterCount}
-        setBoosterCount={setBoosterCount}
         account={account}
         integerBalanceDisplay={formattedBalance}
       />
@@ -169,7 +148,6 @@ function Home() {
       playerName={playerName}
       onSavePlayerName={handleSaveName}
       boosterCount={boosterCount}
-      onBuyBooster={handleBuyBooster}
       account={account}
       integerBalanceDisplay={formattedBalance}
       valuePerPoint={config.onePointInValue}

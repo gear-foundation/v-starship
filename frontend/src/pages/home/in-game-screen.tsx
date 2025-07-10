@@ -34,13 +34,12 @@ interface GameObject {
 }
 
 interface InGameScreenProps {
-  onBackToMenu: (ptsEarned: number) => void;
+  onBackToMenu: (ptsEarned: number, activatedBoostersCount: number) => void;
   onReplayGame: () => void;
   playerPTS: number;
   gamesAvailable: number;
   shipLevel: number;
   boosterCount: number;
-  setBoosterCount: React.Dispatch<React.SetStateAction<number>>;
   account: Account | undefined;
   integerBalanceDisplay: {
     value?: string;
@@ -130,7 +129,6 @@ export default function InGameScreen({
   gamesAvailable,
   shipLevel,
   boosterCount,
-  setBoosterCount,
   account,
   integerBalanceDisplay,
 }: InGameScreenProps) {
@@ -294,6 +292,8 @@ export default function InGameScreen({
   const [fireRateMultiplier, setFireRateMultiplier] = useState(1);
 
   // Бустеры: теперь с полем appearAt и isActive
+  const activatedBoostersCount = useRef(0);
+
   const [boosters, setBoosters] = useState<any[]>([]);
   const boostersRef = useRef(boosters);
   useEffect(() => {
@@ -1273,7 +1273,8 @@ export default function InGameScreen({
   // Используем resetGameState в handleReplay и при старте новой игры
   const handleReplay = () => {
     resetGameState();
-    onBackToMenu(ptsEarned); // Сначала начисляем PTS
+    onBackToMenu(ptsEarned, activatedBoostersCount.current);
+
     if (gamesAvailable > 0) {
       onReplayGame(); // Запускаем новую игру, если есть попытки
     }
@@ -1282,7 +1283,7 @@ export default function InGameScreen({
   // Возврат в меню
   const handleBackToMenuFromResults = () => {
     setShowResults(false);
-    onBackToMenu(ptsEarned);
+    onBackToMenu(ptsEarned, activatedBoostersCount.current);
   };
 
   // Логирование монтирования/размонтирования компонента
@@ -1360,8 +1361,9 @@ export default function InGameScreen({
   }
 
   function handleActivateBoosterByButton() {
-    if (activeBooster || boosterCount <= 0) return;
-    setBoosterCount((c) => c - 1);
+    if (activeBooster || activatedBoostersCount.current >= boosterCount) return;
+
+    activatedBoostersCount.current += 1;
     activateBooster();
   }
 

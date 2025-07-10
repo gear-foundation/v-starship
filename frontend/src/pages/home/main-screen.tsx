@@ -31,7 +31,6 @@ interface MainScreenProps {
   playerName: string;
   onSavePlayerName: (name: string, onSuccess: () => void) => void;
   boosterCount: number;
-  onBuyBooster: () => void;
   account: Account | undefined;
   valuePerPoint: bigint;
   integerBalanceDisplay: { value?: string; unit?: string };
@@ -116,7 +115,6 @@ export default function MainScreen({
   playerName,
   onSavePlayerName,
   boosterCount,
-  onBuyBooster,
   account,
   valuePerPoint,
   integerBalanceDisplay,
@@ -511,7 +509,6 @@ export default function MainScreen({
         playerPTS={playerPTS}
         onGetPTS={handleGetPTSFromShop}
         shipLevel={shipLevel}
-        onBuyBooster={onBuyBooster}
       />
 
       <LeaderboardDialog isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />

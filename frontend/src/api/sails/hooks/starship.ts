@@ -52,6 +52,7 @@ function usePlayer() {
         shipLevel: data.ship_level,
       }),
     },
+    watch: true,
   });
 }
 
