@@ -1,4 +1,25 @@
-import { useConfig, usePlayer, useBuyPoints, useAddPoints, useBurnPoints } from './starship';
+import {
+  useConfig,
+  usePlayer,
+  useTimeToFreeAttempts,
+  useBuyPoints,
+  useAddPoints,
+  useSetPlayerName,
+  useBuyAttempt,
+  useBuyBooster,
+  useBuyShip,
+} from './starship';
 import { usePointsBalance } from './vft';
 
-export { useConfig, usePlayer, useBuyPoints, useAddPoints, useBurnPoints, usePointsBalance };
+export {
+  useConfig,
+  usePlayer,
+  useTimeToFreeAttempts,
+  useBuyPoints,
+  useAddPoints,
+  useSetPlayerName,
+  useBuyAttempt,
+  useBuyBooster,
+  useBuyShip,
+  usePointsBalance,
+};

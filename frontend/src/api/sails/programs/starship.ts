@@ -14,13 +14,18 @@ import {
 export interface Config {
   ft_contract: ActorId;
   ship_price: number | string | bigint;
+  attempt_price: number | string | bigint;
+  booster_price: number | string | bigint;
   one_point_in_value: number | string | bigint;
 }
 
 export interface PlayerInfo {
+  player_name: string;
   earned_points: number | string | bigint;
-  level: number;
-  ship: number;
+  number_of_attempts: number;
+  number_of_boosters: number;
+  ship_level: number;
+  attempt_timestamp: number | string | bigint;
 }
 
 export class SailsProgram {
@@ -33,8 +38,21 @@ export class SailsProgram {
     programId?: `0x${string}`,
   ) {
     const types: Record<string, any> = {
-      Config: { ft_contract: '[u8;32]', ship_price: 'u128', one_point_in_value: 'u128' },
-      PlayerInfo: { earned_points: 'u128', level: 'u16', ship: 'u16' },
+      Config: {
+        ft_contract: '[u8;32]',
+        ship_price: 'u128',
+        attempt_price: 'u128',
+        booster_price: 'u128',
+        one_point_in_value: 'u128',
+      },
+      PlayerInfo: {
+        player_name: 'String',
+        earned_points: 'u128',
+        number_of_attempts: 'u16',
+        number_of_boosters: 'u16',
+        ship_level: 'u16',
+        attempt_timestamp: 'u64',
+      },
     };
 
     this.registry = new TypeRegistry();
@@ -88,27 +106,40 @@ export class SailsProgram {
 export class Starship {
   constructor(private _program: SailsProgram) {}
 
-  public addPoints(points: number | string | bigint, new_level: boolean): TransactionBuilder<null> {
+  public addPoints(points: number | string | bigint, num_spent_boosters: number): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'AddPoints', points, new_level],
-      '(String, String, u128, bool)',
+      ['Starship', 'AddPoints', points, num_spent_boosters],
+      '(String, String, u128, u16)',
       'Null',
       this._program.programId,
     );
   }
 
-  public burnPoints(points: number | string | bigint): TransactionBuilder<null> {
+  public buyAttempt(): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'BurnPoints', points],
-      '(String, String, u128)',
+      ['Starship', 'BuyAttempt'],
+      '(String, String)',
+      'Null',
+      this._program.programId,
+    );
+  }
+
+  public buyBooster(): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Starship', 'BuyBooster'],
+      '(String, String)',
       'Null',
       this._program.programId,
     );
@@ -166,6 +197,19 @@ export class Starship {
     );
   }
 
+  public setName(name: string): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Starship', 'SetName', name],
+      '(String, String, String)',
+      'Null',
+      this._program.programId,
+    );
+  }
+
   public withdrawalOfValues(to: ActorId): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
@@ -217,14 +261,14 @@ export class Starship {
     return result[2].toJSON() as unknown as Config;
   }
 
-  public async playersInfo(
+  public async playerInfo(
     player: ActorId,
     originAddress?: string,
     value?: number | string | bigint,
     atBlock?: `0x${string}`,
   ): Promise<PlayerInfo> {
     const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Starship', 'PlayersInfo', player])
+      .createType('(String, String, [u8;32])', ['Starship', 'PlayerInfo', player])
       .toHex();
     const reply = await this._program.api.message.calculateReply({
       destination: this._program.programId,
@@ -239,21 +283,26 @@ export class Starship {
     return result[2].toJSON() as unknown as PlayerInfo;
   }
 
-  public subscribeToPointsBurnedEvent(callback: (data: bigint) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'PointsBurned') {
-        callback(
-          this._program.registry
-            .createType('(String, String, u128)', message.payload)[2]
-            .toBigInt() as unknown as bigint,
-        );
-      }
+  public async timeToFreeAttempts(
+    player: ActorId,
+    originAddress?: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<bigint> {
+    const payload = this._program.registry
+      .createType('(String, String, [u8;32])', ['Starship', 'TimeToFreeAttempts', player])
+      .toHex();
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
     });
+    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
+    const result = this._program.registry.createType('(String, String, u64)', reply.payload);
+    return result[2].toBigInt() as unknown as bigint;
   }
 
   public subscribeToPointsAddedEvent(callback: (data: bigint) => void | Promise<void>): Promise<() => void> {
@@ -346,6 +395,49 @@ export class Starship {
             .createType('(String, String, [u8;32])', message.payload)[2]
             .toJSON() as unknown as ActorId,
         );
+      }
+    });
+  }
+
+  public subscribeToNameSetEvent(callback: (data: string) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'NameSet') {
+        callback(
+          this._program.registry
+            .createType('(String, String, String)', message.payload)[2]
+            .toString() as unknown as string,
+        );
+      }
+    });
+  }
+
+  public subscribeToAttemptBoughtEvent(callback: (data: null) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'AttemptBought') {
+        callback(null);
+      }
+    });
+  }
+
+  public subscribeToBoosterBoughtEvent(callback: (data: null) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'BoosterBought') {
+        callback(null);
       }
     });
   }

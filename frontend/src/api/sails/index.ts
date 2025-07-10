@@ -1,3 +1,25 @@
-import { useConfig, usePlayer, useBuyPoints, useAddPoints, useBurnPoints, usePointsBalance } from './hooks';
+import {
+  useConfig,
+  usePlayer,
+  useTimeToFreeAttempts,
+  useBuyPoints,
+  useAddPoints,
+  useSetPlayerName,
+  useBuyAttempt,
+  useBuyBooster,
+  useBuyShip,
+  usePointsBalance,
+} from './hooks';
 
-export { useConfig, usePlayer, useBuyPoints, useAddPoints, useBurnPoints, usePointsBalance };
+export {
+  useConfig,
+  usePlayer,
+  useTimeToFreeAttempts,
+  useBuyPoints,
+  useAddPoints,
+  useSetPlayerName,
+  useBuyAttempt,
+  useBuyBooster,
+  useBuyShip,
+  usePointsBalance,
+};

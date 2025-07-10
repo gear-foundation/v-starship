@@ -117,7 +117,10 @@ function Home() {
 
   // Завершение игры: возвращаемся на главную, добавляем PTS
   function handleBackToMenu(earnedPTS: number) {
-    addPlayerPTS({ args: [earnedPTS, false] })
+    // TODO: change to dynamic value
+    const spentBoostersCount = 0;
+
+    addPlayerPTS({ args: [earnedPTS, spentBoostersCount] })
       .then(() => setCurrentScreen('main'))
       .catch((error) => alert.error(getErrorMessage(error)));
   }
