@@ -234,9 +234,9 @@ export const GAME_CONFIG: GameConfig = {
   PLAYER_ROCKET_SPEED: 2.0, // %/тик (скорость ракеты игрока)
 
   // Награды
-  ENEMY_REWARD: 60,
+  ENEMY_REWARD: 50,
   ASTEROID_REWARD: 30,
-  MINE_REWARD: 40,
+  MINE_REWARD: 20,
 
   // Размеры
   PLAYER_SHIP_BASE_SIZE: 56,
