@@ -325,14 +325,17 @@ export default function MainScreen({
                 ) : (
                   <>
                     <span className="text-gray-300 text-lg glow-white">{playerName}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
-                      onClick={() => setEditingName(true)}
-                      title="Edit name">
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
+
+                    {account && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
+                        onClick={() => setEditingName(true)}
+                        title="Edit name">
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
@@ -391,7 +394,7 @@ export default function MainScreen({
                 onClick={onStartGame}
                 className="w-full bg-gradient-to-r from-red-500/80 to-cyan-400/80 border-2 border-red-500 text-white hover:bg-red-500/90 font-bold py-4 text-lg rounded-xl shadow-lg glow-red-border transition-all duration-300 mb-2"
                 style={{ minHeight: 56, fontSize: 22, letterSpacing: 2 }}
-                disabled={gamesAvailable === 0}>
+                disabled={gamesAvailable === 0 || !account}>
                 START GAME
               </Button>
               <div className="flex gap-3 w-full">

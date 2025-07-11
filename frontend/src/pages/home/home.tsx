@@ -16,26 +16,27 @@ function Home() {
   const { getFormattedBalance } = useBalanceFormat();
 
   const { data: config } = useConfig();
-  const { data: playerPTS } = usePointsBalance();
+  const { data: playerPTS = 0 } = usePointsBalance();
 
-  const { data: balance } = useDeriveBalancesAll({
+  const { data: balance = 0n } = useDeriveBalancesAll({
     address: account?.address,
     query: { select: (data) => data.transferable?.toBigInt() },
     watch: true,
   });
 
   const { data: player, isPending: isPlayerFetching } = usePlayer();
-  const { data: timeToFreeAttempts } = useTimeToFreeAttempts();
+  const { data: timeToFreeAttempts = 0 } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
   if (
-    playerPTS === undefined ||
-    !config ||
-    balance === null ||
-    balance === undefined ||
-    isPlayerFetching ||
-    timeToFreeAttempts === undefined
+    account &&
+    (playerPTS === undefined ||
+      !config ||
+      balance === null ||
+      balance === undefined ||
+      isPlayerFetching ||
+      timeToFreeAttempts === undefined)
   )
     return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
 
@@ -44,7 +45,7 @@ function Home() {
     shipLevel,
     attemptsCount: gamesAvailable,
     boostersCount: boosterCount,
-  } = player || config.defaults;
+  } = player || config?.defaults || { name: 'Player', shipLevel: 1, attemptsCount: 0, boostersCount: 0 };
 
   function handleStartGame() {
     if (gamesAvailable > 0) {
@@ -94,7 +95,7 @@ function Home() {
       boosterCount={boosterCount}
       account={account}
       integerBalanceDisplay={formattedBalance}
-      valuePerPoint={config.valuePerPoint}
+      valuePerPoint={config?.valuePerPoint || 1n}
     />
   );
 }
