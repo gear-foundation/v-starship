@@ -36,7 +36,7 @@ function Home() {
     isPlayerFetching ||
     timeToFreeAttempts === undefined
   )
-    return;
+    return null;
 
   const {
     name: playerName,
