@@ -357,12 +357,16 @@ export default function MainScreen({
               <div className="mb-3">
                 <span className="text-cyan-400 text-base glow-blue">Games available: {gamesAvailable} of 3</span>
               </div>
-              <div className="mb-3">
-                <span className="text-gray-400 text-sm glow-gray">
-                  Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
-                  {String(timeLeft.minutes).padStart(2, '0')}
-                </span>
-              </div>
+
+              {Boolean(timeLeftMs) && (
+                <div className="mb-3">
+                  <span className="text-gray-400 text-sm glow-gray">
+                    Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+
               <div className="mb-8">
                 <div className="flex items-center justify-center gap-2">
                   <Zap className="h-4 w-4 text-yellow-400" />

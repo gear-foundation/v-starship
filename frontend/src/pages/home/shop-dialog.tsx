@@ -28,9 +28,10 @@ interface ShopDialogProps {
 export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel }: ShopDialogProps) {
   const alert = useAlert();
 
-  const { sendTransactionAsync: buyShip } = useBuyShip();
-  const { sendTransactionAsync: buyAttempt } = useBuyAttempt();
-  const { sendTransactionAsync: buyBooster } = useBuyBooster();
+  const { sendTransactionAsync: buyShip, isPending: isBuyingShip } = useBuyShip();
+  const { sendTransactionAsync: buyAttempt, isPending: isBuyingAttempt } = useBuyAttempt();
+  const { sendTransactionAsync: buyBooster, isPending: isBuyingBooster } = useBuyBooster();
+  const isPending = isBuyingShip || isBuyingAttempt || isBuyingBooster;
 
   const [selectedItem, setSelectedItem] = useState<string>('extra-game');
   const [gamesAvailable] = useState<number>(1);
@@ -226,15 +227,17 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
                   : 'bg-gray-800 border-2 border-gray-600 text-gray-500 cursor-not-allowed'
               }
             `}>
-            {selectedItem === 'ship-upgrade'
-              ? shipLevel === 10
-                ? 'MAX LEVEL'
-                : canUpgrade
-                  ? 'UPGRADE'
-                  : 'INSUFFICIENT PTS'
-              : canAfford
-                ? 'PURCHASE'
-                : 'INSUFFICIENT PTS'}
+            {isPending
+              ? 'PROCESSING...'
+              : selectedItem === 'ship-upgrade'
+                ? shipLevel === 10
+                  ? 'MAX LEVEL'
+                  : canUpgrade
+                    ? 'UPGRADE'
+                    : 'INSUFFICIENT PTS'
+                : canAfford
+                  ? 'PURCHASE'
+                  : 'INSUFFICIENT PTS'}
           </Button>
         </div>
       </div>
