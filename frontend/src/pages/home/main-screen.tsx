@@ -6,12 +6,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Account } from '@gear-js/react-hooks';
+import { Account, useAlert } from '@gear-js/react-hooks';
 import { Wallet } from '@gear-js/wallet-connect';
-import { Edit2, Zap } from 'lucide-react';
+import { Edit2, Loader2, Zap } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+import { useSetPlayerName } from '@/api/sails';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 import LeaderboardDialog from './leaderboard-dialog';
@@ -28,7 +30,6 @@ interface MainScreenProps {
   shipLevel: number;
   playerVARA: bigint;
   playerName: string;
-  onSavePlayerName: (name: string, onSuccess: () => void) => void;
   boosterCount: number;
   account: Account | undefined;
   valuePerPoint: bigint;
@@ -110,7 +111,6 @@ export default function MainScreen({
   shipLevel,
   playerVARA,
   playerName,
-  onSavePlayerName,
   boosterCount,
   account,
   valuePerPoint,
@@ -158,11 +158,18 @@ export default function MainScreen({
     setTempName(playerName);
   }, [playerName]);
 
+  const alert = useAlert();
+  const { sendTransactionAsync: setPlayerName, isPending: isSettingName } = useSetPlayerName();
+
   // Обработчик сохранения имени
   const handleSaveName = () => {
     const trimmed = tempName.trim();
     if (trimmed.length > 0 && trimmed.length <= 16) {
-      onSavePlayerName(trimmed, () => setEditingName(false));
+      setPlayerName({ args: [trimmed] })
+        .then(() => () => setEditingName(false))
+        .catch((error) => {
+          alert.error(getErrorMessage(error));
+        });
     }
   };
 
@@ -303,8 +310,8 @@ export default function MainScreen({
                       size="sm"
                       className="p-1 h-6 w-6 text-cyan-400 border border-cyan-400 glow-blue"
                       onClick={handleSaveName}
-                      title="Сохранить имя">
-                      <span className="font-bold">⏎</span>
+                      title="Save name">
+                      {isSettingName ? <Loader2 className="animate-spin" /> : <span className="font-bold">⏎</span>}
                     </Button>
                     <Button
                       variant="ghost"

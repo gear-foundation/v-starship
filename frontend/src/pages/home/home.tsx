@@ -1,8 +1,7 @@
-import { useAccount, useAlert, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
+import { useAccount, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
 import { useState } from 'react';
 
-import { useConfig, usePlayer, usePointsBalance, useSetPlayerName, useTimeToFreeAttempts } from '@/api/sails';
-import { getErrorMessage } from '@/utils';
+import { useConfig, usePlayer, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
 
 import InGameScreen from './in-game-screen';
 import MainScreen from './main-screen';
@@ -14,7 +13,6 @@ function Home() {
 
   const { account } = useAccount();
   const { getFormattedBalance } = useBalanceFormat();
-  const alert = useAlert();
 
   const { data: config } = useConfig();
 
@@ -28,7 +26,6 @@ function Home() {
 
   const { data: player, isPending: isPlayerFetching } = usePlayer();
 
-  const { sendTransactionAsync: setPlayerName } = useSetPlayerName();
   const {
     name: playerName,
     shipLevel,
@@ -57,14 +54,6 @@ function Home() {
       setCurrentScreen('game');
     }
   }
-
-  const handleSaveName = (name: string, onSuccess: () => void) => {
-    setPlayerName({ args: [name] })
-      .then(() => onSuccess())
-      .catch((error) => {
-        alert.error(getErrorMessage(error));
-      });
-  };
 
   if (
     playerPTS === undefined ||
@@ -103,7 +92,6 @@ function Home() {
       shipLevel={shipLevel}
       playerVARA={balance}
       playerName={playerName}
-      onSavePlayerName={handleSaveName}
       boosterCount={boosterCount}
       account={account}
       integerBalanceDisplay={formattedBalance}
