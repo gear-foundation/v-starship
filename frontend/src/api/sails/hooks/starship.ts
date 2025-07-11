@@ -57,6 +57,28 @@ function usePlayer() {
   });
 }
 
+function usePlayers() {
+  const { data: program } = useStarshipProgram();
+
+  return useProgramQuery({
+    program,
+    serviceName: 'starship',
+    functionName: 'allPlayersInfo',
+    args: [],
+    query: {
+      select: (data) =>
+        data.map(([address, player]) => ({
+          address,
+          name: player.player_name,
+          earnedPoints: Number(player.earned_points),
+          attemptsCount: player.number_of_attempts,
+          boostersCount: player.number_of_boosters,
+          shipLevel: player.ship_level,
+        })),
+    },
+  });
+}
+
 function useTimeToFreeAttempts() {
   const { account } = useAccount();
   const { data: program } = useStarshipProgram();
@@ -143,6 +165,7 @@ function useBuyShip() {
 export {
   useConfig,
   usePlayer,
+  usePlayers,
   useTimeToFreeAttempts,
   useBuyPoints,
   useAddPoints,
