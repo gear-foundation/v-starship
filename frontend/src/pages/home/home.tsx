@@ -1,14 +1,7 @@
 import { useAccount, useAlert, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
 import { useState } from 'react';
 
-import {
-  useAddPoints,
-  useConfig,
-  usePlayer,
-  usePointsBalance,
-  useSetPlayerName,
-  useTimeToFreeAttempts,
-} from '@/api/sails';
+import { useConfig, usePlayer, usePointsBalance, useSetPlayerName, useTimeToFreeAttempts } from '@/api/sails';
 import { getErrorMessage } from '@/utils';
 
 import InGameScreen from './in-game-screen';
@@ -26,7 +19,6 @@ function Home() {
   const { data: config } = useConfig();
 
   const { data: playerPTS } = usePointsBalance();
-  const { sendTransactionAsync: addPlayerPTS } = useAddPoints();
 
   const { data: balance } = useDeriveBalancesAll({
     address: account?.address,
@@ -48,11 +40,6 @@ function Home() {
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
-  // Кнопки сброса
-  function resetPTS() {}
-  function resetGames() {}
-
-  // Старт игры: уменьшаем gamesAvailable
   function handleStartGame() {
     if (gamesAvailable > 0) {
       setGameSessionId((id) => id + 1);
@@ -60,14 +47,10 @@ function Home() {
     }
   }
 
-  // Завершение игры: возвращаемся на главную, добавляем PTS
-  function handleBackToMenu(earnedPTS: number, activatedBoostersCount: number) {
-    addPlayerPTS({ args: [earnedPTS, activatedBoostersCount] })
-      .then(() => setCurrentScreen('main'))
-      .catch((error) => alert.error(getErrorMessage(error)));
+  function handleBackToMenu() {
+    setCurrentScreen('main');
   }
 
-  // Повтор игры: уменьшаем gamesAvailable и перезапускаем игру
   function handleReplayGame() {
     if (gamesAvailable > 0) {
       setGameSessionId((id) => id + 1);
@@ -117,8 +100,6 @@ function Home() {
       playerPTS={playerPTS}
       gamesAvailable={gamesAvailable}
       timeToFreeAttempts={timeToFreeAttempts}
-      onResetPTS={resetPTS}
-      onResetGames={resetGames}
       shipLevel={shipLevel}
       playerVARA={balance}
       playerName={playerName}

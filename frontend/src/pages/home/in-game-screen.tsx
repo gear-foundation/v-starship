@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { type Account } from '@gear-js/react-hooks';
+import { Account } from '@gear-js/react-hooks';
 import { Heart, Zap } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
@@ -34,7 +34,7 @@ interface GameObject {
 }
 
 interface InGameScreenProps {
-  onBackToMenu: (ptsEarned: number, activatedBoostersCount: number) => void;
+  onBackToMenu: () => void;
   onReplayGame: () => void;
   playerPTS: number;
   gamesAvailable: number;
@@ -118,9 +118,6 @@ const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
 
 // === КОНФИГ ДЛЯ БУСТЕРОВ ===
 const BOOSTER_CONFIG = GAME_CONFIG.BOOSTER_CONFIG;
-
-// === Конфиг ===
-const GAME_DURATION = GAME_CONFIG.GAME_DURATION * 1000; // ms
 
 export default function InGameScreen({
   onBackToMenu,
@@ -1224,68 +1221,6 @@ export default function InGameScreen({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // === Сброс состояния при старте новой игры/повторе ===
-  // Сбрасываем ВСЕ игровые массивы, HP, координаты, скорости, бустеры, эффекты, kill-счётчики.
-  const resetGameState = () => {
-    setPtsEarned(0);
-    setEnemiesKilled(0);
-    setAsteroidsKilled(0);
-    setMinesKilled(0);
-    setEnemies([]);
-    setAsteroids([]);
-    setMines([]);
-    setPlayerLasers([]);
-    setPlayerRockets([]);
-    setEnemyLasers([]);
-    setEnemyHP({});
-    setAsteroidHP({});
-    setMineHP({});
-    setPlayerHP(GAME_CONFIG.INITIAL_PLAYER_HP);
-    setPlayerExists(true);
-    setPlayerX(50);
-    setPlayerY(10);
-    setPlayerVX(0);
-    setPlayerVY(0);
-    setBoosters(generateFreeBoosters());
-    setActiveBooster(false);
-    setFireRateMultiplier(1);
-    setGameTime(GAME_CONFIG.GAME_DURATION); // Сброс таймера на значение из конфига
-    if (boosterTimeoutRef.current) clearTimeout(boosterTimeoutRef.current);
-    // --- Сброс состояния босса ---
-    setBoss({
-      id: 'boss',
-      x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-      y: BOSS_CONFIG.trajectory.Y_APPEAR, // старт вне поля
-      speed: BOSS_CONFIG.speed,
-      x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-      y0: BOSS_CONFIG.trajectory.Y_APPEAR,
-      ampX: BOSS_CONFIG.trajectory.AMP_X,
-      phaseX: 0,
-      ampY: BOSS_CONFIG.trajectory.AMP_Y,
-      phaseY: 0,
-      born: Date.now(),
-    });
-    setBossHP(params.boss?.bossHP || 30);
-    setBossExists(false);
-    setBossPhase('idle');
-  };
-
-  // Используем resetGameState в handleReplay и при старте новой игры
-  const handleReplay = () => {
-    resetGameState();
-    onBackToMenu(ptsEarned, activatedBoostersCount.current);
-
-    if (gamesAvailable > 0) {
-      onReplayGame(); // Запускаем новую игру, если есть попытки
-    }
-  };
-
-  // Возврат в меню
-  const handleBackToMenuFromResults = () => {
-    setShowResults(false);
-    onBackToMenu(ptsEarned, activatedBoostersCount.current);
-  };
-
   // Логирование монтирования/размонтирования компонента
   useEffect(() => {
     console.log('[InGameScreen] mounted');
@@ -1432,26 +1367,6 @@ export default function InGameScreen({
       running = false;
     };
   }, [showResults, playerX, playerY]);
-
-  // Генерация бесплатных бустеров в пределах 10%-90% времени игры
-  const generateFreeBoosters = () => {
-    const arr = [];
-    const now = Date.now();
-    const minTime = now + GAME_DURATION * 0.1;
-    const maxTime = now + GAME_DURATION * 0.9;
-    for (let i = 0; i < BOOSTER_CONFIG.countPerGame; ++i) {
-      const appearAt = minTime + Math.random() * (maxTime - minTime);
-      arr.push({
-        id: `booster_${now}_${i}`,
-        x: Math.random() * 80 + 10,
-        y: 100,
-        rotation: Math.random() * 360,
-        appearAt,
-        isActive: false,
-      });
-    }
-    return arr;
-  };
 
   // Цвета снарядов из конфига
   const PLAYER_LASER_COLOR = GAME_CONFIG.PLAYER_LASER_COLOR;
@@ -1986,8 +1901,8 @@ export default function InGameScreen({
       {/* Экран результатов */}
       <ResultsScreen
         isOpen={showResults}
-        onClose={handleBackToMenuFromResults}
-        onReplay={gamesAvailable > 0 ? handleReplay : undefined}
+        onClose={onBackToMenu}
+        onReplay={gamesAvailable > 1 ? onReplayGame : undefined}
         isVictory={isVictory}
         ptsEarned={ptsEarned}
         playerPTS={playerPTS}
@@ -1995,6 +1910,7 @@ export default function InGameScreen({
         enemiesDefeated={enemiesKilled + asteroidsKilled + minesKilled}
         asteroidsKilled={asteroidsKilled}
         minesKilled={minesKilled}
+        activatedBoostersCount={activatedBoostersCount.current}
       />
       <style>{`
             @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');

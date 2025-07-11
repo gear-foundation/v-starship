@@ -25,8 +25,6 @@ interface MainScreenProps {
   playerPTS: number;
   gamesAvailable: number;
   timeToFreeAttempts: number;
-  onResetPTS: () => void;
-  onResetGames: () => void;
   shipLevel: number;
   playerVARA: bigint;
   playerName: string;
@@ -109,8 +107,6 @@ export default function MainScreen({
   playerPTS,
   gamesAvailable,
   timeToFreeAttempts,
-  onResetPTS,
-  onResetGames,
   shipLevel,
   playerVARA,
   playerName,
@@ -400,21 +396,6 @@ export default function MainScreen({
                   LEADERBOARD
                 </Button>
               </div>
-            </div>
-            {/* Временные кнопки сброса */}
-            <div className="flex gap-2 justify-center mb-4">
-              <Button
-                onClick={onResetPTS}
-                variant="outline"
-                className="text-xs px-2 py-1 border-cyan-400 text-cyan-400">
-                Reset PTS
-              </Button>
-              <Button
-                onClick={onResetGames}
-                variant="outline"
-                className="text-xs px-2 py-1 border-cyan-400 text-cyan-400">
-                Reset Games
-              </Button>
             </div>
           </div>
         </div>

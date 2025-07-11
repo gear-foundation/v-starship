@@ -59,24 +59,32 @@ function usePlayer() {
 
 function usePlayers() {
   const { data: program } = useStarshipProgram();
+  const { data: player } = usePlayer();
 
-  return useProgramQuery({
+  const query = useProgramQuery({
     program,
     serviceName: 'starship',
     functionName: 'allPlayersInfo',
     args: [],
     query: {
       select: (data) =>
-        data.map(([address, player]) => ({
+        data.map(([address, _player]) => ({
           address,
-          name: player.player_name,
-          earnedPoints: Number(player.earned_points),
-          attemptsCount: player.number_of_attempts,
-          boostersCount: player.number_of_boosters,
-          shipLevel: player.ship_level,
+          name: _player.player_name,
+          earnedPoints: Number(_player.earned_points),
+          attemptsCount: _player.number_of_attempts,
+          boostersCount: _player.number_of_boosters,
+          shipLevel: _player.ship_level,
         })),
     },
   });
+
+  useEffect(() => {
+    if (player) void query.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player]);
+
+  return query;
 }
 
 function useTimeToFreeAttempts() {
