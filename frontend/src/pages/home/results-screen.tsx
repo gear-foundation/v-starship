@@ -1,7 +1,10 @@
+import { useAlert } from '@gear-js/react-hooks';
 import { Trophy, Skull, RotateCcw, Home } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
+import { useAddPoints } from '@/api/sails';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -16,6 +19,7 @@ interface ResultsScreenProps {
   enemiesDefeated: number;
   asteroidsKilled: number;
   minesKilled: number;
+  activatedBoostersCount: number;
 }
 
 export function ResultsScreen({
@@ -29,9 +33,11 @@ export function ResultsScreen({
   enemiesDefeated,
   asteroidsKilled,
   minesKilled,
+  activatedBoostersCount,
 }: ResultsScreenProps) {
   // Проигрывание звука победы только при победе
   const victoryAudioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     if (isOpen && isVictory) {
       if (!victoryAudioRef.current) {
@@ -48,6 +54,21 @@ export function ResultsScreen({
       }
     }
   }, [isOpen, isVictory]);
+
+  const alert = useAlert();
+  const { sendTransactionAsync: addPlayerPTS, isPending: isAddingPTS } = useAddPoints();
+
+  const handleBackToMenu = () => {
+    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
+      .then(() => onClose())
+      .catch((error) => alert.error(getErrorMessage(error)));
+  };
+
+  const handleReplay = () => {
+    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
+      .then(() => onReplay?.())
+      .catch((error) => alert.error(getErrorMessage(error)));
+  };
 
   if (!isOpen) return null;
 
@@ -125,7 +146,7 @@ export function ResultsScreen({
         <div className="p-6 flex flex-col items-center gap-4">
           {onReplay && (
             <Button
-              onClick={onReplay}
+              onClick={handleReplay}
               className={`
               w-full font-bold py-6 text-xl flex items-center justify-center gap-2 transition-all duration-300
               bg-transparent border-2 hover:bg-opacity-10 hover:shadow-lg
@@ -134,17 +155,20 @@ export function ResultsScreen({
                   ? 'border-red-500 text-red-400 hover:bg-red-500/10 glow-red-border hover:shadow-red-500/25'
                   : 'border-red-500 text-red-400 hover:bg-red-500/10 glow-red-border hover:shadow-red-500/25'
               }
-            `}>
+            `}
+              disabled={isAddingPTS}>
               <RotateCcw className="h-5 w-5" />
-              REPLAY
+              {isAddingPTS ? 'PROCESSING...' : 'REPLAY'}
             </Button>
           )}
+
           <Button
-            onClick={onClose}
+            onClick={handleBackToMenu}
             variant="outline"
-            className="w-3/4 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-bold py-2 text-sm glow-blue-border transition-all duration-300 flex items-center justify-center gap-2">
+            className="w-3/4 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-bold py-2 text-sm glow-blue-border transition-all duration-300 flex items-center justify-center gap-2"
+            disabled={isAddingPTS}>
             <Home className="h-4 w-4" />
-            BACK TO MENU
+            {isAddingPTS ? 'PROCESSING...' : 'BACK TO MENU'}
           </Button>
         </div>
       </div>

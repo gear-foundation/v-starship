@@ -1,13 +1,8 @@
+import { useAccount } from '@gear-js/react-hooks';
 import { X, Trophy, Medal, Award } from 'lucide-react';
 
+import { usePlayers } from '@/api/sails';
 import { Button } from '@/components/ui/button';
-
-interface LeaderboardEntry {
-  rank: number;
-  playerName: string;
-  shipLevel: number;
-  pts: number;
-}
 
 interface LeaderboardDialogProps {
   isOpen: boolean;
@@ -15,19 +10,12 @@ interface LeaderboardDialogProps {
 }
 
 export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialogProps) {
-  // Mock leaderboard data - in a real app this would come from an API
-  const leaderboardData: LeaderboardEntry[] = [
-    { rank: 1, playerName: 'CosmicAce', shipLevel: 10, pts: 45000 },
-    { rank: 2, playerName: 'StarHunter', shipLevel: 9, pts: 38500 },
-    { rank: 3, playerName: 'VoidMaster', shipLevel: 8, pts: 32100 },
-    { rank: 4, playerName: 'NebulaKing', shipLevel: 10, pts: 29800 },
-    { rank: 5, playerName: 'GalaxyRider', shipLevel: 7, pts: 25600 },
-    { rank: 6, playerName: 'User1', shipLevel: 6, pts: 22300 }, // Current player
-    { rank: 7, playerName: 'SpacePilot', shipLevel: 6, pts: 19900 },
-    { rank: 8, playerName: 'AsteroidCrusher', shipLevel: 5, pts: 17400 },
-    { rank: 9, playerName: 'LaserBeam', shipLevel: 8, pts: 15200 },
-    { rank: 10, playerName: 'RocketFuel', shipLevel: 4, pts: 12800 },
-  ];
+  const { account } = useAccount();
+  const { data: players } = usePlayers();
+
+  const rankedPlayers =
+    players?.sort((a, b) => b.earnedPoints - a.earnedPoints).map((player, index) => ({ ...player, rank: index + 1 })) ||
+    [];
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -49,6 +37,43 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
     if (level >= 3) return 'text-yellow-400 glow-yellow';
     return 'text-gray-400 glow-gray';
   };
+
+  const render = () =>
+    rankedPlayers.map(({ address, name, rank, shipLevel, earnedPoints }) => {
+      const isUser = account?.decodedAddress === address;
+
+      return (
+        <div
+          key={address}
+          className={`
+                px-4 py-3 border-b border-gray-700/30 transition-all duration-200
+                ${isUser ? 'bg-cyan-400/10 border-cyan-400/30 glow-blue-bg' : 'hover:bg-gray-800/30'}
+              `}>
+          <div className="grid grid-cols-12 gap-2 items-center">
+            <div className="col-span-2 flex justify-center">{getRankIcon(rank)}</div>
+
+            <div className="col-span-4">
+              <span
+                className={`
+                    font-bold
+                    ${isUser ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
+                  `}>
+                {name}
+              </span>
+              {isUser && <span className="ml-2 text-xs text-cyan-300">(YOU)</span>}
+            </div>
+
+            <div className="col-span-3 text-center">
+              <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LV {shipLevel}</span>
+            </div>
+
+            <div className="col-span-3 text-right">
+              <span className="text-green-400 font-bold glow-green">{earnedPoints}</span>
+            </div>
+          </div>
+        </div>
+      );
+    });
 
   if (!isOpen) return null;
 
@@ -86,47 +111,7 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
         </div>
 
         {/* Leaderboard Entries */}
-        <div className="max-h-96 overflow-y-auto">
-          {leaderboardData.map((entry) => (
-            <div
-              key={entry.rank}
-              className={`
-                px-4 py-3 border-b border-gray-700/30 transition-all duration-200
-                ${
-                  entry.playerName === 'User1'
-                    ? 'bg-cyan-400/10 border-cyan-400/30 glow-blue-bg'
-                    : 'hover:bg-gray-800/30'
-                }
-              `}>
-              <div className="grid grid-cols-12 gap-2 items-center">
-                {/* Rank */}
-                <div className="col-span-2 flex justify-center">{getRankIcon(entry.rank)}</div>
-
-                {/* Player Name */}
-                <div className="col-span-4">
-                  <span
-                    className={`
-                    font-bold
-                    ${entry.playerName === 'User1' ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
-                  `}>
-                    {entry.playerName}
-                  </span>
-                  {entry.playerName === 'User1' && <span className="ml-2 text-xs text-cyan-300">(YOU)</span>}
-                </div>
-
-                {/* Ship Level */}
-                <div className="col-span-3 text-center">
-                  <span className={`font-bold ${getShipLevelColor(entry.shipLevel)}`}>LV {entry.shipLevel}</span>
-                </div>
-
-                {/* PTS */}
-                <div className="col-span-3 text-right">
-                  <span className="text-green-400 font-bold glow-green">{entry.pts.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <div className="max-h-96 overflow-y-auto">{render()}</div>
 
         {/* Footer */}
         <div className="p-4 border-t border-cyan-400/20 text-center">

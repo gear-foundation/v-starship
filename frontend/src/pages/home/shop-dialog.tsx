@@ -1,9 +1,11 @@
+import { useAlert } from '@gear-js/react-hooks';
 import { X, Gamepad2, Zap, Rocket, Plus } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 
+import { useBuyAttempt, useBuyBooster, useBuyShip, useConfig } from '@/api/sails';
 import { Button } from '@/components/ui/button';
-import { getShopPrices } from '@/utils';
+import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -21,26 +23,23 @@ interface ShopDialogProps {
   playerPTS: number;
   onGetPTS: () => void;
   shipLevel: number;
-  onUpgradeShip: () => void;
-  onBuyExtraGame: () => void;
-  onBuyBooster: () => void;
 }
 
-export default function ShopDialog({
-  isOpen,
-  onClose,
-  playerPTS,
-  onGetPTS,
-  shipLevel,
-  onUpgradeShip,
-  onBuyExtraGame,
-  onBuyBooster,
-}: ShopDialogProps) {
+export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel }: ShopDialogProps) {
+  const alert = useAlert();
+
+  const { sendTransactionAsync: buyShip, isPending: isBuyingShip } = useBuyShip();
+  const { sendTransactionAsync: buyAttempt, isPending: isBuyingAttempt } = useBuyAttempt();
+  const { sendTransactionAsync: buyBooster, isPending: isBuyingBooster } = useBuyBooster();
+  const isPending = isBuyingShip || isBuyingAttempt || isBuyingBooster;
+
+  const { data: config } = useConfig();
+  const { prices, maxShipLevel } = config || {};
+
   const [selectedItem, setSelectedItem] = useState<string>('extra-game');
   const [gamesAvailable] = useState<number>(1);
 
-  // Получаем актуальные цены для текущего уровня корабля
-  const prices = getShopPrices(shipLevel);
+  if (!isOpen || !prices || maxShipLevel === undefined) return null;
 
   // Формируем массив товаров магазина с динамическими ценами
   const shopItems: ShopItem[] = [
@@ -48,7 +47,7 @@ export default function ShopDialog({
       id: 'extra-game',
       name: 'Extra Game',
       description: 'Add one more game to your daily limit',
-      cost: prices.extraGame,
+      cost: prices.attempt,
       icon: <Gamepad2 className="h-6 w-6" />,
     },
     {
@@ -62,14 +61,14 @@ export default function ShopDialog({
       id: 'ship-upgrade',
       name: 'Ship Upgrade',
       description: 'Upgrade your ship to the next level',
-      cost: prices.shipUpgrade,
+      cost: prices.ship,
       icon: <Rocket className="h-6 w-6" />,
     },
   ];
 
   const selectedItemData = shopItems.find((item) => item.id === selectedItem);
   const canAfford = selectedItemData ? playerPTS >= selectedItemData.cost : false;
-  const canUpgrade = shipLevel < 10 && playerPTS >= 10000;
+  const canUpgrade = shipLevel < maxShipLevel && canAfford;
 
   // Универсальная функция для проигрывания звуков
   function playSound(src: string, volume = 0.7) {
@@ -85,30 +84,36 @@ export default function ShopDialog({
   const handlePurchase = () => {
     if (selectedItem === 'extra-game' && selectedItemData && playerPTS >= selectedItemData.cost && gamesAvailable < 3) {
       playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
-      onBuyExtraGame();
-      onClose();
-      return;
+
+      return buyAttempt({ args: [] })
+        .then(() => onClose())
+        .catch((error) => {
+          alert.error(getErrorMessage(error));
+        });
     }
+
     if (selectedItem === 'ship-upgrade' && canUpgrade && selectedItemData && playerPTS >= selectedItemData.cost) {
       playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
-      onUpgradeShip();
-      onClose();
-      return;
+
+      return buyShip({ args: [] })
+        .then(() => onClose())
+        .catch((error) => alert.error(getErrorMessage(error)));
     }
+
     if (selectedItem === 'booster' && selectedItemData && playerPTS >= selectedItemData.cost) {
       playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
-      onBuyBooster();
-      onClose();
-      return;
+
+      return buyBooster({ args: [] })
+        .then(() => onClose())
+        .catch((error) => alert.error(getErrorMessage(error)));
     }
+
     if (canAfford && selectedItemData) {
       // Purchase logic would go here
       console.log(`Purchasing ${selectedItemData.name} for ${selectedItemData.cost} PTS`);
       onClose();
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen min-w-full p-4">
@@ -162,7 +167,7 @@ export default function ShopDialog({
                     ? 'border-cyan-400 bg-cyan-400/10 glow-blue-border'
                     : 'border-gray-600 hover:border-gray-400 bg-gray-900/30'
                 }
-                ${item.id === 'ship-upgrade' && shipLevel === 10 ? 'opacity-50 pointer-events-none' : ''}
+                ${item.id === 'ship-upgrade' && shipLevel === maxShipLevel ? 'opacity-50 pointer-events-none' : ''}
               `}>
               <div className="flex items-start gap-3">
                 <div
@@ -190,7 +195,9 @@ export default function ShopDialog({
                     {item.cost.toLocaleString()} PTS
                   </div>
                   {item.id === 'ship-upgrade' && (
-                    <div className="mt-2 text-sm text-yellow-400 font-bold">Current Level: {shipLevel} / 10</div>
+                    <div className="mt-2 text-sm text-yellow-400 font-bold">
+                      Current Level: {shipLevel} / {maxShipLevel}
+                    </div>
                   )}
                 </div>
               </div>
@@ -222,15 +229,17 @@ export default function ShopDialog({
                   : 'bg-gray-800 border-2 border-gray-600 text-gray-500 cursor-not-allowed'
               }
             `}>
-            {selectedItem === 'ship-upgrade'
-              ? shipLevel === 10
-                ? 'MAX LEVEL'
-                : canUpgrade
-                  ? 'UPGRADE'
-                  : 'INSUFFICIENT PTS'
-              : canAfford
-                ? 'PURCHASE'
-                : 'INSUFFICIENT PTS'}
+            {isPending
+              ? 'PROCESSING...'
+              : selectedItem === 'ship-upgrade'
+                ? shipLevel === maxShipLevel
+                  ? 'MAX LEVEL'
+                  : canUpgrade
+                    ? 'UPGRADE'
+                    : 'INSUFFICIENT PTS'
+                : canAfford
+                  ? 'PURCHASE'
+                  : 'INSUFFICIENT PTS'}
           </Button>
         </div>
       </div>

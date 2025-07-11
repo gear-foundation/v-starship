@@ -6,37 +6,33 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Account } from '@gear-js/react-hooks';
+import { Account, useAlert } from '@gear-js/react-hooks';
 import { Wallet } from '@gear-js/wallet-connect';
-import { Edit2, Zap } from 'lucide-react';
+import { Edit2, Loader2, Zap } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+import { useSetPlayerName } from '@/api/sails';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 import LeaderboardDialog from './leaderboard-dialog';
 import ShopDialog from './shop-dialog';
 import TokenExchangeDialog from './token-exchange-dialog';
 import './main-screen.css';
+import { useCountdown } from './use-countdown';
 
 interface MainScreenProps {
   onStartGame: () => void;
   playerPTS: number;
   gamesAvailable: number;
-  lastResetTime: number;
-  onResetPTS: () => void;
-  onResetGames: () => void;
+  timeToFreeAttempts: number;
   shipLevel: number;
-  onUpgradeShip: () => void;
-  playerVARA: number;
-  setPlayerVARA: React.Dispatch<React.SetStateAction<number>>;
-  onExchangeVARAToPTS: (ptsAmount: number, varaCost: number) => void;
-  onBuyExtraGame: () => void;
+  playerVARA: bigint;
   playerName: string;
-  setPlayerName: React.Dispatch<React.SetStateAction<string>>;
   boosterCount: number;
-  onBuyBooster: () => void;
   account: Account | undefined;
+  valuePerPoint: bigint;
   integerBalanceDisplay: { value?: string; unit?: string };
 }
 
@@ -111,22 +107,16 @@ export default function MainScreen({
   onStartGame,
   playerPTS,
   gamesAvailable,
-  lastResetTime,
-  onResetPTS,
-  onResetGames,
+  timeToFreeAttempts,
   shipLevel,
-  onUpgradeShip,
   playerVARA,
-  onExchangeVARAToPTS,
-  onBuyExtraGame,
   playerName,
-  setPlayerName,
   boosterCount,
-  onBuyBooster,
   account,
+  valuePerPoint,
   integerBalanceDisplay,
 }: MainScreenProps) {
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
+  // const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showTokenExchange, setShowTokenExchange] = useState(false);
@@ -155,34 +145,31 @@ export default function MainScreen({
     };
   }, [bgParams]);
 
-  // Таймер до следующего сброса игр (12:00 UTC)
-  useEffect(() => {
-    function updateTimeLeft() {
-      const now = new Date();
-      const next = new Date(lastResetTime);
-      next.setUTCHours(12, 0, 0, 0);
-      if (next.getTime() <= lastResetTime) next.setUTCDate(next.getUTCDate() + 1);
-      const diff = next.getTime() - now.getTime();
-      const hours = Math.max(0, Math.floor(diff / 1000 / 60 / 60));
-      const minutes = Math.max(0, Math.floor((diff / 1000 / 60) % 60));
-      setTimeLeft({ hours, minutes });
-    }
-    updateTimeLeft();
-    const timer = setInterval(updateTimeLeft, 60000);
-    return () => clearInterval(timer);
-  }, [lastResetTime]);
+  // Таймер до следующего сброса игр
+  const timeLeftMs = useCountdown(timeToFreeAttempts);
+
+  const timeLeft = {
+    hours: Math.floor((timeLeftMs || 0) / 3600000),
+    minutes: Math.floor(((timeLeftMs || 0) % 3600000) / 60000),
+  };
 
   // Синхронизируем tempName при изменении playerName (например, после сброса)
   useEffect(() => {
     setTempName(playerName);
   }, [playerName]);
 
+  const alert = useAlert();
+  const { sendTransactionAsync: setPlayerName, isPending: isSettingName } = useSetPlayerName();
+
   // Обработчик сохранения имени
   const handleSaveName = () => {
     const trimmed = tempName.trim();
     if (trimmed.length > 0 && trimmed.length <= 16) {
-      setPlayerName(trimmed);
-      setEditingName(false);
+      setPlayerName({ args: [trimmed] })
+        .then(() => setEditingName(false))
+        .catch((error) => {
+          alert.error(getErrorMessage(error));
+        });
     }
   };
 
@@ -199,10 +186,6 @@ export default function MainScreen({
   const handleGetPTSFromShop = () => {
     setShowShop(false);
     setShowTokenExchange(true);
-  };
-
-  const handleExchange = (ptsAmount: number, varaCost: number) => {
-    onExchangeVARAToPTS(ptsAmount, varaCost);
   };
 
   // SSR-safe: если фон ещё не сгенерирован, не рендерим визуал
@@ -327,8 +310,8 @@ export default function MainScreen({
                       size="sm"
                       className="p-1 h-6 w-6 text-cyan-400 border border-cyan-400 glow-blue"
                       onClick={handleSaveName}
-                      title="Сохранить имя">
-                      <span className="font-bold">⏎</span>
+                      title="Save name">
+                      {isSettingName ? <Loader2 className="animate-spin" /> : <span className="font-bold">⏎</span>}
                     </Button>
                     <Button
                       variant="ghost"
@@ -347,7 +330,7 @@ export default function MainScreen({
                       size="sm"
                       className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
                       onClick={() => setEditingName(true)}
-                      title="Редактировать имя">
+                      title="Edit name">
                       <Edit2 className="h-3 w-3" />
                     </Button>
                   </>
@@ -379,14 +362,21 @@ export default function MainScreen({
             {/* Games, Timer, Boosters */}
             <div className="text-center mt-auto">
               <div className="mb-3">
-                <span className="text-cyan-400 text-base glow-blue">Games available: {gamesAvailable} of 3</span>
-              </div>
-              <div className="mb-3">
-                <span className="text-gray-400 text-sm glow-gray">
-                  Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
-                  {String(timeLeft.minutes).padStart(2, '0')}
+                <span className="text-cyan-400 text-base glow-blue">
+                  Games available: {gamesAvailable}
+                  {!timeLeftMs && ' of 3'}
                 </span>
               </div>
+
+              {Boolean(timeLeftMs) && (
+                <div className="mb-3">
+                  <span className="text-gray-400 text-sm glow-gray">
+                    Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+
               <div className="mb-8">
                 <div className="flex items-center justify-center gap-2">
                   <Zap className="h-4 w-4 text-yellow-400" />
@@ -420,21 +410,6 @@ export default function MainScreen({
                   LEADERBOARD
                 </Button>
               </div>
-            </div>
-            {/* Временные кнопки сброса */}
-            <div className="flex gap-2 justify-center mb-4">
-              <Button
-                onClick={onResetPTS}
-                variant="outline"
-                className="text-xs px-2 py-1 border-cyan-400 text-cyan-400">
-                Reset PTS
-              </Button>
-              <Button
-                onClick={onResetGames}
-                variant="outline"
-                className="text-xs px-2 py-1 border-cyan-400 text-cyan-400">
-                Reset Games
-              </Button>
             </div>
           </div>
         </div>
@@ -521,9 +496,6 @@ export default function MainScreen({
         playerPTS={playerPTS}
         onGetPTS={handleGetPTSFromShop}
         shipLevel={shipLevel}
-        onUpgradeShip={onUpgradeShip}
-        onBuyExtraGame={onBuyExtraGame}
-        onBuyBooster={onBuyBooster}
       />
 
       <LeaderboardDialog isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
@@ -532,10 +504,10 @@ export default function MainScreen({
         isOpen={showTokenExchange}
         onClose={() => setShowTokenExchange(false)}
         playerVARA={playerVARA}
-        onExchange={handleExchange}
         account={account}
         balanceValue={integerBalanceDisplay.value}
         balanceUnit={integerBalanceDisplay.unit}
+        valuePerPoint={valuePerPoint}
       />
     </>
   );
