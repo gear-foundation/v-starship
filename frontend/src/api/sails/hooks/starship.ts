@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { ZERO_ADDRESS } from 'sails-js';
 
 import { StartshipProgram } from '../programs';
+import { PlayerInfo } from '../programs/starship';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as HexString;
 
@@ -25,14 +26,36 @@ function useConfig() {
     query: {
       select: (data) => ({
         ftContract: data.ft_contract,
-        attempt_price: BigInt(data.attempt_price),
-        boosterPrice: BigInt(data.booster_price),
-        shipPrice: BigInt(data.ship_price),
-        onePointInValue: BigInt(data.one_point_in_value),
+        valuePerPoint: BigInt(data.one_point_in_value),
+        maxShipLevel: data.max_level_ship,
+
+        defaults: {
+          name: data.default_name,
+          attemptsCount: data.default_free_attempts,
+          boostersCount: data.default_boosters,
+          shipLevel: data.default_level_ship,
+        },
+
+        prices: {
+          attempt: Number(data.attempt_price),
+          booster: Number(data.booster_price),
+          ship: Number(data.ship_price),
+        },
       }),
     },
   });
 }
+
+const formatPlayer = (address: HexString, player: PlayerInfo) => {
+  return {
+    address,
+    name: player.player_name,
+    earnedPoints: Number(player.earned_points),
+    attemptsCount: player.number_of_attempts,
+    boostersCount: player.number_of_boosters,
+    shipLevel: player.ship_level,
+  };
+};
 
 function usePlayer() {
   const { account } = useAccount();
@@ -45,13 +68,7 @@ function usePlayer() {
     args: [account?.decodedAddress || ZERO_ADDRESS],
     query: {
       enabled: Boolean(account),
-      select: (data) => ({
-        name: data.player_name,
-        earnedPoints: data.earned_points,
-        attemptsCount: data.number_of_attempts,
-        boostersCount: data.number_of_boosters,
-        shipLevel: data.ship_level,
-      }),
+      select: (data) => formatPlayer(account?.decodedAddress || ZERO_ADDRESS, data),
     },
     watch: true,
   });
@@ -66,23 +83,13 @@ function usePlayers() {
     serviceName: 'starship',
     functionName: 'allPlayersInfo',
     args: [],
-    query: {
-      select: (data) =>
-        data.map(([address, _player]) => ({
-          address,
-          name: _player.player_name,
-          earnedPoints: Number(_player.earned_points),
-          attemptsCount: _player.number_of_attempts,
-          boostersCount: _player.number_of_boosters,
-          shipLevel: _player.ship_level,
-        })),
-    },
+    query: { select: (data) => data.map(([address, _player]) => formatPlayer(address, _player)) },
   });
 
   useEffect(() => {
-    if (player) void query.refetch();
+    if (player?.name) void query.refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player]);
+  }, [player?.name]);
 
   return query;
 }

@@ -362,7 +362,10 @@ export default function MainScreen({
             {/* Games, Timer, Boosters */}
             <div className="text-center mt-auto">
               <div className="mb-3">
-                <span className="text-cyan-400 text-base glow-blue">Games available: {gamesAvailable} of 3</span>
+                <span className="text-cyan-400 text-base glow-blue">
+                  Games available: {gamesAvailable}
+                  {!timeLeftMs && ' of 3'}
+                </span>
               </div>
 
               {Boolean(timeLeftMs) && (

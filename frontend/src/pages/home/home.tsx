@@ -15,7 +15,6 @@ function Home() {
   const { getFormattedBalance } = useBalanceFormat();
 
   const { data: config } = useConfig();
-
   const { data: playerPTS } = usePointsBalance();
 
   const { data: balance } = useDeriveBalancesAll({
@@ -25,17 +24,26 @@ function Home() {
   });
 
   const { data: player, isPending: isPlayerFetching } = usePlayer();
+  const { data: timeToFreeAttempts } = useTimeToFreeAttempts();
+
+  const [gameSessionId, setGameSessionId] = useState(0);
+
+  if (
+    playerPTS === undefined ||
+    !config ||
+    balance === null ||
+    balance === undefined ||
+    isPlayerFetching ||
+    timeToFreeAttempts === undefined
+  )
+    return;
 
   const {
     name: playerName,
     shipLevel,
     attemptsCount: gamesAvailable,
     boostersCount: boosterCount,
-  } = player || { name: 'Player', shipLevel: 1, attemptsCount: 3, boostersCount: 2 };
-
-  const { data: timeToFreeAttempts } = useTimeToFreeAttempts();
-
-  const [gameSessionId, setGameSessionId] = useState(0);
+  } = player || config.defaults;
 
   function handleStartGame() {
     if (gamesAvailable > 0) {
@@ -54,16 +62,6 @@ function Home() {
       setCurrentScreen('game');
     }
   }
-
-  if (
-    playerPTS === undefined ||
-    !config ||
-    balance === null ||
-    balance === undefined ||
-    isPlayerFetching ||
-    timeToFreeAttempts === undefined
-  )
-    return;
 
   const formattedBalance = getFormattedBalance(balance);
 
@@ -95,7 +93,7 @@ function Home() {
       boosterCount={boosterCount}
       account={account}
       integerBalanceDisplay={formattedBalance}
-      valuePerPoint={config.onePointInValue}
+      valuePerPoint={config.valuePerPoint}
     />
   );
 }
