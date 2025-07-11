@@ -3,14 +3,14 @@ import { useAccount, useProgram, useProgramQuery, useSendProgramTransaction } fr
 import { useEffect } from 'react';
 import { ZERO_ADDRESS } from 'sails-js';
 
-import { StartshipProgram } from '../programs';
+import { StarshipProgram } from '../programs';
 import { PlayerInfo } from '../programs/starship';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as HexString;
 
 function useStarshipProgram() {
   return useProgram({
-    library: StartshipProgram,
+    library: StarshipProgram,
     id: CONTRACT_ADDRESS,
   });
 }
