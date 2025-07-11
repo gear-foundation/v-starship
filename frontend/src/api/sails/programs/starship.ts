@@ -13,15 +13,24 @@ import {
 
 export interface Config {
   ft_contract: ActorId;
+  nft_contract: ActorId;
   ship_price: number | string | bigint;
   attempt_price: number | string | bigint;
   booster_price: number | string | bigint;
   one_point_in_value: number | string | bigint;
+  default_name: string;
+  default_free_attempts: number;
+  default_boosters: number;
+  default_level_ship: number;
+  max_level_ship: number;
+  daily_reset_offset_ms: number | string | bigint;
+  img_links: Array<string>;
 }
 
 export interface PlayerInfo {
   player_name: string;
   earned_points: number | string | bigint;
+  nft_ids: Array<number | string | bigint>;
   number_of_attempts: number;
   number_of_boosters: number;
   ship_level: number;
@@ -40,14 +49,23 @@ export class SailsProgram {
     const types: Record<string, any> = {
       Config: {
         ft_contract: '[u8;32]',
+        nft_contract: '[u8;32]',
         ship_price: 'u128',
         attempt_price: 'u128',
         booster_price: 'u128',
         one_point_in_value: 'u128',
+        default_name: 'String',
+        default_free_attempts: 'u16',
+        default_boosters: 'u16',
+        default_level_ship: 'u16',
+        max_level_ship: 'u16',
+        daily_reset_offset_ms: 'u64',
+        img_links: 'Vec<String>',
       },
       PlayerInfo: {
         player_name: 'String',
         earned_points: 'u128',
+        nft_ids: 'Vec<u64>',
         number_of_attempts: 'u16',
         number_of_boosters: 'u16',
         ship_level: 'u16',
