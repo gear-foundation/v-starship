@@ -1,4 +1,5 @@
 import { useAccount, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
+import { Loader } from 'lucide-react';
 import { useState } from 'react';
 
 import { useConfig, usePlayer, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
@@ -36,7 +37,7 @@ function Home() {
     isPlayerFetching ||
     timeToFreeAttempts === undefined
   )
-    return null;
+    return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
 
   const {
     name: playerName,

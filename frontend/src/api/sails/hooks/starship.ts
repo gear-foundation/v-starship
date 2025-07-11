@@ -8,6 +8,8 @@ import { PlayerInfo } from '../programs/starship';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as HexString;
 
+console.log('CONTRACT_ADDRESS: ', CONTRACT_ADDRESS);
+
 function useStarshipProgram() {
   return useProgram({
     library: StarshipProgram,
