@@ -1,8 +1,10 @@
-import { useAccount, useBalanceFormat, useDeriveBalancesAll } from '@gear-js/react-hooks';
+import { useAccount, useBalanceFormat } from '@gear-js/react-hooks';
 import { Loader } from 'lucide-react';
 import { useState } from 'react';
 
+import { useVaraBalance } from '@/api/gear';
 import { useConfig, usePlayer, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
+import { isNullOrUndefined, isUndefined } from '@/utils';
 
 import InGameScreen from './in-game-screen';
 import MainScreen from './main-screen';
@@ -15,28 +17,22 @@ function Home() {
   const { account } = useAccount();
   const { getFormattedBalance } = useBalanceFormat();
 
+  const { data: balance = 0n } = useVaraBalance();
   const { data: config } = useConfig();
   const { data: playerPTS = 0 } = usePointsBalance();
 
-  const { data: balance = 0n } = useDeriveBalancesAll({
-    address: account?.address,
-    query: { select: (data) => data.transferable?.toBigInt() },
-    watch: true,
-  });
-
-  const { data: player } = usePlayer();
+  const { data: player, isPending: isPlayerFetching } = usePlayer();
   const { data: timeToFreeAttempts = 0 } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
   if (
     account &&
-    (playerPTS === undefined ||
+    (isUndefined(playerPTS) ||
       !config ||
-      balance === null ||
-      balance === undefined ||
-      // isPlayerFetching ||
-      timeToFreeAttempts === undefined)
+      isNullOrUndefined(balance) ||
+      isPlayerFetching ||
+      isUndefined(timeToFreeAttempts))
   )
     return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
 

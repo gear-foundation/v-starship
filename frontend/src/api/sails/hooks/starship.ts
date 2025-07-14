@@ -69,6 +69,12 @@ function usePlayer() {
     query: {
       enabled: Boolean(account),
       select: (data) => formatPlayer(account?.decodedAddress || ZERO_ADDRESS, data),
+
+      // if player has not played yet, there's gonna be an error
+      // and usePlayer in children components gonna be retried by default,
+      // resulting in infinite loop considering loading check at the root component
+      // source: https://github.com/TanStack/query/discussions/2755
+      retryOnMount: false,
     },
     watch: true,
   });
