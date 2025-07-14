@@ -24,7 +24,7 @@ function Home() {
     watch: true,
   });
 
-  const { data: player, isPending: isPlayerFetching } = usePlayer();
+  const { data: player } = usePlayer();
   const { data: timeToFreeAttempts = 0 } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
@@ -35,7 +35,7 @@ function Home() {
       !config ||
       balance === null ||
       balance === undefined ||
-      isPlayerFetching ||
+      // isPlayerFetching ||
       timeToFreeAttempts === undefined)
   )
     return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
