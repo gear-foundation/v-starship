@@ -13,6 +13,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
 import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
+import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
 
 interface GameObject {
@@ -207,6 +208,7 @@ export default function InGameScreen({
 
   // Управление игроком
   const pressedKeys = useRef<{ [key: string]: boolean }>({});
+
   const PLAYER_MOVE = {
     accelX: GAME_CONFIG.PLAYER_ACCEL_X,
     accelY: GAME_CONFIG.PLAYER_ACCEL_Y,
@@ -1624,7 +1626,7 @@ export default function InGameScreen({
           {/* Игровая зона */}
           <div
             id="game-area"
-            className="flex-1 relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
+            className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
             {/* ВРАГИ */}
             {enemiesRef.current.map((enemy) => (
               <img
@@ -1895,6 +1897,8 @@ export default function InGameScreen({
                 )}
               </>
             )}
+
+            <MobileControls onPointer={(arrowKey, isPressed) => (pressedKeys.current[arrowKey] = isPressed)} />
           </div>
         </div>
       </div>
