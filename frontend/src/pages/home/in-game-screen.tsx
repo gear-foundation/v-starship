@@ -438,13 +438,13 @@ export default function InGameScreen({
     let count = 16,
       colors: string[] = [],
       size = 3,
-      speed = 0.5,
+      speed = 0.7,
       life = 600;
     if (type === 'mine') {
       count = 14 + Math.floor(Math.random() * 4);
       colors = ['#ff9800', '#ffb300', '#ff5722', '#fff176'];
       size = 3;
-      speed = 0.5;
+      speed = 0.7;
     } else if (type === 'asteroid') {
       count = 16 + Math.floor(Math.random() * 4);
       colors = ['#fff', '#e0e0e0', '#bdbdbd', '#757575'];
@@ -454,19 +454,19 @@ export default function InGameScreen({
       count = 16 + Math.random() * 4;
       colors = ['#39ff14', '#baffc9', '#00ff99', '#00ffc3'];
       size = 3;
-      speed = 0.5;
+      speed = 0.7;
     } else if (type === 'player') {
-      count = 28 + Math.floor(Math.random() * 6);
+      count = 48 + Math.floor(Math.random() * 8);
       colors = ['#fff200', '#ff9800', '#ff3d00', '#fff', '#ffd600'];
-      size = 6;
-      speed = 0.8;
-      life = 700;
+      size = 4;
+      speed = 1.0;
+      life = 1700;
     } else if (type === 'boss') {
-      count = 64 + Math.floor(Math.random() * 32);
+      count = 48 + Math.floor(Math.random() * 8);
       colors = ['#ff1744', '#ffea00', '#00e5ff', '#fff', '#ff9100', '#00ffea', '#ff4081'];
-      size = 12;
-      speed = 1.2;
-      life = 1200;
+      size = 1;
+      speed = 1.0;
+      life = 1500;
     }
     const now = Date.now();
     const particles: ExplosionParticle[] = [];
@@ -1154,7 +1154,9 @@ export default function InGameScreen({
               playerWasHit = true;
               playerHPNow = Math.max(0, playerHPNow - 1);
               newEnemyLasers.splice(i, 1);
-              // playSound(BOSS_CONFIG.soundLaser, 0.8); // [FIX] Убрано: звук выстрела босса должен проигрываться только при выстреле, а не при попадании
+
+              if (playerHPNow > 0) playSound(GAME_CONFIG.SOUND_PLAYER_HIT, soundVolumes.hitOnPlayer);
+
               continue;
             }
           } else if (laser.type === 'bossRocket') {
@@ -1282,8 +1284,6 @@ export default function InGameScreen({
 
   // Активация бустера (общая для подбора и кнопки)
   function activateBooster() {
-    if (activeBooster) return;
-
     playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
     setActiveBooster(true);
     // Ускоряем стрельбу (в два раза уменьшаем интервалы)
@@ -1855,7 +1855,7 @@ export default function InGameScreen({
               />
             ))}
             {/* БОСС */}
-            {bossExists && boss && (
+            {bossExists && boss && bossPhase !== 'exploding' && (
               <>
                 <img
                   src={BOSS_CONFIG.img}
@@ -1869,8 +1869,8 @@ export default function InGameScreen({
                     transform: 'translateX(-50%)',
                     zIndex: 20,
                     userSelect: 'none',
-                    opacity: bossPhase === 'exploding' ? 0.5 : 1,
-                    filter: bossPhase === 'exploding' ? 'brightness(2) blur(2px)' : 'none',
+                    opacity: 1,
+                    filter: 'none',
                   }}
                 />
                 {/* HP BAR только одна! */}

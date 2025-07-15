@@ -52,7 +52,7 @@ export const BOOSTER_CONFIG: BoosterConfig = {
   countPerGame: 2,
   appearTimeRange: [10, 50],
   speed: 20,
-  size: 56,
+  size: 40,
   rotationSpeed: 0.7,
   effectDuration: 7000, // 7 секунд
   icon: '/img/booster.png',
@@ -178,11 +178,11 @@ export const BOSS_CONFIG = {
   soundExplosion: '/sound/boss-explosion.mp3',
   soundAppear: '/sound/boss-raise.mp3', // Звук появления босса
   // ---  параметры визуала снарядов босса ---
-  laserWidth: 2, // px
-  laserHeight: 8, // px
+  laserWidth: 3, // px
+  laserHeight: 10, // px
   laserColor: 'linear-gradient(180deg, #ffea00 0%, #ff1744 100%)',
   rocketWidth: 5, // px
-  rocketHeight: 10, // px
+  rocketHeight: 12, // px
   rocketColor: 'linear-gradient(180deg, #00e5ff 0%, #ff9100 100%)',
   rocketBorder: '1px solid #fff',
   // ---  параметры скорости снарядов босса ---
@@ -225,10 +225,10 @@ export const GAME_CONFIG: GameConfig = {
   // Параметры движения
   PLAYER_ACCEL_X: 1,
   PLAYER_ACCEL_Y: 1,
-  PLAYER_MAX_SPEED_X: 3.0,
-  PLAYER_MAX_SPEED_Y: 1.3,
-  PLAYER_FRICTION_X: 0.3,
-  PLAYER_FRICTION_Y: 0.2,
+  PLAYER_MAX_SPEED_X: 2.6,
+  PLAYER_MAX_SPEED_Y: 1.6,
+  PLAYER_FRICTION_X: 0.5,
+  PLAYER_FRICTION_Y: 0.5,
   ENEMY_LASER_SPEED: 2.0,
   PLAYER_LASER_SPEED: 2.8, // %/тик (скорость лазера игрока)
   PLAYER_ROCKET_SPEED: 2.0, // %/тик (скорость ракеты игрока)
@@ -277,16 +277,16 @@ export const GAME_CONFIG: GameConfig = {
 
   // Громкость звуков
   VOLUME_PLAYER_LASER: 0.3,
-  VOLUME_PLAYER_ROCKET: 0.4,
+  VOLUME_PLAYER_ROCKET: 0.5,
   VOLUME_PLAYER_EXPLOSION: 0.5,
   VOLUME_PLAYER_HIT: 0.4,
-  VOLUME_ENEMY_LASER: 0.4,
+  VOLUME_ENEMY_LASER: 0.5,
   VOLUME_ENEMY_EXPLOSION: 0.4,
   VOLUME_ENEMY_HIT: 0.3,
-  VOLUME_ASTEROID_EXPLOSION: 0.4,
-  VOLUME_MINE_EXPLOSION: 0.5,
+  VOLUME_ASTEROID_EXPLOSION: 0.5,
+  VOLUME_MINE_EXPLOSION: 0.6,
   VOLUME_BG_MUSIC: 0.8,
-  VOLUME_BOOSTER_ACTIVATE: 0.5,
+  VOLUME_BOOSTER_ACTIVATE: 0.1,
   VOLUME_BOOSTER_DEACTIVATE: 0.5,
   VOLUME_VICTORY: 1,
   VOLUME_GAME_PURCHASE: 0.6,
@@ -297,7 +297,7 @@ export const GAME_CONFIG: GameConfig = {
   PLAYER_LASER_COLOR: '#0ff',
   PLAYER_LASER_COLOR_BOOST: '#ff9900',
   PLAYER_ROCKET_COLOR: '#ff9900', // bg-yellow-400
-  ENEMY_LASER_COLOR: '#cc66ff', // bg-red-500
+  ENEMY_LASER_COLOR: '#85d2ff', // bg-red-500
   // Удаляю строку ENEMY_ROCKET_COLOR: '#00bcd4', // Цвет ракет врага
 
   // Конфигурации подсистем
@@ -322,7 +322,7 @@ export const GAME_CONFIG: GameConfig = {
   },
   ENEMY_FIRE_Y_MIN: 60, // Минимальное значение Y (в %), при котором враг может стрелять
   // === Свечение (boxShadow) для снарядов ===
-  PLAYER_LASER_GLOW: '0 0 4px 1px #ffea00', // Свечение лазера игрока
+  PLAYER_LASER_GLOW: '0 0 4px 1px #44e8fa', // Свечение лазера игрока
   PLAYER_LASER_GLOW_BOOST: '0 0 8px 2px #ff9100', // Свечение лазера игрока с бустером
   PLAYER_ROCKET_GLOW: '0 0 12px 2px #fff', // Свечение ракеты игрока
   ENEMY_LASER_GLOW: '0 0 6px 1px #00e5ff', // Свечение лазера врага
