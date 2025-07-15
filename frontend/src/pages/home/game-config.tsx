@@ -206,7 +206,7 @@ export const BOSS_CONFIG = {
 // === ОСНОВНАЯ КОНФИГУРАЦИЯ ИГРЫ ===
 export const GAME_CONFIG: GameConfig = {
   // Игровые параметры
-  GAME_DURATION: 10, // 1 минута
+  GAME_DURATION: 60, // 1 минута
   INITIAL_PLAYER_HP: 3,
   ENEMY_BASE_HP: 3, // HP обычного врага
   ASTEROID_BASE_HP: 3, // HP астероида
