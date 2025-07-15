@@ -1345,14 +1345,17 @@ export default function InGameScreen({
   // const [fireRateMultiplier, setFireRateMultiplier] = useState(1); // УДАЛЕНО ДУБЛЬ
 
   // Активация бустера (общая для подбора и кнопки)
+  /**
+   * Активирует бустер: ускоряет стрельбу на BOOSTER_CONFIG.effectDuration миллисекунд.
+   * Если бустер уже активен, таймер сбрасывается и эффект продлевается на полный срок с момента последней активации.
+   * Это позволяет корректно обрабатывать ситуацию, когда игрок подбирает несколько бустеров подряд.
+   */
   function activateBooster() {
-    if (activeBooster) return;
-
+    // Всегда сбрасываем таймер и продлеваем эффект
     playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
-    setActiveBooster(true);
-    // Ускоряем стрельбу (в два раза уменьшаем интервалы)
-    setFireRateMultiplier(0.5);
-    if (boosterTimeoutRef.current) clearTimeout(boosterTimeoutRef.current);
+    setActiveBooster(true); // если уже true — не страшно, просто не изменится
+    setFireRateMultiplier(0.5); // ускоряем стрельбу
+    if (boosterTimeoutRef.current) clearTimeout(boosterTimeoutRef.current); // сбрасываем предыдущий таймер
     boosterTimeoutRef.current = setTimeout(() => {
       setActiveBooster(false);
       setFireRateMultiplier(1);
