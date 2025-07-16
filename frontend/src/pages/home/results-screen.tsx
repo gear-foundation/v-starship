@@ -79,7 +79,7 @@ export function ResultsScreen({
 
       {/* Results Dialog (рамка и содержимое по центру) */}
       <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 rounded-lg backdrop-blur-md font-['Orbitron',monospace] overflow-hidden  "
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 rounded-lg backdrop-blur-md font-['Orbitron'] overflow-hidden  "
         style={{ borderColor: isVictory ? 'rgba(34,211,238,0.5)' : 'rgba(239,68,68,0.5)' }}>
         {/* Glow effect */}
         <div
@@ -172,76 +172,6 @@ export function ResultsScreen({
           </Button>
         </div>
       </div>
-
-      <style>{`
-        .glow-blue {
-          text-shadow:
-            0 0 10px #00bcd4,
-            0 0 20px #00bcd4;
-        }
-
-        .glow-white {
-          text-shadow:
-            0 0 10px #ffffff,
-            0 0 20px #ffffff;
-        }
-
-        .glow-red {
-          text-shadow:
-            0 0 10px #ef4444,
-            0 0 20px #ef4444;
-        }
-
-        .glow-yellow {
-          text-shadow:
-            0 0 10px #fbbf24,
-            0 0 20px #fbbf24;
-        }
-
-        .glow-green {
-          text-shadow:
-            0 0 10px #10b981,
-            0 0 20px #10b981;
-        }
-
-        .glow-blue-border {
-          box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
-        }
-
-        .glow-red-border {
-          box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
-        }
-
-        .glow-green-bg {
-          box-shadow:
-            0 0 10px #10b981,
-            0 0 20px #10b981;
-        }
-
-        .glow-yellow-bg {
-          box-shadow:
-            0 0 10px #fbbf24,
-            0 0 20px #fbbf24;
-        }
-
-        .game-viewport {
-          aspect-ratio: 20/9;
-          max-height: 100vh;
-          width: 100vw;
-          max-width: calc(100vh * 9 / 20);
-          background: transparent;
-          box-shadow:
-            0 0 32px 0 #000a,
-            0 0 0 100vmax #000a;
-          border-radius: 24px;
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          justify-content: stretch;
-        }
-      `}</style>
     </div>
   );
 }

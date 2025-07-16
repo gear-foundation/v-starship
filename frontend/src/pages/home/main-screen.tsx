@@ -265,7 +265,7 @@ export default function MainScreen({
           </div>
 
           {/* Main Content */}
-          <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron',monospace]">
+          <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
             {/* Header: Wallet, PTS */}
             <div className="flex flex-col items-center mb-4">
               <div
@@ -416,80 +416,6 @@ export default function MainScreen({
             </div>
           </div>
         </div>
-
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
-          .game-viewport {
-            aspect-ratio: 20/9;
-            max-height: 100vh;
-            width: 100vw;
-            max-width: calc(100vh * 9 / 20);
-            background: transparent;
-            box-shadow:
-              0 0 32px 0 #000a,
-              0 0 0 100vmax #000a;
-            border-radius: 24px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            justify-content: stretch;
-          }
-
-          .glow-blue {
-            text-shadow:
-              0 0 10px #00bcd4,
-              0 0 20px #00bcd4,
-              0 0 30px #00bcd4;
-          }
-
-          .glow-blue-bright {
-            text-shadow:
-              0 0 15px #00bcd4,
-              0 0 30px #00bcd4,
-              0 0 45px #00bcd4;
-          }
-
-          .glow-white {
-            text-shadow:
-              0 0 10px #ffffff,
-              0 0 20px #ffffff;
-          }
-
-          .glow-gray {
-            text-shadow: 0 0 8px #9ca3af;
-          }
-
-          .glow-yellow {
-            text-shadow:
-              0 0 10px #fbbf24,
-              0 0 20px #fbbf24;
-          }
-
-          .glow-blue-border {
-            box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
-          }
-
-          .glow-red-border {
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
-          }
-
-          .glow-purple-border-soft {
-            box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);
-          }
-
-          .glow-purple {
-            text-shadow:
-              0 0 10px #c084fc,
-              0 0 20px #c084fc;
-          }
-
-          .bg-gradient-radial {
-            background: radial-gradient(circle, var(--tw-gradient-stops));
-          }
-        `}</style>
       </div>
 
       {/* Dialog Overlays */}

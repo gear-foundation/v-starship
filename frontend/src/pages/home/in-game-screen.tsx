@@ -1587,7 +1587,7 @@ export default function InGameScreen({
           })}
         </div>
         {/* HUD и игровая зона */}
-        <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron',monospace]">
+        <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
           {/* Верхний HUD: PTS и VARA */}
           <div className="flex justify-between items-center mb-4">
             <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS}</div>
@@ -1910,6 +1910,7 @@ export default function InGameScreen({
           </div>
         </div>
       </div>
+
       {/* Экран результатов */}
       <ResultsScreen
         isOpen={showResults}
@@ -1924,29 +1925,6 @@ export default function InGameScreen({
         minesKilled={minesKilled}
         activatedBoostersCount={activatedBoostersCount.current}
       />
-      <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-          .game-viewport {
-            aspect-ratio: 20/9;
-            max-height: 100vh;
-            width: 100vw;
-            max-width: calc(100vh * 9 / 20);
-            background: transparent;
-            box-shadow: 0 0 32px 0 #000a, 0 0 0 100vmax #000a;
-            border-radius: 24px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            justify-content: stretch;
-          }
-          .glow-blue { text-shadow: 0 0 10px #00bcd4, 0 0 20px #00bcd4; }
-          .glow-white { text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff; }
-          .glow-red { text-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444; }
-          .glow-yellow { text-shadow: 0 0 10px #fbbf24, 0 0 20px #fbbf24; }
-          .glow-yellow-border { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
-        `}</style>
     </div>
   );
 }

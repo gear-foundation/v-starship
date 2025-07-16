@@ -122,7 +122,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Shop Dialog */}
-      <div className="relative w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron',monospace]">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-purple-600/10 rounded-lg blur-xl -z-10"></div>
 
@@ -243,50 +243,6 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
           </Button>
         </div>
       </div>
-
-      <style>{`
-        .glow-blue {
-          text-shadow:
-            0 0 10px #00bcd4,
-            0 0 20px #00bcd4;
-        }
-
-        .glow-white {
-          text-shadow:
-            0 0 10px #ffffff,
-            0 0 20px #ffffff;
-        }
-
-        .glow-red {
-          text-shadow:
-            0 0 10px #ef4444,
-            0 0 20px #ef4444;
-        }
-
-        .glow-green {
-          text-shadow:
-            0 0 10px #10b981,
-            0 0 20px #10b981;
-        }
-
-        .glow-blue-border {
-          box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
-        }
-
-        .glow-red-border {
-          box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
-        }
-
-        .glow-green-border {
-          box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-        }
-
-        .glow-blue-bg {
-          box-shadow:
-            0 0 10px #00bcd4,
-            0 0 20px #00bcd4;
-        }
-      `}</style>
     </div>
   );
 }
