@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -15,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
+import { SpaceBackground } from './space-background';
 
 interface GameObject {
   id: string;
@@ -48,57 +48,8 @@ interface InGameScreenProps {
   };
 }
 
-// === КОНФИГ ДЛЯ ГЕНЕРАЦИИ ФОНА ИГРОВОГО ЭКРАНА ===
-const GAME_BG_CONFIG = GAME_CONFIG.GAME_BG_CONFIG;
-
-// === ФУНКЦИЯ ГЕНЕРАЦИИ ПАРАМЕТРОВ ФОНА ===
-function generateGameBgParams(cfg = GAME_BG_CONFIG) {
-  // Генерация звёзд
-  const starCount = Math.floor(cfg.starCount.min + Math.random() * (cfg.starCount.max - cfg.starCount.min + 1));
-  const stars = Array.from({ length: starCount }, () => ({
-    x: Math.random(),
-    y: Math.random(),
-    size: cfg.starSize.min + Math.random() * (cfg.starSize.max - cfg.starSize.min),
-    color: cfg.starColors[Math.floor(Math.random() * cfg.starColors.length)],
-    twinkle: cfg.starTwinkle.min + Math.random() * (cfg.starTwinkle.max - cfg.starTwinkle.min),
-    phase: Math.random() * Math.PI * 2,
-  }));
-  // Генерация планет
-  const planetCount = Math.floor(cfg.planetCount.min + Math.random() * (cfg.planetCount.max - cfg.planetCount.min + 1));
-  const planets = Array.from({ length: planetCount }, () => {
-    const colorPair = cfg.planetColors[Math.floor(Math.random() * cfg.planetColors.length)];
-    return {
-      x: Math.random(),
-      y: Math.random(),
-      size: cfg.planetSize.min + Math.random() * (cfg.planetSize.max - cfg.planetSize.min),
-      colorFrom: colorPair[0],
-      colorTo: colorPair[1],
-      opacity: cfg.planetOpacity.min + Math.random() * (cfg.planetOpacity.max - cfg.planetOpacity.min),
-      blur: 8 + Math.random() * 12,
-    };
-  });
-  // Генерация туманностей
-  const nebulaCount = Math.floor(cfg.nebulaCount.min + Math.random() * (cfg.nebulaCount.max - cfg.nebulaCount.min + 1));
-  const nebulas = Array.from({ length: nebulaCount }, () => {
-    const colorPair = cfg.nebulaColors[Math.floor(Math.random() * cfg.nebulaColors.length)];
-    return {
-      x: Math.random(),
-      y: Math.random(),
-      size: cfg.nebulaSize.min + Math.random() * (cfg.nebulaSize.max - cfg.nebulaSize.min),
-      colorFrom: colorPair[0],
-      colorTo: colorPair[1],
-      opacity: cfg.nebulaOpacity.min + Math.random() * (cfg.nebulaOpacity.max - cfg.nebulaOpacity.min),
-      blur: 32 + Math.random() * 32,
-    };
-  });
-  // Цвет поля
-  const fieldColor = cfg.fieldColors[Math.floor(Math.random() * cfg.fieldColors.length)];
-  return { stars, planets, nebulas, fieldColor };
-}
-
 // === ПАРАМЕТРЫ СКОРОСТИ ===
 const MINE_SPEED = GAME_CONFIG.MINE_SPEED;
-const backgroundScrollSpeed = GAME_CONFIG.BACKGROUND_SCROLL_SPEED;
 
 // === КОНСТАНТЫ РАЗМЕРОВ И СКОРОСТЕЙ ===
 const PLAYER_SHIP_BASE_SIZE = GAME_CONFIG.PLAYER_SHIP_BASE_SIZE;
@@ -320,30 +271,6 @@ export default function InGameScreen({
     }
     setBoosterAppearTimes(arr.sort((a, b) => a - b));
   }, [showResults]);
-
-  // === Фон ===
-  const [bgParams, setBgParams] = useState<any>(null);
-  useEffect(() => {
-    setBgParams(generateGameBgParams());
-  }, []);
-  const [backgroundOffset, setBackgroundOffset] = useState(0);
-  useEffect(() => {
-    if (!bgParams || showResults) return;
-    let lastTime = Date.now();
-    let running = true;
-    function animate() {
-      if (!running) return;
-      const now = Date.now();
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-      setBackgroundOffset((prev) => (prev + backgroundScrollSpeed * dt * 100) % 100);
-      requestAnimationFrame(animate);
-    }
-    animate();
-    return () => {
-      running = false;
-    };
-  }, [showResults, backgroundScrollSpeed, bgParams]);
 
   // === ЗВУКИ ===
   // Фоновая музыка и звуки событий
@@ -1236,38 +1163,6 @@ export default function InGameScreen({
     console.log(`[PTS] Total updated: ${ptsEarned}`);
   }, [ptsEarned]);
 
-  // === ПАРАМЕТРЫ ФОНА ===
-  // УДАЛЕНО ДУБЛЬ:
-  // const [bgParams, setBgParams] = useState<any>(null);
-  // useEffect(() => { setBgParams(generateGameBgParams()); }, []);
-  // useEffect(() => { ... }, [showResults, backgroundScrollSpeed, bgParams]);
-  // if (!bgParams) return null;
-
-  // Генерируем фон только на клиенте после монтирования (SSR-safe)
-  // const [bgParams, setBgParams] = useState<any>(null);
-  // useEffect(() => {
-  //   setBgParams(generateGameBgParams());
-  // }, []);
-
-  // === АНИМАЦИЯ ДВИЖЕНИЯ ФОНА ===
-  useEffect(() => {
-    if (!bgParams || showResults) return;
-    let lastTime = Date.now();
-    let running = true;
-    function animate() {
-      if (!running) return;
-      const now = Date.now();
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-      setBackgroundOffset((prev) => (prev + backgroundScrollSpeed * dt * 100) % 100);
-      requestAnimationFrame(animate);
-    }
-    animate();
-    return () => {
-      running = false;
-    };
-  }, [showResults, backgroundScrollSpeed, bgParams]);
-
   // === КОНСТАНТЫ HITBOX (в процентах поля, как раньше) ===
   const PLAYER_HITBOX = GAME_CONFIG.PLAYER_HITBOX_SIZE; // Увеличен с 3.5 для соответствия размеру спрайта 56px
   const ENEMY_HITBOX = GAME_CONFIG.ENEMY_HITBOX_SIZE; // Увеличен с 3.0 для соответствия размеру спрайта 48px
@@ -1491,101 +1386,11 @@ export default function InGameScreen({
   }, [bossExists, bossPhase, bossParams, playerExists]);
 
   return (
-    <div
-      className="fixed inset-0 min-h-screen w-full flex items-center justify-center"
-      style={{ background: bgParams?.fieldColor }}>
+    <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
       {/* Viewport 20:9 */}
       <div className="game-viewport relative flex flex-col h-full w-full overflow-hidden">
-        {/* Космический фон — строго на всю область game-viewport */}
-        <div
-          className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden"
-          style={{ borderRadius: 24, zIndex: 0 }}>
-          {/* Однородный фон */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              background: 'transparent',
-              zIndex: 0,
-              borderRadius: 24,
-            }}
-          />
-          {/* Двигающиеся звёзды */}
-          {bgParams?.stars.map((star: any, i: number) => {
-            const y = (star.y * 100 + backgroundOffset) % 100;
-            const x = star.x * 100;
-            const size = star.size;
-            const pulse = 0.7 + star.twinkle * Math.sin(Date.now() / 600 + star.phase);
-            const color = star.color;
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  width: `${size * pulse}px`,
-                  height: `${size * pulse}px`,
-                  background: color,
-                  borderRadius: '50%',
-                  opacity: 0.7 + 0.3 * Math.sin(Date.now() / 800 + star.phase),
-                  filter: 'blur(0.5px)',
-                  zIndex: 1,
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })}
-          {/* Двигающиеся планеты */}
-          {bgParams?.planets.map((planet: any, i: number) => {
-            const y = (planet.y * 100 + backgroundOffset) % 100;
-            const x = planet.x * 100;
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  width: `${planet.size}px`,
-                  height: `${planet.size}px`,
-                  background: `linear-gradient(135deg, ${planet.colorFrom}, ${planet.colorTo})`,
-                  borderRadius: '50%',
-                  opacity: planet.opacity,
-                  filter: `blur(${planet.blur}px)`,
-                  zIndex: 2,
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })}
-          {/* Двигающиеся туманности */}
-          {bgParams?.nebulas.map((nebula: any, i: number) => {
-            const y = (nebula.y * 100 + backgroundOffset) % 100;
-            const x = nebula.x * 100;
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  width: `${nebula.size}px`,
-                  height: `${nebula.size}px`,
-                  background: `radial-gradient(circle, ${nebula.colorFrom} 0%, ${nebula.colorTo} 100%)`,
-                  borderRadius: '50%',
-                  opacity: nebula.opacity,
-                  filter: `blur(${nebula.blur}px)`,
-                  zIndex: 1,
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })}
-        </div>
+        <SpaceBackground variant="game" />
+
         {/* HUD и игровая зона */}
         <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
           {/* Верхний HUD: PTS и VARA */}

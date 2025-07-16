@@ -1,11 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Account, useAlert } from '@gear-js/react-hooks';
 import { Wallet } from '@gear-js/wallet-connect';
 import { Edit2, Loader2, Zap } from 'lucide-react';
@@ -18,6 +13,7 @@ import { getErrorMessage } from '@/utils';
 import { GAME_CONFIG } from './game-config';
 import LeaderboardDialog from './leaderboard-dialog';
 import ShopDialog from './shop-dialog';
+import { SpaceBackground } from './space-background';
 import TokenExchangeDialog from './token-exchange-dialog';
 import './main-screen.css';
 import { useCountdown } from './use-countdown';
@@ -46,63 +42,6 @@ function formatNumber(n: number) {
 const BASE_SHIP_SIZE = GAME_CONFIG.PLAYER_SHIP_BASE_SIZE * 2;
 const SHIP_SIZE_STEP = GAME_CONFIG.PLAYER_SHIP_SIZE_STEP * 2;
 
-// === КОНФИГ ДЛЯ ГЕНЕРАЦИИ ФОНА ГЛАВНОГО ЭКРАНА ===
-export const MAIN_BG_CONFIG = {
-  ...GAME_CONFIG.GAME_BG_CONFIG,
-  starCount: { min: 18, max: 32 },
-  planetCount: { min: 1, max: 3 },
-  planetSize: { min: 40, max: 90 },
-  planetOpacity: { min: 0.25, max: 0.6 },
-  nebulaCount: { min: 1, max: 3 },
-  nebulaSize: { min: 120, max: 220 },
-  nebulaOpacity: { min: 0.1, max: 0.25 },
-};
-
-// === ФУНКЦИЯ ГЕНЕРАЦИИ ПАРАМЕТРОВ ФОНА ===
-function generateMainBgParams(cfg = MAIN_BG_CONFIG) {
-  // Генерация звёзд
-  const starCount = Math.floor(cfg.starCount.min + Math.random() * (cfg.starCount.max - cfg.starCount.min + 1));
-  const stars = Array.from({ length: starCount }, () => ({
-    x: Math.random(),
-    y: Math.random(),
-    size: cfg.starSize.min + Math.random() * (cfg.starSize.max - cfg.starSize.min),
-    color: cfg.starColors[Math.floor(Math.random() * cfg.starColors.length)],
-    twinkle: cfg.starTwinkle.min + Math.random() * (cfg.starTwinkle.max - cfg.starTwinkle.min),
-    phase: Math.random() * Math.PI * 2,
-  }));
-  // Генерация планет
-  const planetCount = Math.floor(cfg.planetCount.min + Math.random() * (cfg.planetCount.max - cfg.planetCount.min + 1));
-  const planets = Array.from({ length: planetCount }, () => {
-    const colorPair = cfg.planetColors[Math.floor(Math.random() * cfg.planetColors.length)];
-    return {
-      x: Math.random(),
-      y: Math.random(),
-      size: cfg.planetSize.min + Math.random() * (cfg.planetSize.max - cfg.planetSize.min),
-      colorFrom: colorPair[0],
-      colorTo: colorPair[1],
-      opacity: cfg.planetOpacity.min + Math.random() * (cfg.planetOpacity.max - cfg.planetOpacity.min),
-      blur: 8 + Math.random() * 12,
-    };
-  });
-  // Генерация туманностей
-  const nebulaCount = Math.floor(cfg.nebulaCount.min + Math.random() * (cfg.nebulaCount.max - cfg.nebulaCount.min + 1));
-  const nebulas = Array.from({ length: nebulaCount }, () => {
-    const colorPair = cfg.nebulaColors[Math.floor(Math.random() * cfg.nebulaColors.length)];
-    return {
-      x: Math.random(),
-      y: Math.random(),
-      size: cfg.nebulaSize.min + Math.random() * (cfg.nebulaSize.max - cfg.nebulaSize.min),
-      colorFrom: colorPair[0],
-      colorTo: colorPair[1],
-      opacity: cfg.nebulaOpacity.min + Math.random() * (cfg.nebulaOpacity.max - cfg.nebulaOpacity.min),
-      blur: 32 + Math.random() * 32,
-    };
-  });
-  // Цвет поля
-  const fieldColor = cfg.fieldColors[Math.floor(Math.random() * cfg.fieldColors.length)];
-  return { stars, planets, nebulas, fieldColor };
-}
-
 export default function MainScreen({
   onStartGame,
   playerPTS,
@@ -122,28 +61,6 @@ export default function MainScreen({
   const [showTokenExchange, setShowTokenExchange] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(playerName);
-
-  // Генерируем фон только на клиенте после монтирования (SSR-safe)
-  const [bgParams, setBgParams] = useState<any>(null);
-  useEffect(() => {
-    setBgParams(generateMainBgParams());
-  }, []);
-
-  // === АНИМАЦИЯ ПУЛЬСАЦИИ ЗВЁЗД ===
-  const [starAnimTime, setStarAnimTime] = useState(0);
-  useEffect(() => {
-    if (!bgParams) return;
-    let running = true;
-    function animate() {
-      if (!running) return;
-      setStarAnimTime(Date.now());
-      requestAnimationFrame(animate);
-    }
-    animate();
-    return () => {
-      running = false;
-    };
-  }, [bgParams]);
 
   // Таймер до следующего сброса игр
   const timeLeftMs = useCountdown(timeToFreeAttempts);
@@ -188,81 +105,14 @@ export default function MainScreen({
     setShowTokenExchange(true);
   };
 
-  // SSR-safe: если фон ещё не сгенерирован, не рендерим визуал
-  if (!bgParams) return null;
+  console.log('render');
 
   return (
     <>
-      <div
-        className="fixed inset-0 min-h-screen w-full flex items-center justify-center"
-        style={{ background: bgParams.fieldColor }}>
+      <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
         {/* Viewport 20:9 */}
         <div className="game-viewport relative flex flex-col h-full w-full overflow-hidden">
-          {/* === СЛУЧАЙНО СГЕНЕРИРОВАННЫЙ КОСМИЧЕСКИЙ ФОН === */}
-          <div
-            className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden"
-            style={{ borderRadius: 24, zIndex: 0 }}>
-            {/* Пульсирующие звёзды */}
-            {bgParams.stars.map((star: any, i: number) => {
-              const pulse = 0.7 + star.twinkle * Math.sin(starAnimTime / 600 + star.phase);
-              return (
-                <div
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    left: `${star.x * 100}%`,
-                    top: `${star.y * 100}%`,
-                    width: `${star.size * pulse}px`,
-                    height: `${star.size * pulse}px`,
-                    background: star.color,
-                    borderRadius: '50%',
-                    opacity: 0.7 + 0.3 * Math.sin(starAnimTime / 800 + star.phase),
-                    filter: 'blur(0.5px)',
-                    zIndex: 1,
-                    pointerEvents: 'none',
-                  }}
-                />
-              );
-            })}
-            {/* Планеты */}
-            {bgParams.planets.map((planet: any, i: number) => (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${planet.x * 100}%`,
-                  top: `${planet.y * 100}%`,
-                  width: `${planet.size}px`,
-                  height: `${planet.size}px`,
-                  background: `linear-gradient(135deg, ${planet.colorFrom}, ${planet.colorTo})`,
-                  borderRadius: '50%',
-                  opacity: planet.opacity,
-                  filter: `blur(${planet.blur}px)`,
-                  zIndex: 2,
-                  pointerEvents: 'none',
-                }}
-              />
-            ))}
-            {/* Туманности */}
-            {bgParams.nebulas.map((nebula: any, i: number) => (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${nebula.x * 100}%`,
-                  top: `${nebula.y * 100}%`,
-                  width: `${nebula.size}px`,
-                  height: `${nebula.size}px`,
-                  background: `radial-gradient(circle, ${nebula.colorFrom} 0%, ${nebula.colorTo} 100%)`,
-                  borderRadius: '50%',
-                  opacity: nebula.opacity,
-                  filter: `blur(${nebula.blur}px)`,
-                  zIndex: 1,
-                  pointerEvents: 'none',
-                }}
-              />
-            ))}
-          </div>
+          <SpaceBackground />
 
           {/* Main Content */}
           <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
