@@ -209,6 +209,9 @@ export default function InGameScreen({
   // Управление игроком
   const pressedKeys = useRef<{ [key: string]: boolean }>({});
 
+  // Trackpad input intensities (0-1, where 1 is maximum intensity)
+  const trackpadIntensity = useRef<{ [key: string]: number }>({});
+
   const PLAYER_MOVE = {
     accelX: GAME_CONFIG.PLAYER_ACCEL_X,
     accelY: GAME_CONFIG.PLAYER_ACCEL_Y,
@@ -341,40 +344,6 @@ export default function InGameScreen({
       running = false;
     };
   }, [showResults, backgroundScrollSpeed, bgParams]);
-
-  // === Управление игроком: непрерывное движение с ускорением ===
-  // Состояние для нажатых клавиш
-  // const pressedKeys = useRef<{ [key: string]: boolean }>({}) // УДАЛЕНО ДУБЛЬ
-  // === ПАРАМЕТРЫ ДВИЖЕНИЯ ИГРОКА ===
-  // const PLAYER_MOVE = { ... } // УДАЛЕНО ДУБЛЬ
-  // const [playerVX, setPlayerVX] = useState(0) // УДАЛЕНО ДУБЛЬ
-  // const [playerVY, setPlayerVY] = useState(0) // УДАЛЕНО ДУБЛЬ
-
-  // === Рефы для актуальных данных ===
-  // const enemiesRef = useRef(enemies) // УДАЛЕНО ДУБЛЬ
-  // const asteroidsRef = useRef(asteroids) // УДАЛЕНО ДУБЛЬ
-  // const minesRef = useRef(mines) // УДАЛЕНО ДУБЛЬ
-  // const enemyHPRef = useRef(enemyHP) // УДАЛЕНО ДУБЛЬ
-  // const asteroidHPRef = useRef(asteroidHP) // УДАЛЕНО ДУБЛЬ
-  // const mineHPRef = useRef(mineHP) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { enemiesRef.current = enemies }, [enemies]) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { asteroidsRef.current = asteroids }, [asteroids]) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { minesRef.current = mines }, [mines]) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { enemyHPRef.current = enemyHP }, [enemyHP]) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { asteroidHPRef.current = asteroidHP }, [asteroidHP]) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { mineHPRef.current = mineHP }, [mineHP]) // УДАЛЕНО ДУБЛЬ
-
-  // === Реф для playerHP ===
-  // const playerHPRef = useRef(playerHP) // УДАЛЕНО ДУБЛЬ
-  // useEffect(() => { playerHPRef.current = playerHP }, [playerHP]) // УДАЛЕНО ДУБЛЬ
-
-  // === ВЗРЫВЫ ===
-  // interface Explosion { ... } // Оставляем только одну декларацию
-  // const [explosions, setExplosions] = useState<Explosion[]>([]) // УДАЛЕНО ДУБЛЬ
-
-  // === ЧАСТИЦЫ ВЗРЫВА ===
-  // interface ExplosionParticle { ... } // Оставляем только одну декларацию
-  // const [explosionParticles, setExplosionParticles] = useState<ExplosionParticle[]>([]) // УДАЛЕНО ДУБЛЬ
 
   // === ЗВУКИ ===
   // Фоновая музыка и звуки событий
@@ -607,25 +576,54 @@ export default function InGameScreen({
     const interval = setInterval(() => {
       let vx = playerVX;
       let vy = playerVY;
-      // Управление ускорением
+
+      // Calculate input intensity for X axis
+      let xIntensity = 0;
       if (pressedKeys.current['ArrowLeft']) {
-        vx = Math.max(vx - PLAYER_MOVE.accelX, -PLAYER_MOVE.maxSpeedX);
+        xIntensity = -(trackpadIntensity.current['ArrowLeft'] || 1); // Negative for left
       } else if (pressedKeys.current['ArrowRight']) {
-        vx = Math.min(vx + PLAYER_MOVE.accelX, PLAYER_MOVE.maxSpeedX);
+        xIntensity = trackpadIntensity.current['ArrowRight'] || 1; // Positive for right
+      }
+
+      // Calculate input intensity for Y axis
+      let yIntensity = 0;
+      if (pressedKeys.current['ArrowUp']) {
+        yIntensity = trackpadIntensity.current['ArrowUp'] || 1; // Positive for up
+      } else if (pressedKeys.current['ArrowDown']) {
+        yIntensity = -(trackpadIntensity.current['ArrowDown'] || 1); // Negative for down
+      }
+
+      // Apply movement with intensity-based acceleration and max speed
+      if (xIntensity !== 0) {
+        const targetSpeedX = PLAYER_MOVE.maxSpeedX * xIntensity;
+        const accelX = PLAYER_MOVE.accelX * Math.abs(xIntensity);
+
+        if (xIntensity < 0) {
+          vx = Math.max(vx - accelX, targetSpeedX);
+        } else {
+          vx = Math.min(vx + accelX, targetSpeedX);
+        }
       } else {
         // Торможение по X
         if (vx > 0) vx = Math.max(0, vx - PLAYER_MOVE.frictionX);
         if (vx < 0) vx = Math.min(0, vx + PLAYER_MOVE.frictionX);
       }
-      if (pressedKeys.current['ArrowUp']) {
-        vy = Math.min(vy + PLAYER_MOVE.accelY, PLAYER_MOVE.maxSpeedY);
-      } else if (pressedKeys.current['ArrowDown']) {
-        vy = Math.max(vy - PLAYER_MOVE.accelY, -PLAYER_MOVE.maxSpeedY);
+
+      if (yIntensity !== 0) {
+        const targetSpeedY = PLAYER_MOVE.maxSpeedY * yIntensity;
+        const accelY = PLAYER_MOVE.accelY * Math.abs(yIntensity);
+
+        if (yIntensity < 0) {
+          vy = Math.max(vy - accelY, targetSpeedY);
+        } else {
+          vy = Math.min(vy + accelY, targetSpeedY);
+        }
       } else {
         // Торможение по Y
         if (vy > 0) vy = Math.max(0, vy - PLAYER_MOVE.frictionY);
         if (vy < 0) vy = Math.min(0, vy + PLAYER_MOVE.frictionY);
       }
+
       // Обновляем скорости
       setPlayerVX(vx);
       setPlayerVY(vy);
@@ -642,6 +640,7 @@ export default function InGameScreen({
       setPlayerVX(0);
       setPlayerVY(0);
       pressedKeys.current = {};
+      trackpadIntensity.current = {};
     }
   }, [showResults]);
 
@@ -1898,7 +1897,16 @@ export default function InGameScreen({
               </>
             )}
 
-            <MobileControls onPointer={(arrowKey, isPressed) => (pressedKeys.current[arrowKey] = isPressed)} />
+            <MobileControls
+              onPointer={(arrowKey, isPressed, intensity = 1) => {
+                pressedKeys.current[arrowKey] = isPressed;
+                if (isPressed) {
+                  trackpadIntensity.current[arrowKey] = intensity;
+                } else {
+                  delete trackpadIntensity.current[arrowKey];
+                }
+              }}
+            />
           </div>
         </div>
       </div>

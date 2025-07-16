@@ -1,7 +1,19 @@
 import { useRef, useCallback, useState } from 'react';
 
+// Configuration constants
+const TRACKPAD_CONFIG = {
+  MAX_RADIUS: 48, // Max distance from center (trackpad is 128px, so radius is 64, leave some padding)
+  DEAD_ZONE: 5, // Minimum distance to register movement (reduced from 15 for smaller deadzone)
+  HORIZONTAL_THRESHOLD: 0.2, // Sensitivity for horizontal movement detection
+  VERTICAL_THRESHOLD: 0.2, // Sensitivity for vertical movement detection
+};
+
 type Props = {
-  onPointer: (arrowKey: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', isPressed: boolean) => void;
+  onPointer: (
+    arrowKey: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight',
+    isPressed: boolean,
+    intensity?: number,
+  ) => void;
 };
 
 type TrackpadProps = {
@@ -27,7 +39,7 @@ function MobileControls({ onPointer }: TrackpadProps) {
       const deltaY = clientY - centerY;
 
       // Calculate trackball position (constrained within trackpad bounds)
-      const maxRadius = 48; // Max distance from center (trackpad is 128px, so radius is 64, leave some padding)
+      const maxRadius = TRACKPAD_CONFIG.MAX_RADIUS;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       let ballX = 0;
@@ -43,27 +55,32 @@ function MobileControls({ onPointer }: TrackpadProps) {
       // Update trackball position (relative to trackpad center)
       setTrackballPosition({ x: ballX, y: ballY });
 
-      // Smaller threshold for fixed-size trackpad
-      const threshold = 15; // Minimum distance to register movement
+      // Apply configurable deadzone threshold
+      const threshold = TRACKPAD_CONFIG.DEAD_ZONE;
 
       if (distance < threshold) return null;
 
-      const directions: ('ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight')[] = [];
+      // Calculate intensity based on distance from center
+      const intensity = Math.min(distance / maxRadius, 1.0);
 
-      // Sensitive detection for small trackpad
-      const horizontalThreshold = 0.2;
-      const verticalThreshold = 0.2;
+      const directions: { direction: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'; intensity: number }[] = [];
+
+      // Use configurable detection thresholds
+      const horizontalThreshold = TRACKPAD_CONFIG.HORIZONTAL_THRESHOLD;
+      const verticalThreshold = TRACKPAD_CONFIG.VERTICAL_THRESHOLD;
 
       // Horizontal movement
       if (Math.abs(deltaX) > Math.abs(deltaY) * horizontalThreshold) {
-        if (deltaX > 0) directions.push('ArrowRight');
-        else directions.push('ArrowLeft');
+        const horizontalIntensity = intensity * (Math.abs(deltaX) / distance);
+        if (deltaX > 0) directions.push({ direction: 'ArrowRight', intensity: horizontalIntensity });
+        else directions.push({ direction: 'ArrowLeft', intensity: horizontalIntensity });
       }
 
       // Vertical movement
       if (Math.abs(deltaY) > Math.abs(deltaX) * verticalThreshold) {
-        if (deltaY > 0) directions.push('ArrowDown');
-        else directions.push('ArrowUp');
+        const verticalIntensity = intensity * (Math.abs(deltaY) / distance);
+        if (deltaY > 0) directions.push({ direction: 'ArrowDown', intensity: verticalIntensity });
+        else directions.push({ direction: 'ArrowUp', intensity: verticalIntensity });
       }
 
       return directions;
@@ -73,8 +90,8 @@ function MobileControls({ onPointer }: TrackpadProps) {
 
   const updateControls = useCallback(
     (clientX: number, clientY: number) => {
-      const newDirections = calculateDirection(clientX, clientY) || [];
-      const newKeys = new Set(newDirections);
+      const directionData = calculateDirection(clientX, clientY) || [];
+      const newKeys = new Set(directionData.map((d) => d.direction));
 
       // Release keys that are no longer active
       activeKeys.current.forEach((key: string) => {
@@ -83,21 +100,24 @@ function MobileControls({ onPointer }: TrackpadProps) {
         }
       });
 
-      // Press keys that are newly active
-      newKeys.forEach((key) => {
-        if (!activeKeys.current.has(key)) {
-          onPointer(key, true);
+      // Press keys that are newly active or update intensity for existing keys
+      directionData.forEach(({ direction, intensity }) => {
+        if (!activeKeys.current.has(direction)) {
+          onPointer(direction, true, intensity);
+        } else {
+          // Update intensity for already active direction
+          onPointer(direction, true, intensity);
         }
       });
 
-      activeKeys.current = new Set(newKeys);
+      activeKeys.current = new Set(directionData.map((d) => d.direction));
     },
     [calculateDirection, onPointer],
   );
 
   const releaseAllKeys = useCallback(() => {
     activeKeys.current.forEach((key: string) => {
-      onPointer(key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', false);
+      onPointer(key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', false, 0);
     });
     activeKeys.current.clear();
   }, [onPointer]);
