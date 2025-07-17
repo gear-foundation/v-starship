@@ -738,21 +738,17 @@ export default function InGameScreen({
     return () => clearInterval(interval);
   }, [showResults, playerExists]);
 
-  // === Защита от множественных игровых циклов ===
-  const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
-  // === ЕДИНЫЙ GAME LOOP: движение, столкновения, урон, уничтожение, подсчёты ===
-  // Вся игровая логика (движение объектов, столкновения, урон, уничтожение, подсчёты) происходит только здесь.
-  // Никаких других setInterval/useEffect для движения/столкновений быть не должно!
   useEffect(() => {
-    if (showResults) return;
     let lastTime = Date.now();
+    let lastGameUpdate = Date.now();
 
-    if (gameLoopRef.current) {
-      clearInterval(gameLoopRef.current);
-      gameLoopRef.current = null;
-    }
-    gameLoopRef.current = setInterval(() => {
+    function gameLoop() {
       const now = Date.now();
+
+      // Maintain 30ms interval equivalent (33.33 FPS)
+      if (now - lastGameUpdate < 30) return requestAnimationFrame(gameLoop);
+
+      lastGameUpdate = now;
       const dt = (now - lastTime) / 1000;
       lastTime = now;
       // === ДВИЖЕНИЕ и СТОЛКНОВЕНИЯ ===
@@ -1135,14 +1131,16 @@ export default function InGameScreen({
       if (enemiesKilledNow) setEnemiesKilled((prev) => prev + enemiesKilledNow);
       if (asteroidsKilledNow) setAsteroidsKilled((prev) => prev + asteroidsKilledNow);
       if (minesKilledNow) setMinesKilled((prev) => prev + minesKilledNow);
-    }, 30);
+
+      return requestAnimationFrame(gameLoop);
+    }
+
+    const requestId = gameLoop();
+
     return () => {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-        gameLoopRef.current = null;
-      }
+      cancelAnimationFrame(requestId);
     };
-  }, [showResults, boss, bossExists, bossPhase, bossHP]);
+  }, []);
 
   // Форматирование времени для HUD
   const formatTime = (seconds: number) => {
@@ -1154,6 +1152,7 @@ export default function InGameScreen({
   // Логирование монтирования/размонтирования компонента
   useEffect(() => {
     console.log('[InGameScreen] mounted');
+
     return () => {
       console.log('[InGameScreen] unmounted');
     };
