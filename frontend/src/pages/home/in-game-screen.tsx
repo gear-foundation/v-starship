@@ -738,15 +738,41 @@ export default function InGameScreen({
     return () => clearInterval(interval);
   }, [showResults, playerExists]);
 
+  const [fps, setFps] = useState(0);
+
+  function getUpdateFps() {
+    let frameCount = 0;
+    let lastTime = performance.now();
+
+    return () => {
+      frameCount++;
+
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < 1000) return;
+
+      setFps(frameCount);
+      frameCount = 0;
+      lastTime = currentTime;
+    };
+  }
+
   useEffect(() => {
+    let requestId: number;
     let lastTime = Date.now();
     let lastGameUpdate = Date.now();
+    const updateFps = getUpdateFps();
 
     function gameLoop() {
+      updateFps();
+
       const now = Date.now();
 
       // Maintain 30ms interval equivalent (33.33 FPS)
-      if (now - lastGameUpdate < 30) return requestAnimationFrame(gameLoop);
+      if (now - lastGameUpdate < 30) {
+        requestId = requestAnimationFrame(gameLoop);
+        return;
+      }
 
       lastGameUpdate = now;
       const dt = (now - lastTime) / 1000;
@@ -1132,10 +1158,10 @@ export default function InGameScreen({
       if (asteroidsKilledNow) setAsteroidsKilled((prev) => prev + asteroidsKilledNow);
       if (minesKilledNow) setMinesKilled((prev) => prev + minesKilledNow);
 
-      return requestAnimationFrame(gameLoop);
+      requestId = requestAnimationFrame(gameLoop);
     }
 
-    const requestId = gameLoop();
+    requestId = requestAnimationFrame(gameLoop);
 
     return () => {
       cancelAnimationFrame(requestId);
@@ -1712,6 +1738,8 @@ export default function InGameScreen({
               }}
             />
           </div>
+
+          <div className="absolute top-0 right-0 p-2 text-white bg-black">{fps}</div>
         </div>
       </div>
 

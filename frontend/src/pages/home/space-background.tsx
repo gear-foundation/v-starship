@@ -73,6 +73,7 @@ function SpaceBackground({ variant = 'default' }: Props) {
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    let requestId: number;
     let lastTime = Date.now();
 
     function animate() {
@@ -87,10 +88,10 @@ function SpaceBackground({ variant = 'default' }: Props) {
         setOffset((prev) => (prev + GAME_CONFIG.BACKGROUND_SCROLL_SPEED * deltaTime * 100) % 100);
       }
 
-      return requestAnimationFrame(animate);
+      requestId = requestAnimationFrame(animate);
     }
 
-    const requestId = animate();
+    requestId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(requestId);
