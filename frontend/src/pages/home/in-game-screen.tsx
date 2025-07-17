@@ -505,51 +505,6 @@ export default function InGameScreen({
   const [asteroidsKilled, setAsteroidsKilled] = useState(0);
   const [minesKilled, setMinesKilled] = useState(0);
 
-  // === СТРЕЛЬБА ИГРОКА: только один useEffect, не зависит от координат ===
-  // Стрельба (лазеры и ракеты) инициируется только этим эффектом, строго по таймеру, без дублирования.
-  useEffect(() => {
-    if (showResults || !playerExists) return;
-    const laserCount = params.lasers || 1;
-    const rocketCount = params.rockets || 1;
-    const laserInterval = setInterval(
-      () => {
-        setPlayerLasers((prev) => [
-          ...prev,
-          ...Array.from({ length: laserCount }).map((_, i) => {
-            const spread = 7 * (laserCount > 1 ? i - (laserCount - 1) / 2 : 0);
-            return {
-              id: `laser_${Math.random().toString(36).slice(2)}`,
-              x: playerXRef.current + spread,
-              y: playerYRef.current + GAME_CONFIG.PLAYER_LASER_SPEED,
-              type: 'laser',
-            };
-          }),
-        ]);
-        playSound(GAME_CONFIG.SOUND_PLAYER_LASER, soundVolumes.playerLaser);
-      },
-      (params.laserRate ?? 1000) * fireRateMultiplier,
-    );
-    const rocketInterval = setInterval(
-      () => {
-        setPlayerRockets((prev) => [
-          ...prev,
-          ...Array.from({ length: rocketCount }).map(() => ({
-            id: `rocket_${Math.random().toString(36).slice(2)}`,
-            x: playerXRef.current,
-            y: playerYRef.current + GAME_CONFIG.PLAYER_ROCKET_SPEED,
-            type: 'rocket',
-          })),
-        ]);
-        playSound(GAME_CONFIG.SOUND_PLAYER_ROCKET, soundVolumes.playerRocket);
-      },
-      (params.rocketRate ?? 2000) * fireRateMultiplier,
-    );
-    return () => {
-      clearInterval(laserInterval);
-      clearInterval(rocketInterval);
-    };
-  }, [showResults, playerExists, fireRateMultiplier, params]);
-
   // === СТРЕЛЬБА ВРАГОВ ===
   useEffect(() => {
     if (showResults || !playerExists) return;
@@ -779,6 +734,57 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnPlayerLasers = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < params.laserRate * fireRateMultiplier) return;
+      lastTime = currentTime;
+
+      const laserCount = params.lasers;
+      const spread = 7 * (laserCount > 1 ? 0 : 0); // Нет спреда, если только один лазер
+
+      setPlayerLasers((prev) => [
+        ...prev,
+        ...Array.from({ length: laserCount }).map(() => ({
+          id: `laser_${Math.random().toString(36).slice(2)}`,
+          x: playerXRef.current + spread,
+          y: playerYRef.current + GAME_CONFIG.PLAYER_LASER_SPEED,
+          type: 'laser',
+        })),
+      ]);
+
+      playSound(GAME_CONFIG.SOUND_PLAYER_LASER, soundVolumes.playerLaser);
+    };
+  };
+
+  const getSpawnPlayerRockets = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < params.rocketRate * fireRateMultiplier) return;
+      lastTime = currentTime;
+
+      const rocketCount = params.rockets;
+
+      setPlayerRockets((prev) => [
+        ...prev,
+        ...Array.from({ length: rocketCount }).map(() => ({
+          id: `rocket_${Math.random().toString(36).slice(2)}`,
+          x: playerXRef.current,
+          y: playerYRef.current + GAME_CONFIG.PLAYER_ROCKET_SPEED,
+          type: 'rocket',
+        })),
+      ]);
+
+      playSound(GAME_CONFIG.SOUND_PLAYER_ROCKET, soundVolumes.playerRocket);
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -790,6 +796,8 @@ export default function InGameScreen({
     const spawnEnemies = getSpawnEnemies();
     const spawnAsteroids = getSpawnAsteroids();
     const spawnMines = getSpawnMines();
+    const spawnPlayerLasers = getSpawnPlayerLasers();
+    const spawnPlayerRockets = getSpawnPlayerRockets();
 
     function gameLoop() {
       updateFps();
@@ -798,6 +806,8 @@ export default function InGameScreen({
       spawnEnemies(); // no need if showResults || bossExists
       spawnAsteroids(); // no need if showResults
       spawnMines(); // no need if showResults || bossExists
+      spawnPlayerRockets(); // no need if showResults || !playerExists
+      spawnPlayerLasers(); // no need if showResults || !playerExists
 
       const now = Date.now();
 
