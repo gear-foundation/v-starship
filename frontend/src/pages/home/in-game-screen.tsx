@@ -380,35 +380,6 @@ export default function InGameScreen({
     setExplosionParticles((prev) => [...prev, ...particles]);
   }
 
-  // Анимация частиц
-  useEffect(() => {
-    if (!explosionParticles.length) return;
-    let running = true;
-    function animate() {
-      setExplosionParticles((prev) =>
-        prev
-          .map((p) => {
-            // Обновляем позицию
-            let nx = p.x + p.vx;
-            let ny = p.y + p.vy;
-            // let nvy = p.vy + 0.04; // убираем гравитацию
-            // Ограничиваем в пределах 0-100%
-            if (nx < 0) nx = 0;
-            if (nx > 100) nx = 100;
-            if (ny < 0) ny = 0;
-            if (ny > 100) ny = 100;
-            return { ...p, x: nx, y: ny };
-          })
-          .filter((p) => Date.now() - p.created < p.life),
-      );
-      if (running && explosionParticles.length) requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-    return () => {
-      running = false;
-    };
-  }, [explosionParticles.length]);
-
   // Вспомогательная функция для взрыва и звука
   function spawnExplosion(x: number, y: number, type: 'enemy' | 'asteroid' | 'mine' | 'player' | 'boss') {
     // Корректируем позицию взрыва для визуального центра объекта
@@ -1261,6 +1232,24 @@ export default function InGameScreen({
           }
         }
       }
+
+      // TODO: if explosionParticles.length > 0 ???
+      setExplosionParticles((prev) =>
+        prev
+          .map((p) => {
+            // Обновляем позицию
+            let nx = p.x + p.vx;
+            let ny = p.y + p.vy;
+            // let nvy = p.vy + 0.04; // убираем гравитацию
+            // Ограничиваем в пределах 0-100%
+            if (nx < 0) nx = 0;
+            if (nx > 100) nx = 100;
+            if (ny < 0) ny = 0;
+            if (ny > 100) ny = 100;
+            return { ...p, x: nx, y: ny };
+          })
+          .filter((p) => Date.now() - p.created < p.life),
+      );
 
       // === ОБНОВЛЯЕМ СОСТОЯНИЯ ===
       setEnemies(newEnemies);
