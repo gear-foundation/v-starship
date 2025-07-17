@@ -484,70 +484,6 @@ export default function InGameScreen({
     };
   }, [showResults]);
 
-  // Основной цикл движения игрока с ускорением
-  useEffect(() => {
-    if (showResults || !playerExists) return;
-    const interval = setInterval(() => {
-      let vx = playerVX;
-      let vy = playerVY;
-
-      // Calculate input intensity for X axis
-      let xIntensity = 0;
-      if (pressedKeys.current['ArrowLeft']) {
-        xIntensity = -(trackpadIntensity.current['ArrowLeft'] || 1); // Negative for left
-      } else if (pressedKeys.current['ArrowRight']) {
-        xIntensity = trackpadIntensity.current['ArrowRight'] || 1; // Positive for right
-      }
-
-      // Calculate input intensity for Y axis
-      let yIntensity = 0;
-      if (pressedKeys.current['ArrowUp']) {
-        yIntensity = trackpadIntensity.current['ArrowUp'] || 1; // Positive for up
-      } else if (pressedKeys.current['ArrowDown']) {
-        yIntensity = -(trackpadIntensity.current['ArrowDown'] || 1); // Negative for down
-      }
-
-      // Apply movement with intensity-based acceleration and max speed
-      if (xIntensity !== 0) {
-        const targetSpeedX = PLAYER_MOVE.maxSpeedX * xIntensity;
-        const accelX = PLAYER_MOVE.accelX * Math.abs(xIntensity);
-
-        if (xIntensity < 0) {
-          vx = Math.max(vx - accelX, targetSpeedX);
-        } else {
-          vx = Math.min(vx + accelX, targetSpeedX);
-        }
-      } else {
-        // Торможение по X
-        if (vx > 0) vx = Math.max(0, vx - PLAYER_MOVE.frictionX);
-        if (vx < 0) vx = Math.min(0, vx + PLAYER_MOVE.frictionX);
-      }
-
-      if (yIntensity !== 0) {
-        const targetSpeedY = PLAYER_MOVE.maxSpeedY * yIntensity;
-        const accelY = PLAYER_MOVE.accelY * Math.abs(yIntensity);
-
-        if (yIntensity < 0) {
-          vy = Math.max(vy - accelY, targetSpeedY);
-        } else {
-          vy = Math.min(vy + accelY, targetSpeedY);
-        }
-      } else {
-        // Торможение по Y
-        if (vy > 0) vy = Math.max(0, vy - PLAYER_MOVE.frictionY);
-        if (vy < 0) vy = Math.min(0, vy + PLAYER_MOVE.frictionY);
-      }
-
-      // Обновляем скорости
-      setPlayerVX(vx);
-      setPlayerVY(vy);
-      // Обновляем позицию игрока
-      setPlayerX((prev) => Math.max(X_MIN, Math.min(X_MAX, prev + vx)));
-      setPlayerY((prev) => Math.max(Y_MIN, Math.min(Y_MAX, prev + vy)));
-    }, 16); // ~60 FPS
-    return () => clearInterval(interval);
-  }, [showResults, playerVX, playerVY, playerExists]);
-
   // При завершении игры сбрасываем скорости и клавиши
   useEffect(() => {
     if (showResults) {
@@ -758,6 +694,76 @@ export default function InGameScreen({
     };
   };
 
+  const getUpdatePlayerMovement = () => {
+    const UPDATE_INTERVAL_MS = 16; // 60 FPS
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < UPDATE_INTERVAL_MS) return;
+
+      lastTime = currentTime;
+
+      let vx = playerVX;
+      let vy = playerVY;
+
+      // Calculate input intensity for X axis
+      let xIntensity = 0;
+      if (pressedKeys.current['ArrowLeft']) {
+        xIntensity = -(trackpadIntensity.current['ArrowLeft'] || 1); // Negative for left
+      } else if (pressedKeys.current['ArrowRight']) {
+        xIntensity = trackpadIntensity.current['ArrowRight'] || 1; // Positive for right
+      }
+
+      // Calculate input intensity for Y axis
+      let yIntensity = 0;
+      if (pressedKeys.current['ArrowUp']) {
+        yIntensity = trackpadIntensity.current['ArrowUp'] || 1; // Positive for up
+      } else if (pressedKeys.current['ArrowDown']) {
+        yIntensity = -(trackpadIntensity.current['ArrowDown'] || 1); // Negative for down
+      }
+
+      // Apply movement with intensity-based acceleration and max speed
+      if (xIntensity !== 0) {
+        const targetSpeedX = PLAYER_MOVE.maxSpeedX * xIntensity;
+        const accelX = PLAYER_MOVE.accelX * Math.abs(xIntensity);
+
+        if (xIntensity < 0) {
+          vx = Math.max(vx - accelX, targetSpeedX);
+        } else {
+          vx = Math.min(vx + accelX, targetSpeedX);
+        }
+      } else {
+        // Торможение по X
+        if (vx > 0) vx = Math.max(0, vx - PLAYER_MOVE.frictionX);
+        if (vx < 0) vx = Math.min(0, vx + PLAYER_MOVE.frictionX);
+      }
+
+      if (yIntensity !== 0) {
+        const targetSpeedY = PLAYER_MOVE.maxSpeedY * yIntensity;
+        const accelY = PLAYER_MOVE.accelY * Math.abs(yIntensity);
+
+        if (yIntensity < 0) {
+          vy = Math.max(vy - accelY, targetSpeedY);
+        } else {
+          vy = Math.min(vy + accelY, targetSpeedY);
+        }
+      } else {
+        // Торможение по Y
+        if (vy > 0) vy = Math.max(0, vy - PLAYER_MOVE.frictionY);
+        if (vy < 0) vy = Math.min(0, vy + PLAYER_MOVE.frictionY);
+      }
+
+      // Обновляем скорости
+      setPlayerVX(vx);
+      setPlayerVY(vy);
+      // Обновляем позицию игрока
+      setPlayerX((prev) => Math.max(X_MIN, Math.min(X_MAX, prev + vx)));
+      setPlayerY((prev) => Math.max(Y_MIN, Math.min(Y_MAX, prev + vy)));
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -765,10 +771,12 @@ export default function InGameScreen({
 
     const updateFps = getUpdateFps();
     const updateGameTime = getUpdateGameTime();
+    const updatePlayerMovement = getUpdatePlayerMovement();
 
     function gameLoop() {
       updateFps();
-      updateGameTime();
+      updateGameTime(); // no need if showResults
+      updatePlayerMovement(); // no need if showResults || !playerExists
 
       const now = Date.now();
 
