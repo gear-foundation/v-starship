@@ -446,19 +446,6 @@ export default function InGameScreen({
     return () => clearInterval(interval);
   }, [explosions.length]);
 
-  // Таймер игры: каждую секунду уменьшаем gameTime
-  useEffect(() => {
-    if (showResults) return; // Не продолжаем таймер, если игра завершена
-    if (gameTime === 0) return; // Не продолжаем, если время вышло
-    const timer = setInterval(() => {
-      setGameTime((prev: number) => {
-        if (prev > 0) return prev - 1;
-        return 0;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [gameTime, showResults]);
-
   // Проверка завершения игры: по времени или по жизням
   useEffect(() => {
     if (showResults) return;
@@ -757,14 +744,31 @@ export default function InGameScreen({
     };
   }
 
+  const getUpdateGameTime = () => {
+    const UPDATE_INTERVAL_MS = 1000;
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < UPDATE_INTERVAL_MS) return;
+
+      setGameTime((prev: number) => (prev > 0 ? prev - 1 : 0));
+      lastTime = currentTime;
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
     let lastGameUpdate = Date.now();
+
     const updateFps = getUpdateFps();
+    const updateGameTime = getUpdateGameTime();
 
     function gameLoop() {
       updateFps();
+      updateGameTime();
 
       const now = Date.now();
 
