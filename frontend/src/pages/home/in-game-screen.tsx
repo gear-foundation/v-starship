@@ -500,30 +500,6 @@ export default function InGameScreen({
   const params = React.useMemo(() => SHIP_LEVELS[safeLevel] || SHIP_LEVELS[1], [safeLevel]);
   const bossParams = params.boss;
 
-  // Генерация астероидов
-  useEffect(() => {
-    if (showResults) return;
-    const interval = setInterval(() => {
-      const id = `asteroid_${Math.random().toString(36).slice(2)}`;
-      setAsteroids((prev) => [
-        ...prev,
-        {
-          id,
-          x: Math.random() * 90, // стартовая X (0-90%)
-          y: 100, // сверху
-          speed: ASTEROID_SPEED_MIN + Math.random() * (ASTEROID_SPEED_MAX - ASTEROID_SPEED_MIN), // скорость вниз
-          rotation: Math.random() * 360, // начальный угол
-          // rotationSpeed теперь из GAME_CONFIG
-          rotationSpeed:
-            GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
-            Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
-        },
-      ]);
-      setAsteroidHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ASTEROID_BASE_HP }));
-    }, params.asteroidInterval);
-    return () => clearInterval(interval);
-  }, [showResults, params.asteroidInterval]);
-
   // Генерация мин
   useEffect(() => {
     if (showResults || bossExists) return;
@@ -769,6 +745,35 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnAsteroids = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < params.asteroidInterval) return;
+      lastTime = currentTime;
+
+      const id = `asteroid_${Math.random().toString(36).slice(2)}`;
+      setAsteroids((prev) => [
+        ...prev,
+        {
+          id,
+          x: Math.random() * 90, // стартовая X (0-90%)
+          y: 100, // сверху
+          speed: ASTEROID_SPEED_MIN + Math.random() * (ASTEROID_SPEED_MAX - ASTEROID_SPEED_MIN), // скорость вниз
+          rotation: Math.random() * 360, // начальный угол
+          // rotationSpeed теперь из GAME_CONFIG
+          rotationSpeed:
+            GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
+            Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
+        },
+      ]);
+
+      setAsteroidHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ASTEROID_BASE_HP }));
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -778,12 +783,14 @@ export default function InGameScreen({
     const updateGameTime = getUpdateGameTime();
     const updatePlayerMovement = getUpdatePlayerMovement();
     const spawnEnemies = getSpawnEnemies();
+    const spawnAsteroids = getSpawnAsteroids();
 
     function gameLoop() {
       updateFps();
       updateGameTime(); // no need if showResults
       updatePlayerMovement(); // no need if showResults || !playerExists
       spawnEnemies(); // no need if showResults || bossExists
+      spawnAsteroids(); // no need if showResults
 
       const now = Date.now();
 
