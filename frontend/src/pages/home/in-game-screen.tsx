@@ -500,40 +500,6 @@ export default function InGameScreen({
   const params = React.useMemo(() => SHIP_LEVELS[safeLevel] || SHIP_LEVELS[1], [safeLevel]);
   const bossParams = params.boss;
 
-  // Генерация врагов
-  useEffect(() => {
-    if (showResults || bossExists) return;
-    const interval = setInterval(() => {
-      const cfg = GAME_CONFIG.ENEMY_TRAJECTORY_CONFIG;
-      const id = `enemy_${Math.random().toString(36).slice(2)}`;
-      // Используем параметры из конфига
-      const x0 = cfg.X0_MIN + Math.random() * (cfg.X0_MAX - cfg.X0_MIN); // стартовая X
-      const ampX = cfg.AMP_X_MIN + Math.random() * (cfg.AMP_X_MAX - cfg.AMP_X_MIN); // амплитуда X
-      const phaseX = cfg.PHASE_X_MIN + Math.random() * (cfg.PHASE_X_MAX - cfg.PHASE_X_MIN); // фаза X
-      const ampY = cfg.AMP_Y_MIN + Math.random() * (cfg.AMP_Y_MAX - cfg.AMP_Y_MIN); // амплитуда Y
-      const phaseY = cfg.PHASE_Y_MIN + Math.random() * (cfg.PHASE_Y_MAX - cfg.PHASE_Y_MIN); // фаза Y
-      setEnemies((prev) => [
-        ...prev,
-        {
-          id,
-          x: x0,
-          y: 100, // сверху
-          speed:
-            GAME_CONFIG.ENEMY_SPEED_MIN + Math.random() * (GAME_CONFIG.ENEMY_SPEED_MAX - GAME_CONFIG.ENEMY_SPEED_MIN), // скорость вниз
-          x0,
-          y0: 100,
-          ampX,
-          phaseX,
-          ampY,
-          phaseY,
-          born: Date.now(),
-        },
-      ]);
-      setEnemyHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ENEMY_BASE_HP }));
-    }, params.enemyInterval);
-    return () => clearInterval(interval);
-  }, [showResults, params.enemyInterval, bossExists]);
-
   // Генерация астероидов
   useEffect(() => {
     if (showResults) return;
@@ -764,6 +730,45 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnEnemies = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < params.enemyInterval) return;
+      lastTime = currentTime;
+
+      const cfg = GAME_CONFIG.ENEMY_TRAJECTORY_CONFIG;
+      const id = `enemy_${Math.random().toString(36).slice(2)}`;
+      const x0 = cfg.X0_MIN + Math.random() * (cfg.X0_MAX - cfg.X0_MIN); // стартовая X
+      const ampX = cfg.AMP_X_MIN + Math.random() * (cfg.AMP_X_MAX - cfg.AMP_X_MIN); // амплитуда X
+      const phaseX = cfg.PHASE_X_MIN + Math.random() * (cfg.PHASE_X_MAX - cfg.PHASE_X_MIN); // фаза X
+      const ampY = cfg.AMP_Y_MIN + Math.random() * (cfg.AMP_Y_MAX - cfg.AMP_Y_MIN); // амплитуда Y
+      const phaseY = cfg.PHASE_Y_MIN + Math.random() * (cfg.PHASE_Y_MAX - cfg.PHASE_Y_MIN); // фаза Y
+
+      setEnemies((prev) => [
+        ...prev,
+        {
+          id,
+          x: x0,
+          y: 100, // сверху
+          speed:
+            GAME_CONFIG.ENEMY_SPEED_MIN + Math.random() * (GAME_CONFIG.ENEMY_SPEED_MAX - GAME_CONFIG.ENEMY_SPEED_MIN), // скорость вниз
+          x0,
+          y0: 100,
+          ampX,
+          phaseX,
+          ampY,
+          phaseY,
+          born: Date.now(),
+        },
+      ]);
+
+      setEnemyHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ENEMY_BASE_HP }));
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -772,11 +777,13 @@ export default function InGameScreen({
     const updateFps = getUpdateFps();
     const updateGameTime = getUpdateGameTime();
     const updatePlayerMovement = getUpdatePlayerMovement();
+    const spawnEnemies = getSpawnEnemies();
 
     function gameLoop() {
       updateFps();
       updateGameTime(); // no need if showResults
       updatePlayerMovement(); // no need if showResults || !playerExists
+      spawnEnemies(); // no need if showResults || bossExists
 
       const now = Date.now();
 
