@@ -437,15 +437,6 @@ export default function InGameScreen({
     else if (type === 'player') playSound(GAME_CONFIG.SOUND_PLAYER_EXPLOSION, soundVolumes.playerExplosion);
   }
 
-  // Очищаем старые взрывы
-  useEffect(() => {
-    if (!explosions.length) return;
-    const interval = setInterval(() => {
-      setExplosions((prev) => prev.filter((e) => Date.now() - e.created < 600));
-    }, 200);
-    return () => clearInterval(interval);
-  }, [explosions.length]);
-
   // Проверка завершения игры: по времени или по жизням
   useEffect(() => {
     if (showResults) return;
@@ -523,6 +514,20 @@ export default function InGameScreen({
       lastTime = currentTime;
     };
   }
+
+  const getCleanupExplosions = () => {
+    const UPDATE_INTERVAL_MS = 200;
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (!explosions.length || currentTime - lastTime < UPDATE_INTERVAL_MS) return;
+      lastTime = currentTime;
+
+      setExplosions((prev) => prev.filter((e) => Date.now() - e.created < 600));
+    };
+  };
 
   const getUpdateGameTime = () => {
     const UPDATE_INTERVAL_MS = 1000;
@@ -796,7 +801,7 @@ export default function InGameScreen({
     return () => {
       const currentTime = performance.now();
 
-      if (!bossParams) return;
+      if (!bossParams || !bossExists || bossPhase !== 'active') return;
       if (currentTime - lastTime < bossParams.rocketRate) return; // Проверка интервала
 
       const muzzleX = bossRef.current.x;
@@ -826,12 +831,49 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnBossLasers = () => {
+    const lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (!bossParams || !bossExists || bossPhase !== 'active') return;
+      if (currentTime - lastTime < bossParams.laserRate) return; // Проверка интервала
+
+      const muzzleX = bossRef.current.x;
+      const muzzleY = bossRef.current.y;
+
+      setEnemyLasers((prev) => [
+        ...prev,
+        ...Array.from({ length: bossParams.laserCount }).map(() => {
+          const dx = playerXRef.current - muzzleX;
+          const dy = playerYRef.current - muzzleY;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          const vx = (dx / len) * BOSS_CONFIG.laserSpeed;
+          const vy = (dy / len) * BOSS_CONFIG.laserSpeed;
+          return {
+            id: `bossLaser_${Math.random().toString(36).slice(2)}`,
+            x: muzzleX,
+            y: muzzleY,
+            type: 'bossLaser',
+            vx,
+            vy,
+            t: 0,
+          };
+        }),
+      ]);
+
+      playSound(BOSS_CONFIG.soundLaser, 0.8);
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
     let lastGameUpdate = Date.now();
 
     const updateFps = getUpdateFps();
+    const cleanupExplosions = getCleanupExplosions();
     const updateGameTime = getUpdateGameTime();
     const updatePlayerMovement = getUpdatePlayerMovement();
     const spawnEnemies = getSpawnEnemies();
@@ -845,6 +887,7 @@ export default function InGameScreen({
 
     function gameLoop() {
       updateFps();
+      cleanupExplosions(); // no need if !explosions.length
       updateGameTime(); // no need if showResults
       updatePlayerMovement(); // no need if showResults || !playerExists
       spawnEnemies(); // no need if showResults || bossExists
@@ -1285,14 +1328,6 @@ export default function InGameScreen({
   const MINE_HITBOX = GAME_CONFIG.MINE_HITBOX_SIZE; // Увеличен с 2.5 для соответствия размеру спрайта 36px
   const BOOSTER_HITBOX = BOOSTER_CONFIG.hitboxSize;
 
-  // === Летящие бустеры ===
-  // const [boosters, setBoosters] = useState<any[]>([]); // УДАЛЕНО ДУБЛЬ
-  // const [activeBooster, setActiveBooster] = useState(false); // УДАЛЕНО ДУБЛЬ
-  // const [boosterAura, setBoosterAura] = useState(false); // УДАЛЕНО ДУБЛЬ
-  // const boosterTimeoutRef = useRef<NodeJS.Timeout | null>(null); // УДАЛЕНО ДУБЛЬ
-  // === МУЛЬТИПЛИКАТОР СКОРОСТИ СТРЕЛЬБЫ ===
-  // const [fireRateMultiplier, setFireRateMultiplier] = useState(1); // УДАЛЕНО ДУБЛЬ
-
   // Активация бустера (общая для подбора и кнопки)
   function activateBooster() {
     playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
@@ -1432,42 +1467,6 @@ export default function InGameScreen({
       }, 2000);
     }
   }, [bossPhase, boss, bossExists]);
-
-  const getSpawnBossLasers = () => {
-    const lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (!bossParams) return;
-      if (currentTime - lastTime < bossParams.laserRate) return; // Проверка интервала
-
-      const muzzleX = bossRef.current.x;
-      const muzzleY = bossRef.current.y;
-
-      setEnemyLasers((prev) => [
-        ...prev,
-        ...Array.from({ length: bossParams.laserCount }).map(() => {
-          const dx = playerXRef.current - muzzleX;
-          const dy = playerYRef.current - muzzleY;
-          const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          const vx = (dx / len) * BOSS_CONFIG.laserSpeed;
-          const vy = (dy / len) * BOSS_CONFIG.laserSpeed;
-          return {
-            id: `bossLaser_${Math.random().toString(36).slice(2)}`,
-            x: muzzleX,
-            y: muzzleY,
-            type: 'bossLaser',
-            vx,
-            vy,
-            t: 0,
-          };
-        }),
-      ]);
-
-      playSound(BOSS_CONFIG.soundLaser, 0.8);
-    };
-  };
 
   return (
     <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
