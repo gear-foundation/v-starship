@@ -500,25 +500,6 @@ export default function InGameScreen({
   const params = React.useMemo(() => SHIP_LEVELS[safeLevel] || SHIP_LEVELS[1], [safeLevel]);
   const bossParams = params.boss;
 
-  // Генерация мин
-  useEffect(() => {
-    if (showResults || bossExists) return;
-    const interval = setInterval(() => {
-      const id = `mine_${Math.random().toString(36).slice(2)}`;
-      setMines((prev) => [
-        ...prev,
-        {
-          id,
-          x: Math.random() * 90 + 5, // стартовая X (5-95%)
-          y: 100, // сверху
-          speed: MINE_SPEED, // скорость вниз
-        },
-      ]);
-      setMineHP((prev) => ({ ...prev, [id]: GAME_CONFIG.MINE_BASE_HP }));
-    }, params.mineInterval);
-    return () => clearInterval(interval);
-  }, [showResults, params.mineInterval, bossExists]);
-
   // === СЧЁТЧИКИ УНИЧТОЖЕННЫХ ===
   const [enemiesKilled, setEnemiesKilled] = useState(0);
   const [asteroidsKilled, setAsteroidsKilled] = useState(0);
@@ -774,6 +755,30 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnMines = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (currentTime - lastTime < params.mineInterval) return;
+      lastTime = currentTime;
+
+      const id = `mine_${Math.random().toString(36).slice(2)}`;
+      setMines((prev) => [
+        ...prev,
+        {
+          id,
+          x: Math.random() * 90 + 5, // стартовая X (5-95%)
+          y: 100, // сверху
+          speed: MINE_SPEED, // скорость вниз
+        },
+      ]);
+
+      setMineHP((prev) => ({ ...prev, [id]: GAME_CONFIG.MINE_BASE_HP }));
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -784,6 +789,7 @@ export default function InGameScreen({
     const updatePlayerMovement = getUpdatePlayerMovement();
     const spawnEnemies = getSpawnEnemies();
     const spawnAsteroids = getSpawnAsteroids();
+    const spawnMines = getSpawnMines();
 
     function gameLoop() {
       updateFps();
@@ -791,6 +797,7 @@ export default function InGameScreen({
       updatePlayerMovement(); // no need if showResults || !playerExists
       spawnEnemies(); // no need if showResults || bossExists
       spawnAsteroids(); // no need if showResults
+      spawnMines(); // no need if showResults || bossExists
 
       const now = Date.now();
 
