@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-floating-promises */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Account } from '@gear-js/react-hooks';
@@ -15,6 +15,7 @@ import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
 import { SpaceBackground } from './space-background';
+import { usePlaySound } from './use-play-sound';
 
 interface GameObject {
   id: string;
@@ -178,6 +179,7 @@ export default function InGameScreen({
   const enemiesRef = useRef(enemies);
   const asteroidsRef = useRef(asteroids);
   const minesRef = useRef(mines);
+
   const playerLasersRef = useRef(playerLasers);
   const playerRocketsRef = useRef(playerRockets);
   const enemyLasersRef = useRef(enemyLasers);
@@ -273,6 +275,8 @@ export default function InGameScreen({
   }, [showResults]);
 
   // === ЗВУКИ ===
+  const playSound = usePlaySound();
+
   // Фоновая музыка и звуки событий
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
 
@@ -293,17 +297,6 @@ export default function InGameScreen({
     hitOnEnemy: GAME_CONFIG.VOLUME_ENEMY_HIT,
     boosterActivate: GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE,
   };
-
-  // Универсальная функция для воспроизведения звуковых эффектов
-  function playSound(src: string, volume = 0.5) {
-    try {
-      const audio = new Audio(src);
-      audio.volume = volume;
-      audio.play();
-    } catch (e) {
-      console.warn('Ошибка воспроизведения звука', src, e);
-    }
-  }
 
   // Фоновая музыка — запускается при старте игры, останавливается при завершении
   useEffect(() => {
