@@ -72,6 +72,19 @@ const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
 // === КОНФИГ ДЛЯ БУСТЕРОВ ===
 const BOOSTER_CONFIG = GAME_CONFIG.BOOSTER_CONFIG;
 
+const getBoosterSpawnTimings = () => {
+  const duration = GAME_CONFIG.GAME_DURATION;
+  const minT = duration * 0.1;
+  const maxT = duration * 0.9;
+  const arr: number[] = [];
+
+  for (let i = 0; i < BOOSTER_CONFIG.countPerGame; ++i) {
+    arr.push(minT + Math.random() * (maxT - minT));
+  }
+
+  return arr.sort((a, b) => a - b);
+};
+
 export default function InGameScreen({
   onBackToMenu,
   onReplayGame,
@@ -256,23 +269,6 @@ export default function InGameScreen({
   }, [boosters]);
   const [activeBooster, setActiveBooster] = useState(false);
   const boosterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Новый стейт для boosterAppearTimes, который обновляется при каждом запуске игры
-  const [boosterAppearTimes, setBoosterAppearTimes] = useState<number[]>([]);
-
-  // Пересчитываем boosterAppearTimes при каждом новом запуске игры
-  useEffect(() => {
-    if (showResults) return;
-    // Берём актуальную длительность игры (секунды)
-    const duration = GAME_CONFIG.GAME_DURATION;
-    const minT = duration * 0.1;
-    const maxT = duration * 0.9;
-    const arr: number[] = [];
-    for (let i = 0; i < BOOSTER_CONFIG.countPerGame; ++i) {
-      arr.push(minT + Math.random() * (maxT - minT));
-    }
-    setBoosterAppearTimes(arr.sort((a, b) => a - b));
-  }, [showResults]);
 
   // === ЗВУКИ ===
   const playSound = usePlaySound();
@@ -831,6 +827,73 @@ export default function InGameScreen({
     };
   };
 
+  const getSpawnBooster = () => {
+    const timings = getBoosterSpawnTimings();
+    let lastTime = performance.now();
+    let boosterIndex = 0;
+
+    return () => {
+      const currentTime = performance.now();
+
+      if (boosterIndex >= timings.length) return;
+      const appearTime = timings[boosterIndex] * 1000; // Convert to milliseconds
+
+      if (currentTime - lastTime < appearTime) return;
+
+      setBoosters((prev) => [
+        ...prev,
+        {
+          id: `booster_${Date.now()}_${boosterIndex}`,
+          x: Math.random() * 80 + 10, // 10-90% ширины
+          y: 100, // сверху
+          rotation: Math.random() * 360,
+        },
+      ]);
+
+      boosterIndex++;
+      lastTime = currentTime;
+    };
+  };
+
+  const getUpdateBoosterMovement = () => {
+    let lastTime = performance.now();
+
+    return () => {
+      const currentTime = performance.now();
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      setBoosters(
+        (prev) =>
+          prev
+            .map((b) => ({
+              ...b,
+              y: b.y - BOOSTER_CONFIG.speed * dt,
+              rotation: (b.rotation + BOOSTER_CONFIG.rotationSpeed * dt * 360) % 360,
+            }))
+            .filter((b) => b.y > -BOOSTER_CONFIG.size), // удаляем если вышел за пределы поля
+      );
+
+      // Проверка столкновения с игроком
+      setBoosters((prev) =>
+        prev.filter((b) => {
+          const dx = b.x - playerXRef.current;
+          const dy = b.y - playerYRef.current;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < BOOSTER_HITBOX + PLAYER_HITBOX) {
+            activateBooster();
+            playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
+
+            return false; // удаляем бустер
+          }
+
+          return true;
+        }),
+      );
+    };
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
@@ -848,6 +911,8 @@ export default function InGameScreen({
     const spawnEnemyLasers = getSpawnEnemyLasers();
     const spawnBossLasers = getSpawnBossLasers();
     const spawnBossRockets = getSpawnBossRockets();
+    const spawnBooster = getSpawnBooster();
+    const updateBoosterMovement = getUpdateBoosterMovement();
 
     function gameLoop() {
       updateFps();
@@ -862,6 +927,8 @@ export default function InGameScreen({
       spawnEnemyLasers(); // no need if showResults || !playerExists
       spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
+      spawnBooster(); // no need if showResults
+      updateBoosterMovement(); // no need if showResults
 
       const now = Date.now();
 
@@ -1329,72 +1396,6 @@ export default function InGameScreen({
     activatedBoostersCount.current += 1;
     activateBooster();
   }
-
-  // === Появление бесплатных бустеров ===
-  useEffect(() => {
-    if (showResults) return;
-    setBoosters([]); // сбрасываем при старте игры
-    const timers: NodeJS.Timeout[] = [];
-    boosterAppearTimes.forEach((appearSec, idx) => {
-      const t = setTimeout(() => {
-        setBoosters((prev) => [
-          ...prev,
-          {
-            id: `booster_${Date.now()}_${idx}`,
-            x: Math.random() * 80 + 10, // 10-90% ширины
-            y: 100, // сверху
-            rotation: Math.random() * 360,
-          },
-        ]);
-      }, appearSec * 1000); // appearSec теперь всегда в секундах
-      timers.push(t);
-    });
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [showResults, boosterAppearTimes]);
-
-  // === Движение, вращение, столкновение и удаление бустеров ===
-  useEffect(() => {
-    if (showResults) return;
-    let lastTime = Date.now();
-    let running = true;
-    function gameLoop() {
-      if (!running) return;
-      const now = Date.now();
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-      setBoosters(
-        (prev) =>
-          prev
-            .map((b) => ({
-              ...b,
-              y: b.y - BOOSTER_CONFIG.speed * dt,
-              rotation: (b.rotation + BOOSTER_CONFIG.rotationSpeed * dt * 360) % 360,
-            }))
-            .filter((b) => b.y > -BOOSTER_CONFIG.size), // удаляем если вышел за пределы поля
-      );
-      // Проверка столкновения с игроком
-      setBoosters((prev) =>
-        prev.filter((b) => {
-          const dx = b.x - playerX;
-          const dy = b.y - playerY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < BOOSTER_HITBOX + PLAYER_HITBOX) {
-            activateBooster();
-            playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
-            return false; // удаляем бустер
-          }
-          return true;
-        }),
-      );
-      if (running) requestAnimationFrame(gameLoop);
-    }
-    requestAnimationFrame(gameLoop);
-    return () => {
-      running = false;
-    };
-  }, [showResults, playerX, playerY]);
 
   // Цвета снарядов из конфига
   const PLAYER_LASER_COLOR = GAME_CONFIG.PLAYER_LASER_COLOR;
