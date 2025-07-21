@@ -15,6 +15,8 @@ import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
 import { SpaceBackground } from './space-background';
+import { useFps } from './use-fps';
+import { useGameTime } from './use-game-time';
 import { usePlaySound } from './use-play-sound';
 
 interface GameObject {
@@ -97,7 +99,6 @@ export default function InGameScreen({
 }: InGameScreenProps) {
   // === ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ НА ВЕРХНЕМ УРОВНЕ ===
   // Основное состояние игры
-  const [gameTime, setGameTime] = useState(GAME_CONFIG.GAME_DURATION);
   const [playerHP, setPlayerHP] = useState(GAME_CONFIG.INITIAL_PLAYER_HP);
   const [playerX, setPlayerX] = useState(50);
   const [playerY, setPlayerY] = useState(10);
@@ -423,7 +424,7 @@ export default function InGameScreen({
     }
     // Если время вышло, но босс ещё не побеждён — ничего не делаем, ждём фазу босса
     // Victory наступает только после bossPhase === 'exploding' (см. отдельный useEffect)
-  }, [gameTime, playerHP, showResults]);
+  }, [playerHP, showResults]);
 
   // Обработка нажатий и отпусканий клавиш
   useEffect(() => {
@@ -469,25 +470,6 @@ export default function InGameScreen({
   const [asteroidsKilled, setAsteroidsKilled] = useState(0);
   const [minesKilled, setMinesKilled] = useState(0);
 
-  const [fps, setFps] = useState(0);
-
-  function getUpdateFps() {
-    let frameCount = 0;
-    let lastTime = performance.now();
-
-    return () => {
-      frameCount++;
-
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < 1000) return;
-
-      setFps(frameCount);
-      frameCount = 0;
-      lastTime = currentTime;
-    };
-  }
-
   const getCleanupExplosions = () => {
     const UPDATE_INTERVAL_MS = 200;
     let lastTime = performance.now();
@@ -502,35 +484,24 @@ export default function InGameScreen({
     };
   };
 
-  const getUpdateGameTime = () => {
-    const UPDATE_INTERVAL_MS = 1000;
-    let lastTime = performance.now();
+  const playerPositionRef = useRef({ x: 50, y: 10 });
+  const playerVelocityRef = useRef({ x: 0, y: 0 });
+  const playerImageRef = useRef<HTMLImageElement>(null);
 
-    return () => {
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < UPDATE_INTERVAL_MS) return;
-
-      setGameTime((prev: number) => (prev > 0 ? prev - 1 : 0));
-      lastTime = currentTime;
-    };
-  };
-
-  const getUpdatePlayerMovement = () => {
+  const getUpdatePlayerPosition = () => {
     const UPDATE_INTERVAL_MS = 16; // 60 FPS
     let lastTime = performance.now();
 
-    return () => {
-      const currentTime = performance.now();
-
+    return (currentTime: number) => {
       if (currentTime - lastTime < UPDATE_INTERVAL_MS) return;
       lastTime = currentTime;
 
-      let vx = playerVXRef.current;
-      let vy = playerVYRef.current;
+      let vx = playerVelocityRef.current.x;
+      let vy = playerVelocityRef.current.y;
 
       // Calculate input intensity for X axis
       let xIntensity = 0;
+
       if (pressedKeys.current['ArrowLeft']) {
         xIntensity = -(trackpadIntensity.current['ArrowLeft'] || 1); // Negative for left
       } else if (pressedKeys.current['ArrowRight']) {
@@ -539,6 +510,7 @@ export default function InGameScreen({
 
       // Calculate input intensity for Y axis
       let yIntensity = 0;
+
       if (pressedKeys.current['ArrowUp']) {
         yIntensity = trackpadIntensity.current['ArrowUp'] || 1; // Positive for up
       } else if (pressedKeys.current['ArrowDown']) {
@@ -576,13 +548,19 @@ export default function InGameScreen({
         if (vy < 0) vy = Math.min(0, vy + PLAYER_MOVE.frictionY);
       }
 
-      // Обновляем скорости
-      setPlayerVX(vx);
-      setPlayerVY(vy);
-      // Обновляем позицию игрока
-      setPlayerX((prev) => Math.max(X_MIN, Math.min(X_MAX, prev + vx)));
-      setPlayerY((prev) => Math.max(Y_MIN, Math.min(Y_MAX, prev + vy)));
+      playerVelocityRef.current.x = vx;
+      playerVelocityRef.current.y = vy;
+
+      playerPositionRef.current.x = Math.max(X_MIN, Math.min(X_MAX, playerPositionRef.current.x + vx));
+      playerPositionRef.current.y = Math.max(Y_MIN, Math.min(Y_MAX, playerPositionRef.current.y + vy));
     };
+  };
+
+  const renderPlayer = () => {
+    if (!playerImageRef.current) return;
+
+    playerImageRef.current.style.bottom = `${playerPositionRef.current.y}%`;
+    playerImageRef.current.style.left = `${playerPositionRef.current.x}%`;
   };
 
   const getSpawnEnemies = () => {
@@ -909,14 +887,16 @@ export default function InGameScreen({
     };
   };
 
+  const { fps, updateFps } = useFps();
+  const { gameTime, updateGameTime } = useGameTime();
+
   useEffect(() => {
     let requestId: number;
     let lastTime = Date.now();
     let lastGameUpdate = Date.now();
 
-    const updateFps = getUpdateFps();
-    const updateGameTime = getUpdateGameTime();
-    const updatePlayerMovement = getUpdatePlayerMovement();
+    const updatePlayerPosition = getUpdatePlayerPosition();
+
     const spawnEnemies = getSpawnEnemies();
     const spawnAsteroids = getSpawnAsteroids();
     const spawnMines = getSpawnMines();
@@ -929,21 +909,25 @@ export default function InGameScreen({
     const updateBoosterMovement = getUpdateBoosterMovement();
     const cleanupExplosions = getCleanupExplosions();
 
-    function gameLoop() {
-      updateFps();
-      updateGameTime(); // no need if showResults
-      updatePlayerMovement(); // no need if showResults || !playerExists
-      spawnEnemies(); // no need if showResults || bossExists
-      spawnAsteroids(); // no need if showResults
-      spawnMines(); // no need if showResults || bossExists
-      spawnPlayerRockets(); // no need if showResults || !playerExists
-      spawnPlayerLasers(); // no need if showResults || !playerExists
-      spawnEnemyLasers(); // no need if showResults || !playerExists
-      spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      spawnBooster(); // no need if showResults
-      updateBoosterMovement(); // no need if showResults
-      cleanupExplosions(); // no need if !explosions.length
+    function gameLoop(currentTime: number) {
+      updateFps(currentTime);
+      updateGameTime(currentTime); // no need if showResults
+
+      updatePlayerPosition(currentTime); // no need if showResults || !playerExists
+
+      renderPlayer();
+
+      // spawnEnemies(); // no need if showResults || bossExists
+      // spawnAsteroids(); // no need if showResults
+      // spawnMines(); // no need if showResults || bossExists
+      // spawnPlayerRockets(); // no need if showResults || !playerExists
+      // spawnPlayerLasers(); // no need if showResults || !playerExists
+      // spawnEnemyLasers(); // no need if showResults || !playerExists
+      // spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
+      // spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
+      // spawnBooster(); // no need if showResults
+      // updateBoosterMovement(); // no need if showResults
+      // cleanupExplosions(); // no need if !explosions.length
 
       const now = Date.now();
 
@@ -1611,8 +1595,6 @@ export default function InGameScreen({
                   draggable={false}
                   className="absolute select-none pointer-events-none"
                   style={{
-                    left: `${playerX}%`,
-                    bottom: `${playerY}%`,
                     width: `${PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}px`,
                     height: `${PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}px`,
                     transform: 'translateX(-50%)',
@@ -1622,6 +1604,7 @@ export default function InGameScreen({
                     background: 'none',
                     boxShadow: 'none',
                   }}
+                  ref={playerImageRef}
                 />
               </>
             )}
