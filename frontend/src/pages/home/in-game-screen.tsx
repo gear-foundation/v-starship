@@ -266,12 +266,6 @@ export default function InGameScreen({
   // Бустеры: теперь с полем appearAt и isActive
   const activatedBoostersCount = useRef(0);
 
-  const [boosters, setBoosters] = useState<any[]>([]);
-  const boostersRef = useRef(boosters);
-  useEffect(() => {
-    boostersRef.current = boosters;
-  }, [boosters]);
-
   const [activeBooster, setActiveBooster] = useState(false);
   const activeBoosterRef = useRef(activeBooster);
   useEffect(() => {
@@ -452,7 +446,7 @@ export default function InGameScreen({
       setPlayerVY(0);
       pressedKeys.current = {};
       trackpadIntensity.current = {};
-      // TODO: clean entities ???
+      // should entities be cleared here? no need any changes for now
     }
   }, [showResults]);
 
@@ -871,20 +865,104 @@ export default function InGameScreen({
     });
   };
 
-  const clearAsteroids = () => {
-    asteroidsDataRef.current = [];
-    if (gameAreaRef.current) {
-      const asteroidElements = gameAreaRef.current.querySelectorAll('[data-asteroid-id]');
-      asteroidElements.forEach((el) => el.remove());
-    }
+  const boostersDataRef = useRef<{ id: string; x: number; y: number; rotation: number }[]>([]);
+
+  const getUpdateBoosters = () => {
+    const timings = getBoosterSpawnTimings();
+    let lastSpawnTime = performance.now();
+    let lastUpdateTime = performance.now();
+    let boosterIndex = 0;
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (boosterIndex >= timings.length) return;
+
+        const appearTime = timings[boosterIndex] * 1000; // Convert to milliseconds
+        if (currentTime - lastSpawnTime < appearTime) return;
+
+        boostersDataRef.current.push({
+          id: `booster_${Date.now()}_${boosterIndex}`,
+          x: Math.random() * 80 + 10, // 10-90% width
+          y: 100, // from top
+          rotation: Math.random() * 360,
+        });
+
+        boosterIndex++;
+        lastSpawnTime = currentTime;
+      };
+
+      const update = () => {
+        const now = performance.now();
+        if (now - lastUpdateTime < 16) return; // 60 FPS limit
+
+        const dt = (now - lastUpdateTime) / 1000; // Delta time in seconds
+        lastUpdateTime = now;
+
+        // Movement and rotation - separate forEach iteration
+        boostersDataRef.current = boostersDataRef.current
+          .map((booster) => ({
+            ...booster,
+            y: booster.y - BOOSTER_CONFIG.speed * dt,
+            rotation: (booster.rotation + BOOSTER_CONFIG.rotationSpeed * dt * 360) % 360,
+          }))
+          // Collision detection with player
+          .filter((booster) => {
+            if (booster.y <= -BOOSTER_CONFIG.size) return false; // удаляем если вышел за пределы поля
+
+            const dx = booster.x - playerXRef.current;
+            const dy = booster.y - playerYRef.current;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < BOOSTER_HITBOX + PLAYER_HITBOX) {
+              activateBooster();
+              playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
+
+              return false; // удаляем бустер
+            }
+
+            return true;
+          });
+      };
+
+      spawn();
+      update();
+    };
   };
 
-  const clearMines = () => {
-    minesDataRef.current = [];
-    if (gameAreaRef.current) {
-      const mineElements = gameAreaRef.current.querySelectorAll('[data-mine-id]');
-      mineElements.forEach((el) => el.remove());
-    }
+  const renderBoosters = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingBoosters = gameAreaRef.current.querySelectorAll('[data-booster-id]');
+    const currentBoosterIds = new Set(boostersDataRef.current.map((booster) => booster.id));
+
+    existingBoosters.forEach((element) => {
+      const boosterId = element.getAttribute('data-booster-id');
+      if (!currentBoosterIds.has(boosterId!)) {
+        element.remove();
+      }
+    });
+
+    boostersDataRef.current.forEach((booster) => {
+      let boosterElement = gameAreaRef.current!.querySelector(`[data-booster-id="${booster.id}"]`) as HTMLDivElement;
+
+      if (!boosterElement) {
+        boosterElement = document.createElement('div');
+        boosterElement.setAttribute('data-booster-id', booster.id);
+        boosterElement.className = 'absolute pointer-events-none';
+        boosterElement.style.width = `${BOOSTER_CONFIG.size}px`;
+        boosterElement.style.height = `${BOOSTER_CONFIG.size}px`;
+        boosterElement.style.backgroundImage = 'url(/img/booster.png)';
+        boosterElement.style.backgroundSize = 'contain';
+        boosterElement.style.backgroundRepeat = 'no-repeat';
+        boosterElement.style.backgroundPosition = 'center';
+        boosterElement.style.zIndex = '1';
+        gameAreaRef.current!.appendChild(boosterElement);
+      }
+
+      boosterElement.style.bottom = `${booster.y}%`;
+      boosterElement.style.left = `${booster.x}%`;
+      boosterElement.style.transform = `translateX(-50%) rotate(${booster.rotation}deg)`;
+    });
   };
 
   const getSpawnEnemies = () => {
@@ -1037,73 +1115,6 @@ export default function InGameScreen({
     };
   };
 
-  const getSpawnBooster = () => {
-    const timings = getBoosterSpawnTimings();
-    let lastTime = performance.now();
-    let boosterIndex = 0;
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (boosterIndex >= timings.length) return;
-      const appearTime = timings[boosterIndex] * 1000; // Convert to milliseconds
-
-      if (currentTime - lastTime < appearTime) return;
-
-      setBoosters((prev) => [
-        ...prev,
-        {
-          id: `booster_${Date.now()}_${boosterIndex}`,
-          x: Math.random() * 80 + 10, // 10-90% ширины
-          y: 100, // сверху
-          rotation: Math.random() * 360,
-        },
-      ]);
-
-      boosterIndex++;
-      lastTime = currentTime;
-    };
-  };
-
-  const getUpdateBoosterMovement = () => {
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-      const dt = (currentTime - lastTime) / 1000;
-      lastTime = currentTime;
-
-      setBoosters(
-        (prev) =>
-          prev
-            .map((b) => ({
-              ...b,
-              y: b.y - BOOSTER_CONFIG.speed * dt,
-              rotation: (b.rotation + BOOSTER_CONFIG.rotationSpeed * dt * 360) % 360,
-            }))
-            .filter((b) => b.y > -BOOSTER_CONFIG.size), // удаляем если вышел за пределы поля
-      );
-
-      // Проверка столкновения с игроком
-      setBoosters((prev) =>
-        prev.filter((b) => {
-          const dx = b.x - playerXRef.current;
-          const dy = b.y - playerYRef.current;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < BOOSTER_HITBOX + PLAYER_HITBOX) {
-            activateBooster();
-            playSound(BOOSTER_CONFIG.soundActivate, soundVolumes.boosterActivate);
-
-            return false; // удаляем бустер
-          }
-
-          return true;
-        }),
-      );
-    };
-  };
-
   const { fps, updateFps } = useFps();
   const { gameTime, updateGameTime } = useGameTime();
 
@@ -1117,6 +1128,7 @@ export default function InGameScreen({
     const updatePlayerRockets = getUpdatePlayerRockets();
     const updateAsteroids = getUpdateAsteroids();
     const updateMines = getUpdateMines();
+    const updateBoosters = getUpdateBoosters();
 
     function gameLoop(currentTime: number) {
       updateFps(currentTime);
@@ -1127,19 +1139,19 @@ export default function InGameScreen({
       updatePlayerRockets(currentTime); // no need if showResults || !playerExists
       updateAsteroids(currentTime); // no need if showResults
       updateMines(currentTime); // no need if showResults || bossExists
+      updateBoosters(currentTime); // no need if showResults
 
       renderPlayer();
       renderPlayerLasers();
       renderPlayerRockets();
       renderAsteroids();
       renderMines();
+      renderBoosters();
 
       // spawnEnemies(); // no need if showResults || bossExists
       // spawnEnemyLasers(); // no need if showResults || !playerExists
       // spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       // spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      // spawnBooster(); // no need if showResults
-      // updateBoosterMovement(); // no need if showResults
       // cleanupExplosions(); // no need if !explosions.length
 
       const now = Date.now();
@@ -1169,7 +1181,6 @@ export default function InGameScreen({
       let enemiesKilledNow = 0;
       let asteroidsKilledNow = 0;
       let minesKilledNow = 0;
-      const newBoosters = [...boostersRef.current];
 
       // === ДВИЖЕНИЕ ОБЪЕКТОВ (восстановлено) ===
 
@@ -1536,7 +1547,6 @@ export default function InGameScreen({
       setEnemyHP(newEnemyHP);
       setAsteroidHP(newAsteroidHP);
       setMineHP(newMineHP);
-      setBoosters(newBoosters); // Обновляем состояние бустеров
       if (playerWasHit) setPlayerHP(playerHPNow);
       // === ВЗРЫВ ИГРОКА ПРИ СМЕРТИ ===
       if (playerWasHit && playerHPNow === 0 && playerExists) {
@@ -1825,26 +1835,6 @@ export default function InGameScreen({
                   transform: 'translateX(-50%) translateY(50%)',
                   boxShadow: `0 0 8px 2px ${p.color}`,
                   transition: 'opacity 0.2s',
-                }}
-              />
-            ))}
-            {/* Летящие бустеры */}
-            {boosters.map((booster) => (
-              <img
-                key={booster.id}
-                src={BOOSTER_CONFIG.icon}
-                alt="booster"
-                className="absolute select-none pointer-events-none"
-                style={{
-                  left: `${booster.x}%`,
-                  bottom: `${booster.y}%`,
-                  width: `${BOOSTER_CONFIG.size}px`,
-                  height: `${BOOSTER_CONFIG.size}px`,
-                  transform: `translateX(-50%) rotate(${booster.rotation}deg)`,
-                  zIndex: 3,
-                  userSelect: 'none',
-                  opacity: 1,
-                  background: 'none',
                 }}
               />
             ))}
