@@ -188,6 +188,15 @@ export default function InGameScreen({
   const [playerVX, setPlayerVX] = useState(0);
   const [playerVY, setPlayerVY] = useState(0);
 
+  const playerVXRef = useRef(playerVX);
+  const playerVYRef = useRef(playerVY);
+  useEffect(() => {
+    playerVXRef.current = playerVX;
+  }, [playerVX]);
+  useEffect(() => {
+    playerVYRef.current = playerVY;
+  }, [playerVY]);
+
   // Рефы для актуальных данных
   const enemiesRef = useRef(enemies);
   const asteroidsRef = useRef(asteroids);
@@ -258,6 +267,10 @@ export default function InGameScreen({
 
   // Мультипликатор скорости стрельбы
   const [fireRateMultiplier, setFireRateMultiplier] = useState(1);
+  const fireRateMultiplierRef = useRef(fireRateMultiplier);
+  useEffect(() => {
+    fireRateMultiplierRef.current = fireRateMultiplier;
+  }, [fireRateMultiplier]);
 
   // Бустеры: теперь с полем appearAt и isActive
   const activatedBoostersCount = useRef(0);
@@ -511,11 +524,10 @@ export default function InGameScreen({
       const currentTime = performance.now();
 
       if (currentTime - lastTime < UPDATE_INTERVAL_MS) return;
-
       lastTime = currentTime;
 
-      let vx = playerVX;
-      let vy = playerVY;
+      let vx = playerVXRef.current;
+      let vy = playerVYRef.current;
 
       // Calculate input intensity for X axis
       let xIntensity = 0;
@@ -671,20 +683,23 @@ export default function InGameScreen({
     return () => {
       const currentTime = performance.now();
 
-      if (currentTime - lastTime < params.laserRate * fireRateMultiplier) return;
+      if (currentTime - lastTime < params.laserRate * fireRateMultiplierRef.current) return;
       lastTime = currentTime;
 
       const laserCount = params.lasers;
-      const spread = 7 * (laserCount > 1 ? 0 : 0); // Нет спреда, если только один лазер
 
       setPlayerLasers((prev) => [
         ...prev,
-        ...Array.from({ length: laserCount }).map(() => ({
-          id: `laser_${Math.random().toString(36).slice(2)}`,
-          x: playerXRef.current + spread,
-          y: playerYRef.current + GAME_CONFIG.PLAYER_LASER_SPEED,
-          type: 'laser',
-        })),
+        ...Array.from({ length: laserCount }).map((_, i) => {
+          const spread = 7 * (laserCount > 1 ? i - (laserCount - 1) / 2 : 0);
+
+          return {
+            id: `laser_${Math.random().toString(36).slice(2)}`,
+            x: playerXRef.current + spread,
+            y: playerYRef.current + GAME_CONFIG.PLAYER_LASER_SPEED,
+            type: 'laser',
+          };
+        }),
       ]);
 
       playSound(GAME_CONFIG.SOUND_PLAYER_LASER, soundVolumes.playerLaser);
@@ -697,7 +712,7 @@ export default function InGameScreen({
     return () => {
       const currentTime = performance.now();
 
-      if (currentTime - lastTime < params.rocketRate * fireRateMultiplier) return;
+      if (currentTime - lastTime < params.rocketRate * fireRateMultiplierRef.current) return;
       lastTime = currentTime;
 
       const rocketCount = params.rockets;
@@ -761,7 +776,7 @@ export default function InGameScreen({
     return () => {
       const currentTime = performance.now();
 
-      if (!bossParams || !bossExists || bossPhase !== 'active') return;
+      if (!bossParams || !bossExistsRef.current || bossPhaseRef.current !== 'active') return;
       if (currentTime - lastTime < bossParams.rocketRate) return; // Проверка интервала
 
       const muzzleX = bossRef.current.x;
@@ -797,7 +812,7 @@ export default function InGameScreen({
     return () => {
       const currentTime = performance.now();
 
-      if (!bossParams || !bossExists || bossPhase !== 'active') return;
+      if (!bossParams || !bossExistsRef.current || bossPhaseRef.current !== 'active') return;
       if (currentTime - lastTime < bossParams.laserRate) return; // Проверка интервала
 
       const muzzleX = bossRef.current.x;
@@ -900,7 +915,6 @@ export default function InGameScreen({
     let lastGameUpdate = Date.now();
 
     const updateFps = getUpdateFps();
-    const cleanupExplosions = getCleanupExplosions();
     const updateGameTime = getUpdateGameTime();
     const updatePlayerMovement = getUpdatePlayerMovement();
     const spawnEnemies = getSpawnEnemies();
@@ -913,10 +927,10 @@ export default function InGameScreen({
     const spawnBossRockets = getSpawnBossRockets();
     const spawnBooster = getSpawnBooster();
     const updateBoosterMovement = getUpdateBoosterMovement();
+    const cleanupExplosions = getCleanupExplosions();
 
     function gameLoop() {
       updateFps();
-      cleanupExplosions(); // no need if !explosions.length
       updateGameTime(); // no need if showResults
       updatePlayerMovement(); // no need if showResults || !playerExists
       spawnEnemies(); // no need if showResults || bossExists
@@ -929,6 +943,7 @@ export default function InGameScreen({
       spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       spawnBooster(); // no need if showResults
       updateBoosterMovement(); // no need if showResults
+      cleanupExplosions(); // no need if !explosions.length
 
       const now = Date.now();
 
@@ -958,7 +973,9 @@ export default function InGameScreen({
       let asteroidsKilledNow = 0;
       let minesKilledNow = 0;
       const newBoosters = [...boostersRef.current];
+
       // === ДВИЖЕНИЕ ОБЪЕКТОВ (восстановлено) ===
+
       // Враги
       newEnemies = newEnemies
         .map((enemy) => ({
@@ -974,6 +991,7 @@ export default function InGameScreen({
               ),
         }))
         .filter((enemy) => enemy.y > -10);
+
       // Астероиды
       newAsteroids = newAsteroids
         .map((ast) => ({
@@ -982,6 +1000,7 @@ export default function InGameScreen({
           rotation: (ast.rotation || 0) + (ast.rotationSpeed || 0) * dt,
         }))
         .filter((ast) => ast.y > -10);
+
       // Мины
       newMines = newMines
         .map((mine) => ({
@@ -989,14 +1008,17 @@ export default function InGameScreen({
           y: mine.y - (mine.speed || 0) * dt,
         }))
         .filter((mine) => mine.y > -10);
+
       // Лазеры игрока
       newPlayerLasers = newPlayerLasers
         .map((laser) => ({ ...laser, y: laser.y + GAME_CONFIG.PLAYER_LASER_SPEED }))
         .filter((laser) => laser.y < 110);
+
       // Ракеты игрока
       newPlayerRockets = newPlayerRockets
         .map((rocket) => ({ ...rocket, y: rocket.y + GAME_CONFIG.PLAYER_ROCKET_SPEED }))
         .filter((rocket) => rocket.y < 110);
+
       // Лазеры врагов и босса (теперь bossLaser и bossRocket используют vx/vy)
       newEnemyLasers = newEnemyLasers
         .map((laser) => {
@@ -1072,6 +1094,7 @@ export default function InGameScreen({
             continue;
           }
         }
+
         // Враги
         for (let j = 0; j < newEnemies.length; j++) {
           const enemy = newEnemies[j];
@@ -1091,6 +1114,7 @@ export default function InGameScreen({
             break;
           }
         }
+
         // Астероиды
         for (let j = 0; j < newAsteroids.length; j++) {
           const ast = newAsteroids[j];
@@ -1110,6 +1134,7 @@ export default function InGameScreen({
             break;
           }
         }
+
         // Мины
         for (let j = 0; j < newMines.length; j++) {
           const mine = newMines[j];
@@ -1128,6 +1153,7 @@ export default function InGameScreen({
           }
         }
       }
+
       // === СТОЛКНОВЕНИЯ: РАКЕТЫ ИГРОКА ===
       for (let i = newPlayerRockets.length - 1; i >= 0; i--) {
         const rocket = newPlayerRockets[i];
@@ -1147,6 +1173,7 @@ export default function InGameScreen({
             continue;
           }
         }
+
         // Враги
         for (let j = 0; j < newEnemies.length; j++) {
           const enemy = newEnemies[j];
@@ -1167,6 +1194,7 @@ export default function InGameScreen({
             break;
           }
         }
+
         // Астероиды
         for (let j = 0; j < newAsteroids.length; j++) {
           const ast = newAsteroids[j];
@@ -1181,6 +1209,7 @@ export default function InGameScreen({
             break;
           }
         }
+
         // Мины
         for (let j = 0; j < newMines.length; j++) {
           const mine = newMines[j];
@@ -1197,6 +1226,7 @@ export default function InGameScreen({
         }
         if (hit) newPlayerRockets.splice(i, 1);
       }
+
       // === СТОЛКНОВЕНИЯ: ВРАГИ/АСТЕРОИДЫ/МИНЫ С ИГРОКОМ ===
       if (playerExists && playerHPNow > 0) {
         // Враги
@@ -1218,6 +1248,7 @@ export default function InGameScreen({
             }
           }
         }
+
         // Астероиды
         for (let i = newAsteroids.length - 1; i >= 0; i--) {
           const ast = newAsteroids[i];
@@ -1237,6 +1268,7 @@ export default function InGameScreen({
             }
           }
         }
+
         // Мины
         for (let i = newMines.length - 1; i >= 0; i--) {
           const mine = newMines[i];
@@ -1256,6 +1288,7 @@ export default function InGameScreen({
             }
           }
         }
+
         // Лазеры врагов
         for (let i = newEnemyLasers.length - 1; i >= 0; i--) {
           const laser = newEnemyLasers[i];
