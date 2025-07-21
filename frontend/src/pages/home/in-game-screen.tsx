@@ -462,8 +462,17 @@ export default function InGameScreen({
       setPlayerVY(0);
       pressedKeys.current = {};
       trackpadIntensity.current = {};
+      // Очищаем лазеры и ракеты при завершении игры
+      clearPlayerRockets();
     }
   }, [showResults]);
+
+  useEffect(() => {
+    return () => {
+      // Очистка при размонтировании компонента
+      clearPlayerRockets();
+    };
+  }, []);
 
   // === ПАРАМЕТРЫ КОРАБЛЯ ПО УРОВНЯМ ===
   const SHIP_LEVELS = GAME_CONFIG.SHIP_LEVELS;
@@ -653,6 +662,91 @@ export default function InGameScreen({
     });
   };
 
+  const playerRocketsDataRef = useRef<{ id: string; x: number; y: number }[]>([]);
+
+  const getUpdatePlayerRockets = () => {
+    const ROCKET_UPDATE_INTERVAL = 16; // 60 FPS - legacy
+    let lastSpawnTime = performance.now();
+    let lastUpdateTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (currentTime - lastSpawnTime < params.rocketRate * fireRateMultiplierRef.current) return;
+        lastSpawnTime = currentTime;
+
+        const rocketCount = params.rockets;
+        const newRockets = Array.from({ length: rocketCount }).map(() => ({
+          id: `rocket_${Math.random().toString(36).slice(2)}`,
+          x: playerPositionRef.current.x,
+          y: playerPositionRef.current.y + GAME_CONFIG.PLAYER_ROCKET_SPEED,
+          type: 'rocket',
+        }));
+
+        playerRocketsDataRef.current.push(...newRockets);
+        playSound(GAME_CONFIG.SOUND_PLAYER_ROCKET, soundVolumes.playerRocket);
+      };
+
+      const update = () => {
+        if (currentTime - lastUpdateTime < ROCKET_UPDATE_INTERVAL) return;
+        lastUpdateTime = currentTime;
+
+        playerRocketsDataRef.current = playerRocketsDataRef.current
+          .map((rocket) => ({
+            ...rocket,
+            y: rocket.y + GAME_CONFIG.PLAYER_ROCKET_SPEED,
+          }))
+          .filter((rocket) => rocket.y < 110);
+      };
+
+      spawn();
+      update();
+    };
+  };
+
+  const renderPlayerRockets = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingRockets = gameAreaRef.current.querySelectorAll('[data-rocket-id]');
+
+    const currentRocketIds = new Set(playerRocketsDataRef.current.map((rocket) => rocket.id));
+    existingRockets.forEach((el) => {
+      const id = el.getAttribute('data-rocket-id');
+      if (id && !currentRocketIds.has(id)) el.remove();
+    });
+
+    playerRocketsDataRef.current.forEach((rocket) => {
+      let rocketElement = gameAreaRef.current!.querySelector(`[data-rocket-id="${rocket.id}"]`) as HTMLDivElement;
+
+      if (!rocketElement) {
+        rocketElement = document.createElement('div');
+        rocketElement.setAttribute('data-rocket-id', rocket.id);
+        rocketElement.className = 'absolute rounded-full shadow-lg';
+        rocketElement.style.width = `${PLAYER_ROCKET_WIDTH}px`;
+        rocketElement.style.height = `${PLAYER_ROCKET_HEIGHT}px`;
+        rocketElement.style.transform = 'translateX(-50%)';
+        rocketElement.style.zIndex = '5';
+        rocketElement.style.opacity = '0.95';
+        gameAreaRef.current!.appendChild(rocketElement);
+      }
+
+      rocketElement.style.left = `${rocket.x}%`;
+      rocketElement.style.bottom = `${rocket.y}%`;
+      rocketElement.style.backgroundColor = PLAYER_ROCKET_COLOR;
+      rocketElement.style.boxShadow = GAME_CONFIG.PLAYER_ROCKET_GLOW;
+    });
+  };
+
+  const clearPlayerRockets = () => {
+    // Очищаем данные в ref
+    playerRocketsDataRef.current = [];
+
+    // Удаляем все ракетные элементы из DOM
+    if (gameAreaRef.current) {
+      const rocketElements = gameAreaRef.current.querySelectorAll('[data-rocket-id]');
+      rocketElements.forEach((el) => el.remove());
+    }
+  };
+
   const getSpawnEnemies = () => {
     let lastTime = performance.now();
 
@@ -742,31 +836,6 @@ export default function InGameScreen({
       ]);
 
       setMineHP((prev) => ({ ...prev, [id]: GAME_CONFIG.MINE_BASE_HP }));
-    };
-  };
-
-  const getSpawnPlayerRockets = () => {
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < params.rocketRate * fireRateMultiplierRef.current) return;
-      lastTime = currentTime;
-
-      const rocketCount = params.rockets;
-
-      setPlayerRockets((prev) => [
-        ...prev,
-        ...Array.from({ length: rocketCount }).map(() => ({
-          id: `rocket_${Math.random().toString(36).slice(2)}`,
-          x: playerXRef.current,
-          y: playerYRef.current + GAME_CONFIG.PLAYER_ROCKET_SPEED,
-          type: 'rocket',
-        })),
-      ]);
-
-      playSound(GAME_CONFIG.SOUND_PLAYER_ROCKET, soundVolumes.playerRocket);
     };
   };
 
@@ -958,11 +1027,11 @@ export default function InGameScreen({
 
     const updatePlayerPosition = getUpdatePlayerPosition();
     const updatePlayerLasers = getUpdatePlayerLasers();
+    const updatePlayerRockets = getUpdatePlayerRockets();
 
     const spawnEnemies = getSpawnEnemies();
     const spawnAsteroids = getSpawnAsteroids();
     const spawnMines = getSpawnMines();
-    const spawnPlayerRockets = getSpawnPlayerRockets();
     const spawnEnemyLasers = getSpawnEnemyLasers();
     const spawnBossLasers = getSpawnBossLasers();
     const spawnBossRockets = getSpawnBossRockets();
@@ -976,9 +1045,11 @@ export default function InGameScreen({
 
       updatePlayerPosition(currentTime); // no need if showResults || !playerExists
       updatePlayerLasers(currentTime); // no need if showResults || !playerExists
+      updatePlayerRockets(currentTime); // no need if showResults || !playerExists
 
       renderPlayer();
       renderPlayerLasers();
+      renderPlayerRockets();
 
       // spawnEnemies(); // no need if showResults || bossExists
       // spawnAsteroids(); // no need if showResults
@@ -1007,8 +1078,8 @@ export default function InGameScreen({
       let newEnemies = [...enemiesRef.current];
       let newAsteroids = [...asteroidsRef.current];
       let newMines = [...minesRef.current];
-      let newPlayerLasers = [...playerLasersRef.current];
-      let newPlayerRockets = [...playerRocketsRef.current];
+      const newPlayerLasers = [...playerLasersRef.current];
+      const newPlayerRockets = [...playerRocketsRef.current];
       let newEnemyLasers = [...enemyLasersRef.current];
       const newEnemyHP = { ...enemyHPRef.current };
       const newAsteroidHP = { ...asteroidHPRef.current };
@@ -1054,16 +1125,6 @@ export default function InGameScreen({
           y: mine.y - (mine.speed || 0) * dt,
         }))
         .filter((mine) => mine.y > -10);
-
-      // Лазеры игрока
-      newPlayerLasers = newPlayerLasers
-        .map((laser) => ({ ...laser, y: laser.y + GAME_CONFIG.PLAYER_LASER_SPEED }))
-        .filter((laser) => laser.y < 110);
-
-      // Ракеты игрока
-      newPlayerRockets = newPlayerRockets
-        .map((rocket) => ({ ...rocket, y: rocket.y + GAME_CONFIG.PLAYER_ROCKET_SPEED }))
-        .filter((rocket) => rocket.y < 110);
 
       // Лазеры врагов и босса (теперь bossLaser и bossRocket используют vx/vy)
       newEnemyLasers = newEnemyLasers
@@ -1676,24 +1737,6 @@ export default function InGameScreen({
                 />
               </>
             )}
-            {/* СНАРЯДЫ: РАКЕТЫ ИГРОКА */}
-            {playerRockets.map((rocket) => (
-              <div
-                key={rocket.id}
-                className="absolute rounded-full shadow-lg"
-                style={{
-                  left: `${rocket.x}%`,
-                  bottom: `${rocket.y}%`,
-                  width: `${PLAYER_ROCKET_WIDTH}px`,
-                  height: `${PLAYER_ROCKET_HEIGHT}px`,
-                  backgroundColor: PLAYER_ROCKET_COLOR,
-                  boxShadow: GAME_CONFIG.PLAYER_ROCKET_GLOW,
-                  transform: 'translateX(-50%)',
-                  zIndex: 5,
-                  opacity: 0.95,
-                }}
-              />
-            ))}
             {/* СНАРЯДЫ: ЛАЗЕРЫ ВРАГОВ */}
             {enemyLasers.map((laser) => {
               if (laser.type === 'bossLaser') {
