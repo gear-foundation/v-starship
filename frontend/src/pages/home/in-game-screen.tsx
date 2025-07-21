@@ -143,8 +143,6 @@ export default function InGameScreen({
 
   // Враги, астероиды, мины
   const [enemies, setEnemies] = useState<GameObject[]>([]);
-  const [asteroids, setAsteroids] = useState<GameObject[]>([]);
-  const [mines, setMines] = useState<GameObject[]>([]);
 
   // Снаряды
   const [playerLasers, setPlayerLasers] = useState<any[]>([]);
@@ -200,8 +198,6 @@ export default function InGameScreen({
 
   // Рефы для актуальных данных
   const enemiesRef = useRef(enemies);
-  const asteroidsRef = useRef(asteroids);
-  const minesRef = useRef(mines);
 
   const playerLasersRef = useRef(playerLasers);
   const playerRocketsRef = useRef(playerRockets);
@@ -213,12 +209,6 @@ export default function InGameScreen({
   useEffect(() => {
     enemiesRef.current = enemies;
   }, [enemies]);
-  useEffect(() => {
-    asteroidsRef.current = asteroids;
-  }, [asteroids]);
-  useEffect(() => {
-    minesRef.current = mines;
-  }, [mines]);
   useEffect(() => {
     playerLasersRef.current = playerLasers;
   }, [playerLasers]);
@@ -462,17 +452,9 @@ export default function InGameScreen({
       setPlayerVY(0);
       pressedKeys.current = {};
       trackpadIntensity.current = {};
-      // Очищаем лазеры и ракеты при завершении игры
-      clearPlayerRockets();
+      // TODO: clean entities ???
     }
   }, [showResults]);
-
-  useEffect(() => {
-    return () => {
-      // Очистка при размонтировании компонента
-      clearPlayerRockets();
-    };
-  }, []);
 
   // === ПАРАМЕТРЫ КОРАБЛЯ ПО УРОВНЯМ ===
   const SHIP_LEVELS = GAME_CONFIG.SHIP_LEVELS;
@@ -736,14 +718,172 @@ export default function InGameScreen({
     });
   };
 
-  const clearPlayerRockets = () => {
-    // Очищаем данные в ref
-    playerRocketsDataRef.current = [];
+  const asteroidsDataRef = useRef<
+    { id: string; x: number; y: number; speed: number; rotation: number; rotationSpeed: number }[]
+  >([]);
+  const minesDataRef = useRef<{ id: string; x: number; y: number; speed: number }[]>([]);
 
-    // Удаляем все ракетные элементы из DOM
+  const getUpdateAsteroids = () => {
+    let lastSpawnTime = performance.now();
+    let lastUpdateTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (currentTime - lastSpawnTime < params.asteroidInterval) return;
+        lastSpawnTime = currentTime;
+
+        const id = `asteroid_${Math.random().toString(36).slice(2)}`;
+
+        asteroidsDataRef.current.push({
+          id,
+          x: Math.random() * 90,
+          y: 100,
+          speed: ASTEROID_SPEED_MIN + Math.random() * (ASTEROID_SPEED_MAX - ASTEROID_SPEED_MIN),
+          rotation: Math.random() * 360,
+          rotationSpeed:
+            GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
+            Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
+        });
+      };
+
+      const update = () => {
+        const now = performance.now();
+        if (now - lastUpdateTime < 16) return; // 60 fps - legacy
+
+        const dt = (now - lastUpdateTime) / 1000; // Delta time in seconds
+        lastUpdateTime = now;
+
+        asteroidsDataRef.current = asteroidsDataRef.current
+          .map((asteroid) => ({
+            ...asteroid,
+            y: asteroid.y - (asteroid.speed || 0) * dt,
+            rotation: (asteroid.rotation || 0) + (asteroid.rotationSpeed || 0) * dt,
+          }))
+          .filter((asteroid) => asteroid.y > -10);
+      };
+
+      spawn();
+      update();
+    };
+  };
+
+  const renderAsteroids = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingAsteroids = gameAreaRef.current.querySelectorAll('[data-asteroid-id]');
+    const currentAsteroidIds = new Set(asteroidsDataRef.current.map((asteroid) => asteroid.id));
+
+    existingAsteroids.forEach((element) => {
+      const asteroidId = element.getAttribute('data-asteroid-id');
+      if (!currentAsteroidIds.has(asteroidId!)) {
+        element.remove();
+      }
+    });
+
+    asteroidsDataRef.current.forEach((asteroid) => {
+      let asteroidElement = gameAreaRef.current!.querySelector(`[data-asteroid-id="${asteroid.id}"]`) as HTMLDivElement;
+
+      if (!asteroidElement) {
+        asteroidElement = document.createElement('div');
+        asteroidElement.setAttribute('data-asteroid-id', asteroid.id);
+        asteroidElement.className = 'absolute pointer-events-none';
+        asteroidElement.style.width = `${ASTEROID_SIZE_MIN + Math.random() * (ASTEROID_SIZE_MAX - ASTEROID_SIZE_MIN)}px`;
+        asteroidElement.style.height = asteroidElement.style.width;
+        asteroidElement.style.backgroundImage = 'url(/img/asteroid.png)';
+        asteroidElement.style.backgroundSize = 'contain';
+        asteroidElement.style.backgroundRepeat = 'no-repeat';
+        asteroidElement.style.backgroundPosition = 'center';
+        gameAreaRef.current!.appendChild(asteroidElement);
+      }
+
+      asteroidElement.style.bottom = `${asteroid.y}%`;
+      asteroidElement.style.left = `${asteroid.x}%`;
+      asteroidElement.style.transform = `rotate(${asteroid.rotation}deg)`;
+    });
+  };
+
+  const getUpdateMines = () => {
+    let lastSpawnTime = performance.now();
+    let lastUpdateTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (currentTime - lastSpawnTime < params.mineInterval) return;
+        lastSpawnTime = currentTime;
+
+        const id = `mine_${Math.random().toString(36).slice(2)}`;
+        minesDataRef.current.push({
+          id,
+          x: Math.random() * 90 + 5,
+          y: 100,
+          speed: MINE_SPEED,
+        });
+      };
+
+      const update = () => {
+        const now = performance.now();
+        if (now - lastUpdateTime < 16) return; // 60 fps - legacy
+
+        const dt = (now - lastUpdateTime) / 1000; // Delta time in seconds
+        lastUpdateTime = now;
+
+        minesDataRef.current = minesDataRef.current
+          .map((mine) => ({ ...mine, y: mine.y - (mine.speed || 0) * dt }))
+          .filter((mine) => mine.y > -10);
+      };
+
+      spawn();
+      update();
+    };
+  };
+
+  const renderMines = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingMines = gameAreaRef.current.querySelectorAll('[data-mine-id]');
+    const currentMineIds = new Set(minesDataRef.current.map((mine) => mine.id));
+
+    existingMines.forEach((element) => {
+      const mineId = element.getAttribute('data-mine-id');
+      if (!currentMineIds.has(mineId!)) {
+        element.remove();
+      }
+    });
+
+    minesDataRef.current.forEach((mine) => {
+      let mineElement = gameAreaRef.current!.querySelector(`[data-mine-id="${mine.id}"]`) as HTMLDivElement;
+
+      if (!mineElement) {
+        mineElement = document.createElement('div');
+        mineElement.setAttribute('data-mine-id', mine.id);
+        mineElement.className = 'absolute pointer-events-none';
+        mineElement.style.width = `${MINE_SIZE}px`;
+        mineElement.style.height = `${MINE_SIZE}px`;
+        mineElement.style.backgroundImage = 'url(/img/mine.png)';
+        mineElement.style.backgroundSize = 'contain';
+        mineElement.style.backgroundRepeat = 'no-repeat';
+        mineElement.style.backgroundPosition = 'center';
+        gameAreaRef.current!.appendChild(mineElement);
+      }
+
+      mineElement.style.bottom = `${mine.y}%`;
+      mineElement.style.left = `${mine.x}%`;
+    });
+  };
+
+  const clearAsteroids = () => {
+    asteroidsDataRef.current = [];
     if (gameAreaRef.current) {
-      const rocketElements = gameAreaRef.current.querySelectorAll('[data-rocket-id]');
-      rocketElements.forEach((el) => el.remove());
+      const asteroidElements = gameAreaRef.current.querySelectorAll('[data-asteroid-id]');
+      asteroidElements.forEach((el) => el.remove());
+    }
+  };
+
+  const clearMines = () => {
+    minesDataRef.current = [];
+    if (gameAreaRef.current) {
+      const mineElements = gameAreaRef.current.querySelectorAll('[data-mine-id]');
+      mineElements.forEach((el) => el.remove());
     }
   };
 
@@ -783,59 +923,6 @@ export default function InGameScreen({
       ]);
 
       setEnemyHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ENEMY_BASE_HP }));
-    };
-  };
-
-  const getSpawnAsteroids = () => {
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < params.asteroidInterval) return;
-      lastTime = currentTime;
-
-      const id = `asteroid_${Math.random().toString(36).slice(2)}`;
-      setAsteroids((prev) => [
-        ...prev,
-        {
-          id,
-          x: Math.random() * 90, // стартовая X (0-90%)
-          y: 100, // сверху
-          speed: ASTEROID_SPEED_MIN + Math.random() * (ASTEROID_SPEED_MAX - ASTEROID_SPEED_MIN), // скорость вниз
-          rotation: Math.random() * 360, // начальный угол
-          // rotationSpeed теперь из GAME_CONFIG
-          rotationSpeed:
-            GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
-            Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
-        },
-      ]);
-
-      setAsteroidHP((prev) => ({ ...prev, [id]: GAME_CONFIG.ASTEROID_BASE_HP }));
-    };
-  };
-
-  const getSpawnMines = () => {
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < params.mineInterval) return;
-      lastTime = currentTime;
-
-      const id = `mine_${Math.random().toString(36).slice(2)}`;
-      setMines((prev) => [
-        ...prev,
-        {
-          id,
-          x: Math.random() * 90 + 5, // стартовая X (5-95%)
-          y: 100, // сверху
-          speed: MINE_SPEED, // скорость вниз
-        },
-      ]);
-
-      setMineHP((prev) => ({ ...prev, [id]: GAME_CONFIG.MINE_BASE_HP }));
     };
   };
 
@@ -1028,16 +1115,8 @@ export default function InGameScreen({
     const updatePlayerPosition = getUpdatePlayerPosition();
     const updatePlayerLasers = getUpdatePlayerLasers();
     const updatePlayerRockets = getUpdatePlayerRockets();
-
-    const spawnEnemies = getSpawnEnemies();
-    const spawnAsteroids = getSpawnAsteroids();
-    const spawnMines = getSpawnMines();
-    const spawnEnemyLasers = getSpawnEnemyLasers();
-    const spawnBossLasers = getSpawnBossLasers();
-    const spawnBossRockets = getSpawnBossRockets();
-    const spawnBooster = getSpawnBooster();
-    const updateBoosterMovement = getUpdateBoosterMovement();
-    const cleanupExplosions = getCleanupExplosions();
+    const updateAsteroids = getUpdateAsteroids();
+    const updateMines = getUpdateMines();
 
     function gameLoop(currentTime: number) {
       updateFps(currentTime);
@@ -1046,15 +1125,16 @@ export default function InGameScreen({
       updatePlayerPosition(currentTime); // no need if showResults || !playerExists
       updatePlayerLasers(currentTime); // no need if showResults || !playerExists
       updatePlayerRockets(currentTime); // no need if showResults || !playerExists
+      updateAsteroids(currentTime); // no need if showResults
+      updateMines(currentTime); // no need if showResults || bossExists
 
       renderPlayer();
       renderPlayerLasers();
       renderPlayerRockets();
+      renderAsteroids();
+      renderMines();
 
       // spawnEnemies(); // no need if showResults || bossExists
-      // spawnAsteroids(); // no need if showResults
-      // spawnMines(); // no need if showResults || bossExists
-      // spawnPlayerRockets(); // no need if showResults || !playerExists
       // spawnEnemyLasers(); // no need if showResults || !playerExists
       // spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       // spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
@@ -1076,8 +1156,8 @@ export default function InGameScreen({
       // === ДВИЖЕНИЕ и СТОЛКНОВЕНИЯ ===
       // --- Берём только актуальные значения из useRef ---
       let newEnemies = [...enemiesRef.current];
-      let newAsteroids = [...asteroidsRef.current];
-      let newMines = [...minesRef.current];
+      const newAsteroids = [...asteroidsDataRef.current];
+      const newMines = [...minesDataRef.current];
       const newPlayerLasers = [...playerLasersRef.current];
       const newPlayerRockets = [...playerRocketsRef.current];
       let newEnemyLasers = [...enemyLasersRef.current];
@@ -1108,23 +1188,6 @@ export default function InGameScreen({
               ),
         }))
         .filter((enemy) => enemy.y > -10);
-
-      // Астероиды
-      newAsteroids = newAsteroids
-        .map((ast) => ({
-          ...ast,
-          y: ast.y - (ast.speed || 0) * dt,
-          rotation: (ast.rotation || 0) + (ast.rotationSpeed || 0) * dt,
-        }))
-        .filter((ast) => ast.y > -10);
-
-      // Мины
-      newMines = newMines
-        .map((mine) => ({
-          ...mine,
-          y: mine.y - (mine.speed || 0) * dt,
-        }))
-        .filter((mine) => mine.y > -10);
 
       // Лазеры врагов и босса (теперь bossLaser и bossRocket используют vx/vy)
       newEnemyLasers = newEnemyLasers
@@ -1465,8 +1528,8 @@ export default function InGameScreen({
 
       // === ОБНОВЛЯЕМ СОСТОЯНИЯ ===
       setEnemies(newEnemies);
-      setAsteroids(newAsteroids);
-      setMines(newMines);
+      asteroidsDataRef.current = newAsteroids;
+      minesDataRef.current = newMines;
       setPlayerLasers(newPlayerLasers);
       setPlayerRockets(newPlayerRockets);
       setEnemyLasers(newEnemyLasers);
@@ -1661,58 +1724,6 @@ export default function InGameScreen({
                 }}
               />
             ))}
-            {/* АСТЕРОИДЫ */}
-            {asteroidsRef.current.map((ast) => {
-              let size = ast.size;
-              if (!size) {
-                size = ASTEROID_SIZE_MIN + Math.floor(Math.random() * (ASTEROID_SIZE_MAX - ASTEROID_SIZE_MIN));
-                ast.size = size;
-              }
-              return (
-                <img
-                  key={ast.id}
-                  src="/img/asteroid.png"
-                  alt="asteroid"
-                  className="absolute select-none pointer-events-none"
-                  style={{
-                    left: `${ast.x}%`,
-                    bottom: `${ast.y}%`,
-                    width: `${size}px`,
-                    height: `${size}px`,
-                    transform: `translateX(-50%) rotate(${ast.rotation || 0}deg)`,
-                    zIndex: 1,
-                    userSelect: 'none',
-                  }}
-                />
-              );
-            })}
-            {/* МИНЫ */}
-            {minesRef.current.map((mine, i) => {
-              const scale = 1 + 0.2 * Math.sin(Date.now() / 200 + i);
-              return (
-                <img
-                  key={mine.id}
-                  src="/img/mine.png"
-                  alt="mine"
-                  width={MINE_SIZE}
-                  height={MINE_SIZE}
-                  draggable={false}
-                  className="absolute select-none pointer-events-none"
-                  style={{
-                    left: `${mine.x}%`,
-                    bottom: `${mine.y}%`,
-                    width: `${MINE_SIZE}px`,
-                    height: `${MINE_SIZE}px`,
-                    transform: `translateX(-50%) scale(${scale})`,
-                    zIndex: 1,
-                    userSelect: 'none',
-                    opacity: 1,
-                    background: 'none',
-                    boxShadow: 'none',
-                  }}
-                />
-              );
-            })}
             {/* Корабль игрока */}
             {playerExists && playerHP > 0 && (
               <>
