@@ -281,7 +281,13 @@ export default function InGameScreen({
   useEffect(() => {
     boostersRef.current = boosters;
   }, [boosters]);
+
   const [activeBooster, setActiveBooster] = useState(false);
+  const activeBoosterRef = useRef(activeBooster);
+  useEffect(() => {
+    activeBoosterRef.current = activeBooster;
+  }, [activeBooster]);
+
   const boosterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // === ЗВУКИ ===
@@ -489,7 +495,7 @@ export default function InGameScreen({
   const playerImageRef = useRef<HTMLImageElement>(null);
 
   const getUpdatePlayerPosition = () => {
-    const UPDATE_INTERVAL_MS = 16; // 60 FPS
+    const UPDATE_INTERVAL_MS = 16; // 60 FPS - legacy
     let lastTime = performance.now();
 
     return (currentTime: number) => {
@@ -561,6 +567,90 @@ export default function InGameScreen({
 
     playerImageRef.current.style.bottom = `${playerPositionRef.current.y}%`;
     playerImageRef.current.style.left = `${playerPositionRef.current.x}%`;
+  };
+
+  const playerLasersDataRef = useRef<{ id: string; x: number; y: number }[]>([]);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+
+  const getUpdatePlayerLasers = () => {
+    let lastSpawnTime = performance.now();
+    let lastUpdateTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (currentTime - lastSpawnTime < params.laserRate * fireRateMultiplierRef.current) return;
+        lastSpawnTime = currentTime;
+
+        const laserCount = params.lasers;
+
+        const lasers = Array.from({ length: laserCount }).map((_, i) => {
+          const spread = 7 * (laserCount > 1 ? i - (laserCount - 1) / 2 : 0);
+
+          return {
+            id: `laser_${Math.random().toString(36).slice(2)}`,
+            x: playerPositionRef.current.x + spread,
+            y: playerPositionRef.current.y + GAME_CONFIG.PLAYER_LASER_SPEED,
+          };
+        });
+
+        playerLasersDataRef.current.push(...lasers);
+        playSound(GAME_CONFIG.SOUND_PLAYER_LASER, soundVolumes.playerLaser);
+      };
+
+      const update = () => {
+        const LASER_UPDATE_INTERVAL = 16; // 60 FPS - legacy
+
+        if (currentTime - lastUpdateTime < LASER_UPDATE_INTERVAL) return;
+        lastUpdateTime = currentTime;
+
+        playerLasersDataRef.current = playerLasersDataRef.current
+          .map((laser) => ({
+            ...laser,
+            y: laser.y + GAME_CONFIG.PLAYER_LASER_SPEED,
+          }))
+          .filter((laser) => laser.y < 110);
+      };
+
+      spawn();
+      update();
+    };
+  };
+
+  const renderPlayerLasers = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingLasers = gameAreaRef.current.querySelectorAll('[data-laser-id]');
+
+    const currentLaserIds = new Set(playerLasersDataRef.current.map((laser) => laser.id));
+
+    existingLasers.forEach((el) => {
+      const id = el.getAttribute('data-laser-id');
+
+      if (id && !currentLaserIds.has(id)) el.remove();
+    });
+
+    playerLasersDataRef.current.forEach((laser) => {
+      let laserElement = gameAreaRef.current!.querySelector(`[data-laser-id="${laser.id}"]`) as HTMLDivElement;
+
+      if (!laserElement) {
+        laserElement = document.createElement('div');
+        laserElement.setAttribute('data-laser-id', laser.id);
+        laserElement.className = 'absolute';
+        laserElement.style.width = `${PLAYER_LASER_WIDTH}px`;
+        laserElement.style.height = `${PLAYER_LASER_HEIGHT}px`;
+        laserElement.style.transform = 'translate(-50%, 0)';
+        laserElement.style.zIndex = '5';
+        gameAreaRef.current!.appendChild(laserElement);
+      }
+
+      laserElement.style.left = `${laser.x}%`;
+      laserElement.style.bottom = `${laser.y}%`;
+      laserElement.style.backgroundColor = activeBoosterRef.current ? PLAYER_LASER_COLOR_BOOST : PLAYER_LASER_COLOR;
+
+      laserElement.style.boxShadow = activeBoosterRef.current
+        ? GAME_CONFIG.PLAYER_LASER_GLOW_BOOST
+        : GAME_CONFIG.PLAYER_LASER_GLOW;
+    });
   };
 
   const getSpawnEnemies = () => {
@@ -652,35 +742,6 @@ export default function InGameScreen({
       ]);
 
       setMineHP((prev) => ({ ...prev, [id]: GAME_CONFIG.MINE_BASE_HP }));
-    };
-  };
-
-  const getSpawnPlayerLasers = () => {
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime < params.laserRate * fireRateMultiplierRef.current) return;
-      lastTime = currentTime;
-
-      const laserCount = params.lasers;
-
-      setPlayerLasers((prev) => [
-        ...prev,
-        ...Array.from({ length: laserCount }).map((_, i) => {
-          const spread = 7 * (laserCount > 1 ? i - (laserCount - 1) / 2 : 0);
-
-          return {
-            id: `laser_${Math.random().toString(36).slice(2)}`,
-            x: playerXRef.current + spread,
-            y: playerYRef.current + GAME_CONFIG.PLAYER_LASER_SPEED,
-            type: 'laser',
-          };
-        }),
-      ]);
-
-      playSound(GAME_CONFIG.SOUND_PLAYER_LASER, soundVolumes.playerLaser);
     };
   };
 
@@ -896,11 +957,11 @@ export default function InGameScreen({
     let lastGameUpdate = Date.now();
 
     const updatePlayerPosition = getUpdatePlayerPosition();
+    const updatePlayerLasers = getUpdatePlayerLasers();
 
     const spawnEnemies = getSpawnEnemies();
     const spawnAsteroids = getSpawnAsteroids();
     const spawnMines = getSpawnMines();
-    const spawnPlayerLasers = getSpawnPlayerLasers();
     const spawnPlayerRockets = getSpawnPlayerRockets();
     const spawnEnemyLasers = getSpawnEnemyLasers();
     const spawnBossLasers = getSpawnBossLasers();
@@ -914,14 +975,15 @@ export default function InGameScreen({
       updateGameTime(currentTime); // no need if showResults
 
       updatePlayerPosition(currentTime); // no need if showResults || !playerExists
+      updatePlayerLasers(currentTime); // no need if showResults || !playerExists
 
       renderPlayer();
+      renderPlayerLasers();
 
       // spawnEnemies(); // no need if showResults || bossExists
       // spawnAsteroids(); // no need if showResults
       // spawnMines(); // no need if showResults || bossExists
       // spawnPlayerRockets(); // no need if showResults || !playerExists
-      // spawnPlayerLasers(); // no need if showResults || !playerExists
       // spawnEnemyLasers(); // no need if showResults || !playerExists
       // spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       // spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
@@ -1071,6 +1133,8 @@ export default function InGameScreen({
           ) {
             setBossHP((prev) => Math.max(0, prev - 1));
             newPlayerLasers.splice(i, 1);
+            // removePlayerLaserFromRef(laser.id); // remove from new refs system
+
             // Если HP босса <= 0, запускаем фазу взрыва
             if (bossHPRef.current - 1 <= 0) {
               setBossPhase('exploding');
@@ -1095,6 +1159,7 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_ENEMY_HIT, soundVolumes.hitOnEnemy);
             }
             newPlayerLasers.splice(i, 1);
+            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1115,6 +1180,7 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_ENEMY_HIT, soundVolumes.hitOnEnemy);
             }
             newPlayerLasers.splice(i, 1);
+            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1133,6 +1199,7 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_MINE_EXPLOSION, soundVolumes.mineExplosion);
             }
             newPlayerLasers.splice(i, 1);
+            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1512,6 +1579,7 @@ export default function InGameScreen({
           </div>
           {/* Игровая зона */}
           <div
+            ref={gameAreaRef}
             id="game-area"
             className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
             {/* ВРАГИ */}
@@ -1608,22 +1676,6 @@ export default function InGameScreen({
                 />
               </>
             )}
-            {/* СНАРЯДЫ: ЛАЗЕРЫ ИГРОКА */}
-            {playerLasers.map((laser) => (
-              <div
-                key={laser.id}
-                className="absolute"
-                style={{
-                  left: `${laser.x}%`,
-                  bottom: `${laser.y}%`,
-                  width: `${PLAYER_LASER_WIDTH}px`,
-                  height: `${PLAYER_LASER_HEIGHT}px`,
-                  backgroundColor: activeBooster ? PLAYER_LASER_COLOR_BOOST : PLAYER_LASER_COLOR,
-                  boxShadow: activeBooster ? GAME_CONFIG.PLAYER_LASER_GLOW_BOOST : GAME_CONFIG.PLAYER_LASER_GLOW,
-                  transform: 'translate(-50%, 0)',
-                }}
-              />
-            ))}
             {/* СНАРЯДЫ: РАКЕТЫ ИГРОКА */}
             {playerRockets.map((rocket) => (
               <div
