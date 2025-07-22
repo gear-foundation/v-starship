@@ -241,7 +241,9 @@ export default function InGameScreen({
     type: 'enemy' | 'asteroid' | 'mine' | 'player' | 'boss';
     created: number;
   }
-  const [explosions, setExplosions] = useState<Explosion[]>([]);
+
+  // Explosions ref-based system
+  const explosionsDataRef = useRef<Explosion[]>([]);
 
   // Частицы взрыва
   interface ExplosionParticle {
@@ -256,7 +258,9 @@ export default function InGameScreen({
     created: number;
     type: 'enemy' | 'asteroid' | 'mine' | 'player' | 'boss';
   }
-  const [explosionParticles, setExplosionParticles] = useState<ExplosionParticle[]>([]);
+
+  // Particles ref-based system
+  const particlesDataRef = useRef<ExplosionParticle[]>([]);
 
   // Мультипликатор скорости стрельбы
   const [fireRateMultiplier, setFireRateMultiplier] = useState(1);
@@ -379,7 +383,8 @@ export default function InGameScreen({
         type,
       });
     }
-    setExplosionParticles((prev) => [...prev, ...particles]);
+
+    particlesDataRef.current.push(...particles);
   }
 
   // Вспомогательная функция для взрыва и звука
@@ -391,10 +396,15 @@ export default function InGameScreen({
     else if (type === 'asteroid') cy = y + 2.5;
     else if (type === 'mine') cy = y + 1.5;
     else if (type === 'player') cy = y + 3;
-    setExplosions((prev) => [
-      ...prev,
-      { id: `${type}_expl_${Math.random().toString(36).slice(2)}`, x: cx, y: cy, type, created: Date.now() },
-    ]);
+
+    explosionsDataRef.current.push({
+      id: `${type}_expl_${Math.random().toString(36).slice(2)}`,
+      x: cx,
+      y: cy,
+      type,
+      created: Date.now(),
+    });
+
     spawnExplosionParticles(cx, cy, type);
     // Воспроизведение звука взрыва
     if (type === 'enemy') playSound(GAME_CONFIG.SOUND_ENEMY_EXPLOSION, soundVolumes.enemyExplosion);
@@ -462,20 +472,6 @@ export default function InGameScreen({
   const [enemiesKilled, setEnemiesKilled] = useState(0);
   const [asteroidsKilled, setAsteroidsKilled] = useState(0);
   const [minesKilled, setMinesKilled] = useState(0);
-
-  const _getCleanupExplosions = () => {
-    const UPDATE_INTERVAL_MS = 200;
-    let lastTime = performance.now();
-
-    return () => {
-      const currentTime = performance.now();
-
-      if (!explosions.length || currentTime - lastTime < UPDATE_INTERVAL_MS) return;
-      lastTime = currentTime;
-
-      setExplosions((prev) => prev.filter((e) => Date.now() - e.created < 600));
-    };
-  };
 
   const playerPositionRef = useRef({ x: 50, y: 10 });
   const playerVelocityRef = useRef({ x: 0, y: 0 });
@@ -1448,6 +1444,67 @@ export default function InGameScreen({
   const { fps, updateFps } = useFps();
   const { gameTime, updateGameTime } = useGameTime();
 
+  // Particles update function
+  const updateExplosionParticles = () => {
+    particlesDataRef.current = particlesDataRef.current
+      .map((p) => {
+        // Update position
+        let nx = p.x + p.vx;
+        let ny = p.y + p.vy;
+        // Constrain within 0-100%
+        if (nx < 0) nx = 0;
+        if (nx > 100) nx = 100;
+        if (ny < 0) ny = 0;
+        if (ny > 100) ny = 100;
+        return { ...p, x: nx, y: ny };
+      })
+      .filter((p) => Date.now() - p.created < p.life);
+  };
+
+  // Particles render function
+  const renderExplosionParticles = () => {
+    if (!gameAreaRef.current) return;
+
+    const existingParticles = gameAreaRef.current.querySelectorAll('[data-particle-id]');
+    const currentParticleIds = new Set(particlesDataRef.current.map((p) => p.id));
+
+    // Remove particles that no longer exist
+    existingParticles.forEach((element) => {
+      const particleId = element.getAttribute('data-particle-id');
+      if (!currentParticleIds.has(particleId!)) {
+        element.remove();
+      }
+    });
+
+    // Create/update existing particles
+    particlesDataRef.current.forEach((particle) => {
+      let particleElement = gameAreaRef.current!.querySelector(`[data-particle-id="${particle.id}"]`) as HTMLDivElement;
+
+      if (!particleElement) {
+        particleElement = document.createElement('div');
+        particleElement.setAttribute('data-particle-id', particle.id);
+        particleElement.className = 'absolute pointer-events-none';
+        particleElement.style.width = `${particle.size}px`;
+        particleElement.style.height = `${particle.size}px`;
+        particleElement.style.background = particle.color;
+        particleElement.style.borderRadius = '50%';
+        particleElement.style.opacity = '0.7';
+        particleElement.style.zIndex = '30';
+        particleElement.style.transform = 'translateX(-50%) translateY(50%)';
+        particleElement.style.boxShadow = `0 0 8px 2px ${particle.color}`;
+        particleElement.style.transition = 'opacity 0.2s';
+        gameAreaRef.current!.appendChild(particleElement);
+      }
+
+      particleElement.style.left = `${particle.x}%`;
+      particleElement.style.bottom = `${particle.y}%`;
+    });
+  };
+
+  const updateExplosions = () => {
+    explosionsDataRef.current = explosionsDataRef.current.filter((e) => Date.now() - e.created < 600);
+  };
+
   useEffect(() => {
     let requestId: number;
     let lastGameUpdate = Date.now();
@@ -1479,6 +1536,7 @@ export default function InGameScreen({
       updateBoss(currentTime); // no need if showResults
       updateBossLasers(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       updateBossRockets(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
+      updateExplosions(); // no need if !explosionsDataRef.current.length
 
       renderPlayer();
       renderPlayerLasers();
@@ -1489,8 +1547,7 @@ export default function InGameScreen({
       renderEnemies();
       renderEnemyLasers();
       renderBoss();
-
-      // cleanupExplosions(); // no need if !explosions.length
+      renderExplosionParticles();
 
       const now = Date.now();
 
@@ -1784,23 +1841,7 @@ export default function InGameScreen({
         }
       }
 
-      // TODO: if explosionParticles.length > 0 ???
-      setExplosionParticles((prev) =>
-        prev
-          .map((p) => {
-            // Обновляем позицию
-            let nx = p.x + p.vx;
-            let ny = p.y + p.vy;
-            // let nvy = p.vy + 0.04; // убираем гравитацию
-            // Ограничиваем в пределах 0-100%
-            if (nx < 0) nx = 0;
-            if (nx > 100) nx = 100;
-            if (ny < 0) ny = 0;
-            if (ny > 100) ny = 100;
-            return { ...p, x: nx, y: ny };
-          })
-          .filter((p) => Date.now() - p.created < p.life),
-      );
+      updateExplosionParticles();
 
       // === ОБНОВЛЯЕМ СОСТОЯНИЯ ===
       enemiesDataRef.current = newEnemies;
@@ -1980,24 +2021,6 @@ export default function InGameScreen({
             ref={gameAreaRef}
             id="game-area"
             className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
-            {/* ВРАГИ */}
-            {enemiesRef.current.map((enemy) => (
-              <img
-                key={enemy.id}
-                src="/img/alien-ship.png"
-                alt="enemy"
-                className="absolute select-none pointer-events-none"
-                style={{
-                  left: `${enemy.x}%`,
-                  bottom: `${enemy.y}%`,
-                  width: `${ENEMY_SIZE}px`,
-                  height: `${ENEMY_SIZE}px`,
-                  transform: 'translateX(-50%)',
-                  zIndex: 2,
-                  userSelect: 'none',
-                }}
-              />
-            ))}
             {/* Корабль игрока */}
             {playerExists && playerHP > 0 && (
               <>
@@ -2022,26 +2045,6 @@ export default function InGameScreen({
                 />
               </>
             )}
-            {/* ВЗРЫВЫ: ЧАСТИЦЫ */}
-            {explosionParticles.map((p) => (
-              <div
-                key={p.id}
-                className="absolute pointer-events-none"
-                style={{
-                  left: `${p.x}%`,
-                  bottom: `${p.y}%`,
-                  width: `${p.size}px`,
-                  height: `${p.size}px`,
-                  background: p.color,
-                  borderRadius: '50%',
-                  opacity: 0.7,
-                  zIndex: 30,
-                  transform: 'translateX(-50%) translateY(50%)',
-                  boxShadow: `0 0 8px 2px ${p.color}`,
-                  transition: 'opacity 0.2s',
-                }}
-              />
-            ))}
 
             <MobileControls
               onPointer={(arrowKey, isPressed, intensity = 1) => {
