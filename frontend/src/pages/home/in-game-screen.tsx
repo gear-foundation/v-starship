@@ -107,7 +107,9 @@ export default function InGameScreen({
   const [playerVARA] = useState(500);
   const [ptsEarned, setPtsEarned] = useState(0);
   const [playerExists, setPlayerExists] = useState(true);
+
   // === СОСТОЯНИЕ ДЛЯ БОССА ===
+  // Keep legacy state for compatibility with other systems that still rely on them
   const [boss, setBoss] = useState<any>({
     id: 'boss',
     x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
@@ -147,7 +149,7 @@ export default function InGameScreen({
   // Снаряды
   const [playerLasers] = useState<any[]>([]);
   const [playerRockets] = useState<any[]>([]);
-  const [enemyLasers, setEnemyLasers] = useState<any[]>([]);
+  const [enemyLasers] = useState<any[]>([]);
 
   // HP
   const [enemyHP, setEnemyHP] = useState<{ [id: string]: number }>({});
@@ -461,7 +463,7 @@ export default function InGameScreen({
   const [asteroidsKilled, setAsteroidsKilled] = useState(0);
   const [minesKilled, setMinesKilled] = useState(0);
 
-  const getCleanupExplosions = () => {
+  const _getCleanupExplosions = () => {
     const UPDATE_INTERVAL_MS = 200;
     let lastTime = performance.now();
 
@@ -1155,12 +1157,35 @@ export default function InGameScreen({
         laserElement = document.createElement('div');
         laserElement.setAttribute('data-enemy-laser-id', laser.id);
         laserElement.className = 'absolute pointer-events-none';
-        laserElement.style.width = `${ENEMY_LASER_WIDTH}px`;
-        laserElement.style.height = `${ENEMY_LASER_HEIGHT}px`;
-        laserElement.style.backgroundColor = '#ff6b6b';
-        laserElement.style.borderRadius = '50%';
-        laserElement.style.boxShadow = '0 0 10px #ff6b6b';
-        laserElement.style.zIndex = '3';
+
+        // Conditional logic for boss types
+        if (laser.type === 'bossLaser') {
+          laserElement.style.width = `${BOSS_CONFIG.laserWidth}px`;
+          laserElement.style.height = `${BOSS_CONFIG.laserHeight}px`;
+          laserElement.style.background = BOSS_CONFIG.laserColor;
+          laserElement.style.boxShadow = GAME_CONFIG.BOSS_LASER_GLOW;
+          laserElement.style.borderRadius = '50%';
+          laserElement.style.opacity = '0.95';
+          laserElement.style.zIndex = '6';
+        } else if (laser.type === 'bossRocket') {
+          laserElement.style.width = `${BOSS_CONFIG.rocketWidth}px`;
+          laserElement.style.height = `${BOSS_CONFIG.rocketHeight}px`;
+          laserElement.style.background = BOSS_CONFIG.rocketColor;
+          laserElement.style.boxShadow = GAME_CONFIG.BOSS_ROCKET_GLOW;
+          laserElement.style.border = BOSS_CONFIG.rocketBorder;
+          laserElement.style.borderRadius = '50%';
+          laserElement.style.opacity = '0.98';
+          laserElement.style.zIndex = '7';
+        } else {
+          // Default enemy laser styling
+          laserElement.style.width = `${ENEMY_LASER_WIDTH}px`;
+          laserElement.style.height = `${ENEMY_LASER_HEIGHT}px`;
+          laserElement.style.backgroundColor = '#ff6b6b';
+          laserElement.style.borderRadius = '50%';
+          laserElement.style.boxShadow = '0 0 10px #ff6b6b';
+          laserElement.style.zIndex = '3';
+        }
+
         gameAreaRef.current!.appendChild(laserElement);
       }
 
@@ -1170,62 +1195,199 @@ export default function InGameScreen({
     });
   };
 
-  const getSpawnBossRockets = () => {
-    const lastTime = performance.now();
+  const bossDataRef = useRef<{
+    id: string;
+    x: number;
+    y: number;
+    speed: number;
+    x0: number;
+    y0: number;
+    ampX: number;
+    phaseX: number;
+    ampY: number;
+    phaseY: number;
+    born: number;
+    hp: number;
+    exists: boolean;
+    phase: 'idle' | 'active' | 'exploding' | 'defeated' | 'appearing';
+  }>({
+    id: 'boss',
+    x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
+    y: BOSS_CONFIG.trajectory.Y_APPEAR, // старт вне поля
+    speed: BOSS_CONFIG.speed,
+    x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
+    y0: BOSS_CONFIG.trajectory.Y_TARGET, // рабочая позиция по Y
+    ampX: BOSS_CONFIG.trajectory.AMP_X,
+    phaseX: BOSS_CONFIG.trajectory.PHASE_X,
+    ampY: BOSS_CONFIG.trajectory.AMP_Y,
+    phaseY: BOSS_CONFIG.trajectory.PHASE_Y,
+    born: Date.now(),
+    hp: 0,
+    exists: false,
+    phase: 'idle',
+  });
 
-    return () => {
-      const currentTime = performance.now();
+  const getUpdateBoss = () => {
+    let lastUpdateTime = performance.now();
 
-      if (!bossParams || !bossExistsRef.current || bossPhaseRef.current !== 'active') return;
-      if (currentTime - lastTime < bossParams.rocketRate) return; // Проверка интервала
+    return (currentTime: number) => {
+      if (currentTime - lastUpdateTime < 16) return; // 60 FPS limit
+      lastUpdateTime = currentTime;
 
-      const muzzleX = bossRef.current.x;
-      const muzzleY = bossRef.current.y;
+      const bossData = bossDataRef.current;
+      if (!bossData.exists) return;
 
-      setEnemyLasers((prev) => [
-        ...prev,
-        ...Array.from({ length: bossParams.rocketCount }).map(() => {
-          const dx = playerXRef.current - muzzleX;
-          const dy = playerYRef.current - muzzleY;
-          const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          const vx = (dx / len) * BOSS_CONFIG.rocketSpeed;
-          const vy = (dy / len) * BOSS_CONFIG.rocketSpeed;
-          return {
-            id: `bossRocket_${Math.random().toString(36).slice(2)}`,
-            x: muzzleX,
-            y: muzzleY,
-            type: 'bossRocket',
-            vx,
-            vy,
-            t: 0,
+      const dt = (currentTime - lastUpdateTime) / 1000;
+
+      if (bossData.phase === 'appearing') {
+        // === Анимация появления ===
+        const yNow = bossData.y;
+        const yTarget = BOSS_CONFIG.trajectory.Y_TARGET;
+        const appearSpeed = BOSS_CONFIG.trajectory.APPEAR_SPEED * dt; // %/сек
+        let newY = yNow + appearSpeed;
+
+        if (newY >= yTarget) {
+          newY = yTarget;
+          // Фиксируем x0/y0, сбрасываем фазы и born (для плавного старта синусоиды)
+          bossDataRef.current = {
+            ...bossData,
+            y: newY,
+            x0: bossData.x,
+            y0: newY,
+            phaseX: 0,
+            phaseY: 0,
+            born: Date.now(), // сброс времени для t=0
+            phase: 'active',
           };
-        }),
-      ]);
+        } else {
+          bossDataRef.current = { ...bossData, y: newY };
+        }
 
-      playSound(BOSS_CONFIG.soundRocket, 0.9);
+        return;
+      }
+
+      if (bossData.phase === 'active') {
+        // === Обычная траектория ===
+        const t = (Date.now() - (bossData.born || 0)) / 1000;
+
+        // Y: синусоида вокруг y0
+        const yAmp = BOSS_CONFIG.trajectory.AMP_Y;
+        const newY =
+          (bossData.y0 ?? BOSS_CONFIG.trajectory.Y_TARGET) +
+          yAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossData.phaseY || 0));
+
+        // X: синусоида вокруг x0
+        const xAmp = BOSS_CONFIG.trajectory.AMP_X;
+        const newX =
+          (bossData.x0 ?? (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2) +
+          xAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossData.phaseX || 0));
+
+        bossDataRef.current = { ...bossData, x: newX, y: newY };
+      }
     };
   };
 
-  const getSpawnBossLasers = () => {
-    const lastTime = performance.now();
+  const renderBoss = () => {
+    if (!gameAreaRef.current) return;
 
-    return () => {
-      const currentTime = performance.now();
+    const bossData = bossDataRef.current;
 
-      if (!bossParams || !bossExistsRef.current || bossPhaseRef.current !== 'active') return;
-      if (currentTime - lastTime < bossParams.laserRate) return; // Проверка интервала
+    // Remove existing boss elements if they shouldn't exist
+    const existingBoss = gameAreaRef.current.querySelector('[data-boss-id]') as HTMLImageElement;
+    const existingHpBar = gameAreaRef.current.querySelector('[data-boss-hp-id]') as HTMLDivElement;
 
-      const muzzleX = bossRef.current.x;
-      const muzzleY = bossRef.current.y;
+    if (!bossData.exists || bossData.phase === 'exploding') {
+      if (existingBoss) existingBoss.remove();
+      if (existingHpBar) existingHpBar.remove();
+      return;
+    }
 
-      setEnemyLasers((prev) => [
-        ...prev,
-        ...Array.from({ length: bossParams.laserCount }).map(() => {
-          const dx = playerXRef.current - muzzleX;
-          const dy = playerYRef.current - muzzleY;
+    // Render boss image
+    let bossElement = existingBoss;
+    if (!bossElement) {
+      bossElement = document.createElement('img');
+      bossElement.setAttribute('data-boss-id', bossData.id);
+      bossElement.src = BOSS_CONFIG.img;
+      bossElement.alt = 'boss';
+      bossElement.className = 'absolute select-none pointer-events-none';
+      bossElement.style.width = `${BOSS_CONFIG.size}px`;
+      bossElement.style.height = `${BOSS_CONFIG.size}px`;
+      bossElement.style.transform = 'translateX(-50%)';
+      bossElement.style.zIndex = '20';
+      bossElement.style.userSelect = 'none';
+      bossElement.style.opacity = '1';
+      bossElement.style.filter = 'none';
+      gameAreaRef.current.appendChild(bossElement);
+    }
+
+    bossElement.style.left = `${bossData.x}%`;
+    bossElement.style.bottom = `${bossData.y}%`;
+
+    // Render HP bar only in 'active' phase
+    if (bossData.phase === 'active') {
+      let hpBarElement = existingHpBar;
+      if (!hpBarElement) {
+        hpBarElement = document.createElement('div');
+        hpBarElement.setAttribute('data-boss-hp-id', 'boss-hp');
+        hpBarElement.className = 'absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center';
+
+        const hpContainer = document.createElement('div');
+        hpContainer.className =
+          'w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative';
+
+        const hpFill = document.createElement('div');
+        hpFill.className = 'h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0';
+        hpFill.style.transition = 'width 0.2s';
+        hpFill.style.zIndex = '1';
+
+        const hpLabel = document.createElement('span');
+        hpLabel.className =
+          'absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg';
+        hpLabel.style.fontSize = '13px';
+        hpLabel.style.letterSpacing = '2px';
+        hpLabel.style.zIndex = '2';
+        hpLabel.textContent = 'Mothership';
+
+        hpContainer.appendChild(hpFill);
+        hpContainer.appendChild(hpLabel);
+        hpBarElement.appendChild(hpContainer);
+        gameAreaRef.current.appendChild(hpBarElement);
+      }
+
+      // Update HP bar width
+      const maxHP = params.boss?.bossHP || 30;
+      const hpPercentage = (bossData.hp / maxHP) * 100;
+      const hpFill = hpBarElement.querySelector('.bg-gradient-to-r') as HTMLDivElement;
+      if (hpFill) {
+        hpFill.style.width = `${hpPercentage}%`;
+      }
+    } else {
+      // Remove HP bar if not in active phase
+      if (existingHpBar) {
+        existingHpBar.remove();
+      }
+    }
+  };
+
+  const getUpdateBossLasers = () => {
+    let lastSpawnTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (!bossParams || !bossDataRef.current.exists || bossDataRef.current.phase !== 'active') return;
+        if (currentTime - lastSpawnTime < bossParams.laserRate) return;
+        lastSpawnTime = currentTime;
+
+        const muzzleX = bossDataRef.current.x;
+        const muzzleY = bossDataRef.current.y;
+
+        const lasers = Array.from({ length: bossParams.laserCount }).map(() => {
+          const dx = playerPositionRef.current.x - muzzleX;
+          const dy = playerPositionRef.current.y - muzzleY;
           const len = Math.sqrt(dx * dx + dy * dy) || 1;
           const vx = (dx / len) * BOSS_CONFIG.laserSpeed;
           const vy = (dy / len) * BOSS_CONFIG.laserSpeed;
+
           return {
             id: `bossLaser_${Math.random().toString(36).slice(2)}`,
             x: muzzleX,
@@ -1235,10 +1397,51 @@ export default function InGameScreen({
             vy,
             t: 0,
           };
-        }),
-      ]);
+        });
 
-      playSound(BOSS_CONFIG.soundLaser, 0.8);
+        enemyLasersDataRef.current.push(...lasers);
+        playSound(BOSS_CONFIG.soundLaser, 0.8);
+      };
+
+      spawn();
+    };
+  };
+
+  const getUpdateBossRockets = () => {
+    let lastSpawnTime = performance.now();
+
+    return (currentTime: number) => {
+      const spawn = () => {
+        if (!bossParams || !bossDataRef.current.exists || bossDataRef.current.phase !== 'active') return;
+        if (currentTime - lastSpawnTime < bossParams.rocketRate) return;
+        lastSpawnTime = currentTime;
+
+        const muzzleX = bossDataRef.current.x;
+        const muzzleY = bossDataRef.current.y;
+
+        const rockets = Array.from({ length: bossParams.rocketCount }).map(() => {
+          const dx = playerPositionRef.current.x - muzzleX;
+          const dy = playerPositionRef.current.y - muzzleY;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          const vx = (dx / len) * BOSS_CONFIG.rocketSpeed;
+          const vy = (dy / len) * BOSS_CONFIG.rocketSpeed;
+
+          return {
+            id: `bossRocket_${Math.random().toString(36).slice(2)}`,
+            x: muzzleX,
+            y: muzzleY,
+            type: 'bossRocket',
+            vx,
+            vy,
+            t: 0,
+          };
+        });
+
+        enemyLasersDataRef.current.push(...rockets);
+        playSound(BOSS_CONFIG.soundRocket, 0.9);
+      };
+
+      spawn();
     };
   };
 
@@ -1247,7 +1450,6 @@ export default function InGameScreen({
 
   useEffect(() => {
     let requestId: number;
-    let lastTime = Date.now();
     let lastGameUpdate = Date.now();
 
     const updatePlayerPosition = getUpdatePlayerPosition();
@@ -1258,6 +1460,9 @@ export default function InGameScreen({
     const updateBoosters = getUpdateBoosters();
     const updateEnemies = getUpdateEnemies();
     const updateEnemyLasers = getUpdateEnemyLasers();
+    const updateBossLasers = getUpdateBossLasers();
+    const updateBossRockets = getUpdateBossRockets();
+    const updateBoss = getUpdateBoss();
 
     function gameLoop(currentTime: number) {
       updateFps(currentTime);
@@ -1271,6 +1476,9 @@ export default function InGameScreen({
       updateBoosters(currentTime); // no need if showResults
       updateEnemies(currentTime); // no need if showResults || bossExists
       updateEnemyLasers(currentTime); // no need if showResults || !playerExists
+      updateBoss(currentTime); // no need if showResults
+      updateBossLasers(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
+      updateBossRockets(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
 
       renderPlayer();
       renderPlayerLasers();
@@ -1280,9 +1488,8 @@ export default function InGameScreen({
       renderBoosters();
       renderEnemies();
       renderEnemyLasers();
+      renderBoss();
 
-      // spawnBossLasers(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      // spawnBossRockets(); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       // cleanupExplosions(); // no need if !explosions.length
 
       const now = Date.now();
@@ -1294,8 +1501,6 @@ export default function InGameScreen({
       }
 
       lastGameUpdate = now;
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
       // === ДВИЖЕНИЕ и СТОЛКНОВЕНИЯ ===
       // --- Берём только актуальные значения из useRef ---
       const newEnemies = [...enemiesDataRef.current];
@@ -1313,69 +1518,23 @@ export default function InGameScreen({
       let asteroidsKilledNow = 0;
       let minesKilledNow = 0;
 
-      // === ДВИЖЕНИЕ БОССА ===
-      if (
-        bossExistsRef.current &&
-        (bossPhaseRef.current === 'active' || bossPhaseRef.current === 'appearing') &&
-        bossRef.current
-      ) {
-        const t = (Date.now() - (bossRef.current.born || 0)) / 1000;
-        // === Анимация появления ===
-        if (bossPhaseRef.current === 'appearing') {
-          // Плавно двигаем по Y к целевой позиции
-          const yNow = bossRef.current.y;
-          const yTarget = BOSS_CONFIG.trajectory.Y_TARGET;
-          const appearSpeed = BOSS_CONFIG.trajectory.APPEAR_SPEED * dt; // %/сек
-          let newY = yNow + appearSpeed;
-          let newBossObj = { ...bossRef.current };
-          if (newY >= yTarget) {
-            newY = yTarget;
-            // Фиксируем x0/y0, сбрасываем фазы и born (для плавного старта синусоиды)
-            newBossObj = {
-              ...bossRef.current,
-              y: newY,
-              x0: bossRef.current.x,
-              y0: newY,
-              phaseX: 0,
-              phaseY: 0,
-              born: Date.now(), // сброс времени для t=0
-            };
-            setBossPhase('active');
-          } else {
-            newBossObj = { ...bossRef.current, y: newY };
-          }
-          setBoss(newBossObj);
-        } else {
-          // === Обычная траектория ===
-          // Y: синусоида вокруг y0
-          const yAmp = BOSS_CONFIG.trajectory.AMP_Y;
-          const newY =
-            (bossRef.current.y0 ?? BOSS_CONFIG.trajectory.Y_TARGET) +
-            yAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossRef.current.phaseY || 0));
-          // X: синусоида вокруг x0
-          const xAmp = BOSS_CONFIG.trajectory.AMP_X;
-          const newX =
-            (bossRef.current.x0 ?? (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2) +
-            xAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossRef.current.phaseX || 0));
-          setBoss({ ...bossRef.current, x: newX, y: newY });
-        }
-      }
       // === СТОЛКНОВЕНИЯ: ЛАЗЕРЫ ИГРОКА ===
       for (let i = newPlayerLasers.length - 1; i >= 0; i--) {
         const laser = newPlayerLasers[i];
         // --- Босс ---
-        if (bossExistsRef.current && bossPhaseRef.current === 'active' && bossRef.current) {
+        if (bossDataRef.current.exists && bossDataRef.current.phase === 'active') {
           if (
-            Math.abs(laser.x - bossRef.current.x) < BOSS_CONFIG.hitbox &&
-            Math.abs(laser.y - bossRef.current.y) < BOSS_CONFIG.hitbox
+            Math.abs(laser.x - bossDataRef.current.x) < BOSS_CONFIG.hitbox &&
+            Math.abs(laser.y - bossDataRef.current.y) < BOSS_CONFIG.hitbox
           ) {
             setBossHP((prev) => Math.max(0, prev - 1));
+            bossDataRef.current.hp = Math.max(0, bossDataRef.current.hp - 1);
             newPlayerLasers.splice(i, 1);
-            // removePlayerLaserFromRef(laser.id); // remove from new refs system
 
             // Если HP босса <= 0, запускаем фазу взрыва
-            if (bossHPRef.current - 1 <= 0) {
+            if (bossDataRef.current.hp <= 0) {
               setBossPhase('exploding');
+              bossDataRef.current.phase = 'exploding';
             }
             continue;
           }
@@ -1448,17 +1607,20 @@ export default function InGameScreen({
         const rocket = newPlayerRockets[i];
         let hit = false;
         // --- Босс ---
-        if (bossExistsRef.current && bossPhaseRef.current === 'active' && bossRef.current) {
+        if (bossDataRef.current.exists && bossDataRef.current.phase === 'active') {
           if (
-            Math.abs(rocket.x - bossRef.current.x) < BOSS_CONFIG.hitbox &&
-            Math.abs(rocket.y - bossRef.current.y) < BOSS_CONFIG.hitbox
+            Math.abs(rocket.x - bossDataRef.current.x) < BOSS_CONFIG.hitbox &&
+            Math.abs(rocket.y - bossDataRef.current.y) < BOSS_CONFIG.hitbox
           ) {
             setBossHP((prev) => Math.max(0, prev - 3));
-            // Если HP босса <= 3, запускаем фазу взрыва
-            if (bossHPRef.current - 3 <= 0) {
-              setBossPhase('exploding');
-            }
+            bossDataRef.current.hp = Math.max(0, bossDataRef.current.hp - 3);
             newPlayerRockets.splice(i, 1);
+
+            // Если HP босса <= 0, запускаем фазу взрыва
+            if (bossDataRef.current.hp <= 0) {
+              setBossPhase('exploding');
+              bossDataRef.current.phase = 'exploding';
+            }
             continue;
           }
         }
@@ -1860,48 +2022,6 @@ export default function InGameScreen({
                 />
               </>
             )}
-            {/* СНАРЯДЫ: ЛАЗЕРЫ ВРАГОВ */}
-            {enemyLasers.map((laser) => {
-              if (laser.type === 'bossLaser') {
-                return (
-                  <div
-                    key={laser.id}
-                    className="absolute rounded-full shadow-lg"
-                    style={{
-                      left: `${laser.x}%`,
-                      bottom: `${laser.y}%`,
-                      width: `${BOSS_CONFIG.laserWidth}px`,
-                      height: `${BOSS_CONFIG.laserHeight}px`,
-                      background: BOSS_CONFIG.laserColor,
-                      boxShadow: GAME_CONFIG.BOSS_LASER_GLOW,
-                      transform: 'translateX(-50%)',
-                      zIndex: 6,
-                      opacity: 0.95,
-                    }}
-                  />
-                );
-              } else if (laser.type === 'bossRocket') {
-                return (
-                  <div
-                    key={laser.id}
-                    className="absolute rounded-full shadow-lg"
-                    style={{
-                      left: `${laser.x}%`,
-                      bottom: `${laser.y}%`,
-                      width: `${BOSS_CONFIG.rocketWidth}px`,
-                      height: `${BOSS_CONFIG.rocketHeight}px`,
-                      background: BOSS_CONFIG.rocketColor,
-                      boxShadow: GAME_CONFIG.BOSS_ROCKET_GLOW,
-                      border: BOSS_CONFIG.rocketBorder,
-                      transform: 'translateX(-50%)',
-                      zIndex: 7,
-                      opacity: 0.98,
-                    }}
-                  />
-                );
-              }
-              return null;
-            })}
             {/* ВЗРЫВЫ: ЧАСТИЦЫ */}
             {explosionParticles.map((p) => (
               <div
@@ -1922,47 +2042,6 @@ export default function InGameScreen({
                 }}
               />
             ))}
-            {/* БОСС */}
-            {bossExists && boss && bossPhase !== 'exploding' && (
-              <>
-                <img
-                  src={BOSS_CONFIG.img}
-                  alt="boss"
-                  className="absolute select-none pointer-events-none"
-                  style={{
-                    left: `${boss.x}%`,
-                    bottom: `${boss.y}%`,
-                    width: `${BOSS_CONFIG.size}px`,
-                    height: `${BOSS_CONFIG.size}px`,
-                    transform: 'translateX(-50%)',
-                    zIndex: 20,
-                    userSelect: 'none',
-                    opacity: 1,
-                    filter: 'none',
-                  }}
-                />
-                {/* HP BAR только одна! */}
-                {bossPhase === 'active' && (
-                  <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
-                    <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
-                      <div
-                        className="h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0"
-                        style={{
-                          width: `${(bossHP / (params.boss?.bossHP || 30)) * 100}%`,
-                          transition: 'width 0.2s',
-                          zIndex: 1,
-                        }}
-                      />
-                      <span
-                        className="absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg"
-                        style={{ fontSize: '13px', letterSpacing: '2px', zIndex: 2 }}>
-                        Mothership
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
 
             <MobileControls
               onPointer={(arrowKey, isPressed, intensity = 1) => {
