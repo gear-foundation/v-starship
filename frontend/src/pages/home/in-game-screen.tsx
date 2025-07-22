@@ -98,11 +98,6 @@ export default function InGameScreen({
     bossPhaseRef.current = bossPhase;
   }, [bossPhase]);
 
-  // HP
-  const [enemyHP, setEnemyHP] = useState<{ [id: string]: number }>({});
-  const [asteroidHP, setAsteroidHP] = useState<{ [id: string]: number }>({});
-  const [mineHP, setMineHP] = useState<{ [id: string]: number }>({});
-
   // Ограничения движения
   const X_MIN = 0;
   const X_MAX = 100;
@@ -126,19 +121,10 @@ export default function InGameScreen({
 
   // Рефы для актуальных данных
 
-  const enemyHPRef = useRef(enemyHP);
-  const asteroidHPRef = useRef(asteroidHP);
-  const mineHPRef = useRef(mineHP);
+  const enemyHPRef = useRef<{ [id: string]: number }>({});
+  const asteroidHPRef = useRef<{ [id: string]: number }>({});
+  const mineHPRef = useRef<{ [id: string]: number }>({});
   const playerHPRef = useRef(playerHP);
-  useEffect(() => {
-    enemyHPRef.current = enemyHP;
-  }, [enemyHP]);
-  useEffect(() => {
-    asteroidHPRef.current = asteroidHP;
-  }, [asteroidHP]);
-  useEffect(() => {
-    mineHPRef.current = mineHP;
-  }, [mineHP]);
   useEffect(() => {
     playerHPRef.current = playerHP;
   }, [playerHP]);
@@ -644,6 +630,9 @@ export default function InGameScreen({
             GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
             Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
         });
+
+        // Initialize asteroid HP
+        asteroidHPRef.current[id] = GAME_CONFIG.ASTEROID_BASE_HP;
       };
 
       const update = () => {
@@ -718,6 +707,9 @@ export default function InGameScreen({
           y: 100,
           speed: MINE_SPEED,
         });
+
+        // Initialize mine HP
+        mineHPRef.current[id] = GAME_CONFIG.MINE_BASE_HP;
       };
 
       const update = () => {
@@ -921,6 +913,9 @@ export default function InGameScreen({
           phaseY,
           born: Date.now(),
         });
+
+        // Initialize enemy HP
+        enemyHPRef.current[id] = GAME_CONFIG.ENEMY_BASE_HP;
       };
 
       const update = () => {
@@ -1508,8 +1503,8 @@ export default function InGameScreen({
         // Враги
         for (let j = 0; j < newEnemies.length; j++) {
           const enemy = newEnemies[j];
-          if (Math.abs(laser.x - enemy.x) < PLAYER_HITBOX && Math.abs(laser.y - enemy.y) < PLAYER_HITBOX) {
-            newEnemyHP[enemy.id] = (newEnemyHP[enemy.id] || 1) - 1;
+          if (Math.abs(laser.x - enemy.x) < ENEMY_HITBOX && Math.abs(laser.y - enemy.y) < ENEMY_HITBOX) {
+            newEnemyHP[enemy.id] = newEnemyHP[enemy.id] - 1;
             if (newEnemyHP[enemy.id] <= 0) {
               spawnExplosion(enemy.x, enemy.y, 'enemy');
               newEnemies.splice(j, 1);
@@ -1521,7 +1516,6 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_ENEMY_HIT, soundVolumes.hitOnEnemy);
             }
             newPlayerLasers.splice(i, 1);
-            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1530,7 +1524,7 @@ export default function InGameScreen({
         for (let j = 0; j < newAsteroids.length; j++) {
           const ast = newAsteroids[j];
           if (Math.abs(laser.x - ast.x) < ASTEROID_HITBOX && Math.abs(laser.y - ast.y) < ASTEROID_HITBOX) {
-            newAsteroidHP[ast.id] = (newAsteroidHP[ast.id] || 1) - 1;
+            newAsteroidHP[ast.id] = newAsteroidHP[ast.id] - 1;
             if (newAsteroidHP[ast.id] <= 0) {
               spawnExplosion(ast.x, ast.y, 'asteroid');
               newAsteroids.splice(j, 1);
@@ -1542,7 +1536,6 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_ENEMY_HIT, soundVolumes.hitOnEnemy);
             }
             newPlayerLasers.splice(i, 1);
-            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1551,7 +1544,7 @@ export default function InGameScreen({
         for (let j = 0; j < newMines.length; j++) {
           const mine = newMines[j];
           if (Math.abs(laser.x - mine.x) < MINE_HITBOX && Math.abs(laser.y - mine.y) < MINE_HITBOX) {
-            newMineHP[mine.id] = (newMineHP[mine.id] || 1) - 1;
+            newMineHP[mine.id] = newMineHP[mine.id] - 1;
             if (newMineHP[mine.id] <= 0) {
               spawnExplosion(mine.x, mine.y, 'mine');
               newMines.splice(j, 1);
@@ -1561,7 +1554,6 @@ export default function InGameScreen({
               playSound(GAME_CONFIG.SOUND_MINE_EXPLOSION, soundVolumes.mineExplosion);
             }
             newPlayerLasers.splice(i, 1);
-            // removePlayerLaserFromRef(laser.id); // remove from new refs system
             break;
           }
         }
@@ -1594,7 +1586,7 @@ export default function InGameScreen({
         for (let j = 0; j < newEnemies.length; j++) {
           const enemy = newEnemies[j];
           if (Math.abs(rocket.x - enemy.x) < PLAYER_HITBOX && Math.abs(rocket.y - enemy.y) < PLAYER_HITBOX) {
-            newEnemyHP[enemy.id] = (newEnemyHP[enemy.id] || 1) - 3;
+            newEnemyHP[enemy.id] = newEnemyHP[enemy.id] - 3;
             if (newEnemyHP[enemy.id] <= 0) {
               spawnExplosion(enemy.x, enemy.y, 'enemy');
               newEnemies.splice(j, 1);
@@ -1758,9 +1750,9 @@ export default function InGameScreen({
       playerLasersDataRef.current = newPlayerLasers;
       playerRocketsDataRef.current = newPlayerRockets;
       enemyLasersDataRef.current = newEnemyLasers;
-      setEnemyHP(newEnemyHP);
-      setAsteroidHP(newAsteroidHP);
-      setMineHP(newMineHP);
+      enemyHPRef.current = newEnemyHP;
+      asteroidHPRef.current = newAsteroidHP;
+      mineHPRef.current = newMineHP;
 
       if (playerWasHit) setPlayerHP(playerHPNow);
 
