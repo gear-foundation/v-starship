@@ -1,9 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Account } from '@gear-js/react-hooks';
 import { Heart, Zap } from 'lucide-react';
@@ -18,24 +14,6 @@ import { SpaceBackground } from './space-background';
 import { useFps } from './use-fps';
 import { useGameTime } from './use-game-time';
 import { usePlaySound } from './use-play-sound';
-
-interface GameObject {
-  id: string;
-  x: number;
-  y: number;
-  rotation?: number;
-  speed?: number;
-  phase?: number;
-  rotationSpeed?: number;
-  x0?: number;
-  y0?: number;
-  ampX?: number;
-  phaseX?: number;
-  ampY?: number;
-  phaseY?: number;
-  born?: number;
-  size?: number;
-}
 
 interface InGameScreenProps {
   onBackToMenu: () => void;
@@ -100,56 +78,25 @@ export default function InGameScreen({
   // === ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ НА ВЕРХНЕМ УРОВНЕ ===
   // Основное состояние игры
   const [playerHP, setPlayerHP] = useState(GAME_CONFIG.INITIAL_PLAYER_HP);
-  const [playerX] = useState(50);
-  const [playerY] = useState(10);
+  const playerExists = playerHP > 0;
+
   const [showResults, setShowResults] = useState(false);
   const [isVictory, setIsVictory] = useState(true);
-  const [playerVARA] = useState(500);
   const [ptsEarned, setPtsEarned] = useState(0);
-  const [playerExists, setPlayerExists] = useState(true);
 
-  // === СОСТОЯНИЕ ДЛЯ БОССА ===
-  // Keep legacy state for compatibility with other systems that still rely on them
-  const [boss, setBoss] = useState<any>({
-    id: 'boss',
-    x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-    y: BOSS_CONFIG.trajectory.Y_APPEAR, // старт вне поля
-    speed: BOSS_CONFIG.speed,
-    x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-    y0: BOSS_CONFIG.trajectory.Y_TARGET, // рабочая позиция по Y
-    ampX: BOSS_CONFIG.trajectory.AMP_X,
-    phaseX: BOSS_CONFIG.trajectory.PHASE_X,
-    ampY: BOSS_CONFIG.trajectory.AMP_Y,
-    phaseY: BOSS_CONFIG.trajectory.PHASE_Y,
-    born: Date.now(),
-  });
   const [bossHP, setBossHP] = useState(0);
-  const [bossExists, setBossExists] = useState(false);
+  const bossExists = bossHP > 0;
+
   const [bossPhase, setBossPhase] = useState<'idle' | 'active' | 'exploding' | 'defeated' | 'appearing'>('idle');
-  const bossRef = useRef(boss);
   const bossHPRef = useRef(bossHP);
-  const bossExistsRef = useRef(bossExists);
   const bossPhaseRef = useRef(bossPhase);
-  useEffect(() => {
-    bossRef.current = boss;
-  }, [boss]);
+
   useEffect(() => {
     bossHPRef.current = bossHP;
   }, [bossHP]);
   useEffect(() => {
-    bossExistsRef.current = bossExists;
-  }, [bossExists]);
-  useEffect(() => {
     bossPhaseRef.current = bossPhase;
   }, [bossPhase]);
-
-  // Враги, астероиды, мины
-  const [enemies] = useState<GameObject[]>([]);
-
-  // Снаряды
-  const [playerLasers] = useState<any[]>([]);
-  const [playerRockets] = useState<any[]>([]);
-  const [enemyLasers] = useState<any[]>([]);
 
   // HP
   const [enemyHP, setEnemyHP] = useState<{ [id: string]: number }>({});
@@ -161,16 +108,6 @@ export default function InGameScreen({
   const X_MAX = 100;
   const Y_MIN = 5;
   const Y_MAX = 60;
-
-  // Рефы для координат игрока
-  const playerXRef = useRef(playerX);
-  const playerYRef = useRef(playerY);
-  useEffect(() => {
-    playerXRef.current = playerX;
-  }, [playerX]);
-  useEffect(() => {
-    playerYRef.current = playerY;
-  }, [playerY]);
 
   // Управление игроком
   const pressedKeys = useRef<{ [key: string]: boolean }>({});
@@ -186,40 +123,13 @@ export default function InGameScreen({
     frictionX: GAME_CONFIG.PLAYER_FRICTION_X,
     frictionY: GAME_CONFIG.PLAYER_FRICTION_Y,
   };
-  const [playerVX, setPlayerVX] = useState(0);
-  const [playerVY, setPlayerVY] = useState(0);
-
-  const playerVXRef = useRef(playerVX);
-  const playerVYRef = useRef(playerVY);
-  useEffect(() => {
-    playerVXRef.current = playerVX;
-  }, [playerVX]);
-  useEffect(() => {
-    playerVYRef.current = playerVY;
-  }, [playerVY]);
 
   // Рефы для актуальных данных
-  const enemiesRef = useRef(enemies);
 
-  const playerLasersRef = useRef(playerLasers);
-  const playerRocketsRef = useRef(playerRockets);
-  const enemyLasersRef = useRef(enemyLasers);
   const enemyHPRef = useRef(enemyHP);
   const asteroidHPRef = useRef(asteroidHP);
   const mineHPRef = useRef(mineHP);
   const playerHPRef = useRef(playerHP);
-  useEffect(() => {
-    enemiesRef.current = enemies;
-  }, [enemies]);
-  useEffect(() => {
-    playerLasersRef.current = playerLasers;
-  }, [playerLasers]);
-  useEffect(() => {
-    playerRocketsRef.current = playerRockets;
-  }, [playerRockets]);
-  useEffect(() => {
-    enemyLasersRef.current = enemyLasers;
-  }, [enemyLasers]);
   useEffect(() => {
     enemyHPRef.current = enemyHP;
   }, [enemyHP]);
@@ -454,8 +364,6 @@ export default function InGameScreen({
   // При завершении игры сбрасываем скорости и клавиши
   useEffect(() => {
     if (showResults) {
-      setPlayerVX(0);
-      setPlayerVY(0);
       pressedKeys.current = {};
       trackpadIntensity.current = {};
       // should entities be cleared here? no need any changes for now
@@ -907,8 +815,8 @@ export default function InGameScreen({
           .filter((booster) => {
             if (booster.y <= -BOOSTER_CONFIG.size) return false; // удаляем если вышел за пределы поля
 
-            const dx = booster.x - playerXRef.current;
-            const dy = booster.y - playerYRef.current;
+            const dx = booster.x - playerPositionRef.current.x;
+            const dy = booster.y - playerPositionRef.current.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < BOOSTER_HITBOX + PLAYER_HITBOX) {
@@ -1741,8 +1649,8 @@ export default function InGameScreen({
         for (let i = newEnemies.length - 1; i >= 0; i--) {
           const enemy = newEnemies[i];
           if (
-            Math.abs(enemy.x - playerXRef.current) < PLAYER_HITBOX + ENEMY_HITBOX &&
-            Math.abs(enemy.y - playerYRef.current) < PLAYER_HITBOX + ENEMY_HITBOX
+            Math.abs(enemy.x - playerPositionRef.current.x) < PLAYER_HITBOX + ENEMY_HITBOX &&
+            Math.abs(enemy.y - playerPositionRef.current.y) < PLAYER_HITBOX + ENEMY_HITBOX
           ) {
             playerWasHit = true;
             playerHPNow = Math.max(0, playerHPNow - 1);
@@ -1761,8 +1669,8 @@ export default function InGameScreen({
         for (let i = newAsteroids.length - 1; i >= 0; i--) {
           const ast = newAsteroids[i];
           if (
-            Math.abs(ast.x - playerXRef.current) < PLAYER_HITBOX + ASTEROID_HITBOX &&
-            Math.abs(ast.y - playerYRef.current) < PLAYER_HITBOX + ASTEROID_HITBOX
+            Math.abs(ast.x - playerPositionRef.current.x) < PLAYER_HITBOX + ASTEROID_HITBOX &&
+            Math.abs(ast.y - playerPositionRef.current.y) < PLAYER_HITBOX + ASTEROID_HITBOX
           ) {
             playerWasHit = true;
             playerHPNow = Math.max(0, playerHPNow - 1);
@@ -1781,8 +1689,8 @@ export default function InGameScreen({
         for (let i = newMines.length - 1; i >= 0; i--) {
           const mine = newMines[i];
           if (
-            Math.abs(mine.x - playerXRef.current) < PLAYER_HITBOX + MINE_HITBOX &&
-            Math.abs(mine.y - playerYRef.current) < PLAYER_HITBOX + MINE_HITBOX
+            Math.abs(mine.x - playerPositionRef.current.x) < PLAYER_HITBOX + MINE_HITBOX &&
+            Math.abs(mine.y - playerPositionRef.current.y) < PLAYER_HITBOX + MINE_HITBOX
           ) {
             playerWasHit = true;
             playerHPNow = Math.max(0, playerHPNow - 1);
@@ -1803,8 +1711,8 @@ export default function InGameScreen({
           // --- Лазеры и ракеты босса ---
           if (laser.type === 'bossLaser') {
             if (
-              Math.abs(laser.x - playerXRef.current) < PLAYER_HITBOX &&
-              Math.abs(laser.y - playerYRef.current) < PLAYER_HITBOX
+              Math.abs(laser.x - playerPositionRef.current.x) < PLAYER_HITBOX &&
+              Math.abs(laser.y - playerPositionRef.current.y) < PLAYER_HITBOX
             ) {
               playerWasHit = true;
               playerHPNow = Math.max(0, playerHPNow - 1);
@@ -1816,8 +1724,8 @@ export default function InGameScreen({
             }
           } else if (laser.type === 'bossRocket') {
             if (
-              Math.abs(laser.x - playerXRef.current) < PLAYER_HITBOX + 2 &&
-              Math.abs(laser.y - playerYRef.current) < PLAYER_HITBOX + 2
+              Math.abs(laser.x - playerPositionRef.current.x) < PLAYER_HITBOX + 2 &&
+              Math.abs(laser.y - playerPositionRef.current.y) < PLAYER_HITBOX + 2
             ) {
               playerWasHit = true;
               playerHPNow = Math.max(0, playerHPNow - 3);
@@ -1827,8 +1735,8 @@ export default function InGameScreen({
             }
           } else if (laser.type === 'enemyLaser') {
             if (
-              Math.abs(laser.x - playerXRef.current) < PLAYER_HITBOX &&
-              Math.abs(laser.y - playerYRef.current) < PLAYER_HITBOX
+              Math.abs(laser.x - playerPositionRef.current.x) < PLAYER_HITBOX &&
+              Math.abs(laser.y - playerPositionRef.current.y) < PLAYER_HITBOX
             ) {
               playerWasHit = true;
               playerHPNow = Math.max(0, playerHPNow - 1);
@@ -1853,13 +1761,13 @@ export default function InGameScreen({
       setEnemyHP(newEnemyHP);
       setAsteroidHP(newAsteroidHP);
       setMineHP(newMineHP);
+
       if (playerWasHit) setPlayerHP(playerHPNow);
-      // === ВЗРЫВ ИГРОКА ПРИ СМЕРТИ ===
+
       if (playerWasHit && playerHPNow === 0 && playerExists) {
-        // Визуальный и звуковой взрыв игрока
-        spawnExplosion(playerXRef.current, playerYRef.current, 'player');
-        setPlayerExists(false); // Скрываем игрока после взрыва
+        spawnExplosion(playerPositionRef.current.x, playerPositionRef.current.y, 'player');
       }
+
       if (enemiesKilledNow) setEnemiesKilled((prev) => prev + enemiesKilledNow);
       if (asteroidsKilledNow) setAsteroidsKilled((prev) => prev + asteroidsKilledNow);
       if (minesKilledNow) setMinesKilled((prev) => prev + minesKilledNow);
@@ -1934,8 +1842,8 @@ export default function InGameScreen({
     }
     // Появление босса после таймера
     if (gameTime === 0 && playerExists && !bossExists) {
-      setBoss((prev: any) => ({
-        ...prev,
+      bossDataRef.current = {
+        ...bossDataRef.current,
         y: BOSS_CONFIG.trajectory.Y_APPEAR,
         x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2, // центр по X
         y0: BOSS_CONFIG.trajectory.Y_APPEAR, // стартовая позиция по Y
@@ -1943,36 +1851,29 @@ export default function InGameScreen({
         phaseY: 0,
         ampY: BOSS_CONFIG.trajectory.AMP_Y,
         born: Date.now(),
-      }));
+      };
+
       setBossHP(params.boss?.bossHP || 30);
-      setBossExists(true);
-      setBossPhase('appearing'); // новая фаза появления
-      // Проигрываем звук появления
+      setBossPhase('appearing');
       playSound(BOSS_CONFIG.soundAppear, GAME_CONFIG.VOLUME_BOSS_APPEAR);
     }
-    // --- Больше не удаляем босса сразу после смерти игрока ---
-    // if (gameTime === 0 && !playerExists && bossExists) {
-    //   setBossExists(false);
-    //   setBossPhase('idle');
-    // }
   }, [gameTime, playerExists, bossExists, showResults]);
 
   // === ВЗРЫВ БОССА, ПОБЕДА, HUD ===
   // Победа после уничтожения босса: взрыв, задержка 2 сек, начисление PTS, показ Victory
   useEffect(() => {
-    if (bossPhase === 'exploding' && boss && bossExists) {
-      spawnExplosion(boss.x, boss.y, 'boss');
+    if (bossPhase === 'exploding' && bossDataRef.current && bossExists) {
+      spawnExplosion(bossDataRef.current.x, bossDataRef.current.y, 'boss');
       playSound(BOSS_CONFIG.soundExplosion, 1);
+
       setTimeout(() => {
         setPtsEarned((prev) => prev + BOSS_CONFIG.reward);
         setIsVictory(true);
         setShowResults(true);
-        setBossExists(false);
         setBossPhase('defeated');
-        setBoss((prev: any) => ({ ...prev, y: 120 })); // Просто скрываем босса за пределами поля
       }, 2000);
     }
-  }, [bossPhase, boss, bossExists]);
+  }, [bossPhase, bossExists]);
 
   return (
     <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
@@ -2070,7 +1971,7 @@ export default function InGameScreen({
         isVictory={isVictory}
         ptsEarned={ptsEarned}
         playerPTS={playerPTS}
-        playerVARA={playerVARA}
+        playerVARA={0}
         enemiesDefeated={enemiesKilled + asteroidsKilled + minesKilled}
         asteroidsKilled={asteroidsKilled}
         minesKilled={minesKilled}
