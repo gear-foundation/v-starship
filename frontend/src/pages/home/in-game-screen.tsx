@@ -356,7 +356,7 @@ export default function InGameScreen({
     }
   }, [showResults]);
 
-  // Initialize canvas and player image
+  // Initialize canvas and load images
   useEffect(() => {
     if (canvasRef.current && !canvasContextRef.current) {
       canvasContextRef.current = canvasRef.current.getContext('2d');
@@ -375,6 +375,33 @@ export default function InGameScreen({
       img.src = `/img/starship-${shipLevel}.png`;
       img.onload = () => {
         playerImageElement.current = img;
+      };
+    }
+
+    // Load asteroid image
+    if (!asteroidImageElement.current) {
+      const img = new Image();
+      img.src = '/img/asteroid.png';
+      img.onload = () => {
+        asteroidImageElement.current = img;
+      };
+    }
+
+    // Load mine image
+    if (!mineImageElement.current) {
+      const img = new Image();
+      img.src = '/img/mine.png';
+      img.onload = () => {
+        mineImageElement.current = img;
+      };
+    }
+
+    // Load booster image
+    if (!boosterImageElement.current) {
+      const img = new Image();
+      img.src = '/img/booster.png';
+      img.onload = () => {
+        boosterImageElement.current = img;
       };
     }
   }, [shipLevel]);
@@ -524,6 +551,9 @@ export default function InGameScreen({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContextRef = useRef<CanvasRenderingContext2D | null>(null);
   const playerImageElement = useRef<HTMLImageElement | null>(null);
+  const asteroidImageElement = useRef<HTMLImageElement | null>(null);
+  const mineImageElement = useRef<HTMLImageElement | null>(null);
+  const boosterImageElement = useRef<HTMLImageElement | null>(null);
 
   const getUpdatePlayerLasers = () => {
     let lastSpawnTime = performance.now();
@@ -687,7 +717,7 @@ export default function InGameScreen({
   };
 
   const asteroidsDataRef = useRef<
-    { id: string; x: number; y: number; speed: number; rotation: number; rotationSpeed: number }[]
+    { id: string; x: number; y: number; speed: number; rotation: number; rotationSpeed: number; size: number }[]
   >([]);
   const minesDataRef = useRef<{ id: string; x: number; y: number; speed: number }[]>([]);
 
@@ -711,6 +741,7 @@ export default function InGameScreen({
           rotationSpeed:
             GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN +
             Math.random() * (GAME_CONFIG.ASTEROID_ROTATION_SPEED_MAX - GAME_CONFIG.ASTEROID_ROTATION_SPEED_MIN),
+          size: ASTEROID_SIZE_MIN + Math.random() * (ASTEROID_SIZE_MAX - ASTEROID_SIZE_MIN),
         });
 
         // Initialize asteroid HP
@@ -739,37 +770,36 @@ export default function InGameScreen({
   };
 
   const renderAsteroids = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current || !asteroidImageElement.current) return;
 
-    const existingAsteroids = gameAreaRef.current.querySelectorAll('[data-asteroid-id]');
-    const currentAsteroidIds = new Set(asteroidsDataRef.current.map((asteroid) => asteroid.id));
-
-    existingAsteroids.forEach((element) => {
-      const asteroidId = element.getAttribute('data-asteroid-id');
-      if (!currentAsteroidIds.has(asteroidId!)) {
-        element.remove();
-      }
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     asteroidsDataRef.current.forEach((asteroid) => {
-      let asteroidElement = gameAreaRef.current!.querySelector(`[data-asteroid-id="${asteroid.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const asteroidX = (asteroid.x / 100) * canvasWidth;
+      const asteroidY = canvasHeight - (asteroid.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!asteroidElement) {
-        asteroidElement = document.createElement('div');
-        asteroidElement.setAttribute('data-asteroid-id', asteroid.id);
-        asteroidElement.className = 'absolute pointer-events-none';
-        asteroidElement.style.width = `${ASTEROID_SIZE_MIN + Math.random() * (ASTEROID_SIZE_MAX - ASTEROID_SIZE_MIN)}px`;
-        asteroidElement.style.height = asteroidElement.style.width;
-        asteroidElement.style.backgroundImage = 'url(/img/asteroid.png)';
-        asteroidElement.style.backgroundSize = 'contain';
-        asteroidElement.style.backgroundRepeat = 'no-repeat';
-        asteroidElement.style.backgroundPosition = 'center';
-        gameAreaRef.current!.appendChild(asteroidElement);
-      }
+      // Save context for rotation
+      ctx.save();
 
-      asteroidElement.style.bottom = `${asteroid.y}%`;
-      asteroidElement.style.left = `${asteroid.x}%`;
-      asteroidElement.style.transform = `rotate(${asteroid.rotation}deg)`;
+      // Move to asteroid position and rotate
+      ctx.translate(asteroidX, asteroidY);
+      ctx.rotate((asteroid.rotation * Math.PI) / 180);
+
+      // Draw asteroid image centered at the position
+      ctx.drawImage(
+        asteroidImageElement.current!,
+        -asteroid.size / 2, // Center horizontally
+        -asteroid.size / 2, // Center vertically
+        asteroid.size,
+        asteroid.size,
+      );
+
+      // Restore context
+      ctx.restore();
     });
   };
 
@@ -812,36 +842,26 @@ export default function InGameScreen({
   };
 
   const renderMines = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current || !mineImageElement.current) return;
 
-    const existingMines = gameAreaRef.current.querySelectorAll('[data-mine-id]');
-    const currentMineIds = new Set(minesDataRef.current.map((mine) => mine.id));
-
-    existingMines.forEach((element) => {
-      const mineId = element.getAttribute('data-mine-id');
-      if (!currentMineIds.has(mineId!)) {
-        element.remove();
-      }
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     minesDataRef.current.forEach((mine) => {
-      let mineElement = gameAreaRef.current!.querySelector(`[data-mine-id="${mine.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const mineX = (mine.x / 100) * canvasWidth;
+      const mineY = canvasHeight - (mine.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!mineElement) {
-        mineElement = document.createElement('div');
-        mineElement.setAttribute('data-mine-id', mine.id);
-        mineElement.className = 'absolute pointer-events-none';
-        mineElement.style.width = `${MINE_SIZE}px`;
-        mineElement.style.height = `${MINE_SIZE}px`;
-        mineElement.style.backgroundImage = 'url(/img/mine.png)';
-        mineElement.style.backgroundSize = 'contain';
-        mineElement.style.backgroundRepeat = 'no-repeat';
-        mineElement.style.backgroundPosition = 'center';
-        gameAreaRef.current!.appendChild(mineElement);
-      }
-
-      mineElement.style.bottom = `${mine.y}%`;
-      mineElement.style.left = `${mine.x}%`;
+      // Draw mine image centered at the position
+      ctx.drawImage(
+        mineImageElement.current!,
+        mineX - MINE_SIZE / 2, // Center horizontally
+        mineY - MINE_SIZE / 2, // Center vertically
+        MINE_SIZE,
+        MINE_SIZE,
+      );
     });
   };
 
@@ -910,38 +930,36 @@ export default function InGameScreen({
   };
 
   const renderBoosters = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current || !boosterImageElement.current) return;
 
-    const existingBoosters = gameAreaRef.current.querySelectorAll('[data-booster-id]');
-    const currentBoosterIds = new Set(boostersDataRef.current.map((booster) => booster.id));
-
-    existingBoosters.forEach((element) => {
-      const boosterId = element.getAttribute('data-booster-id');
-      if (!currentBoosterIds.has(boosterId!)) {
-        element.remove();
-      }
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     boostersDataRef.current.forEach((booster) => {
-      let boosterElement = gameAreaRef.current!.querySelector(`[data-booster-id="${booster.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const boosterX = (booster.x / 100) * canvasWidth;
+      const boosterY = canvasHeight - (booster.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!boosterElement) {
-        boosterElement = document.createElement('div');
-        boosterElement.setAttribute('data-booster-id', booster.id);
-        boosterElement.className = 'absolute pointer-events-none';
-        boosterElement.style.width = `${BOOSTER_CONFIG.size}px`;
-        boosterElement.style.height = `${BOOSTER_CONFIG.size}px`;
-        boosterElement.style.backgroundImage = 'url(/img/booster.png)';
-        boosterElement.style.backgroundSize = 'contain';
-        boosterElement.style.backgroundRepeat = 'no-repeat';
-        boosterElement.style.backgroundPosition = 'center';
-        boosterElement.style.zIndex = '1';
-        gameAreaRef.current!.appendChild(boosterElement);
-      }
+      // Save context for rotation
+      ctx.save();
 
-      boosterElement.style.bottom = `${booster.y}%`;
-      boosterElement.style.left = `${booster.x}%`;
-      boosterElement.style.transform = `translateX(-50%) rotate(${booster.rotation}deg)`;
+      // Move to booster position and rotate
+      ctx.translate(boosterX, boosterY);
+      ctx.rotate((booster.rotation * Math.PI) / 180);
+
+      // Draw booster image centered at the position
+      ctx.drawImage(
+        boosterImageElement.current!,
+        -BOOSTER_CONFIG.size / 2, // Center horizontally
+        -BOOSTER_CONFIG.size / 2, // Center vertically
+        BOOSTER_CONFIG.size,
+        BOOSTER_CONFIG.size,
+      );
+
+      // Restore context
+      ctx.restore();
     });
   };
 
