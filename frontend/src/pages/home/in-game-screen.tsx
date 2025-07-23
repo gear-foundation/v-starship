@@ -412,6 +412,15 @@ export default function InGameScreen({
         enemyImageElement.current = img;
       };
     }
+
+    // Load boss image
+    if (!bossImageElement.current) {
+      const img = new Image();
+      img.src = BOSS_CONFIG.img;
+      img.onload = () => {
+        bossImageElement.current = img;
+      };
+    }
   }, [shipLevel]);
 
   // Resize canvas to match game area
@@ -563,6 +572,7 @@ export default function InGameScreen({
   const mineImageElement = useRef<HTMLImageElement | null>(null);
   const boosterImageElement = useRef<HTMLImageElement | null>(null);
   const enemyImageElement = useRef<HTMLImageElement | null>(null);
+  const bossImageElement = useRef<HTMLImageElement | null>(null);
 
   const getUpdatePlayerLasers = () => {
     let lastSpawnTime = performance.now();
@@ -1283,84 +1293,32 @@ export default function InGameScreen({
   };
 
   const renderBoss = () => {
-    if (!gameAreaRef.current) return;
-
     const bossData = bossDataRef.current;
 
-    // Remove existing boss elements if they shouldn't exist
-    const existingBoss = gameAreaRef.current.querySelector('[data-boss-id]') as HTMLImageElement;
-    const existingHpBar = gameAreaRef.current.querySelector('[data-boss-hp-id]') as HTMLDivElement;
+    if (
+      canvasContextRef.current &&
+      canvasRef.current &&
+      bossImageElement.current &&
+      bossData.exists &&
+      (bossData.phase === 'appearing' || bossData.phase === 'active')
+    ) {
+      const canvas = canvasRef.current;
+      const ctx = canvasContextRef.current;
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
 
-    if (!bossData.exists || bossData.phase === 'exploding') {
-      if (existingBoss) existingBoss.remove();
-      if (existingHpBar) existingHpBar.remove();
-      return;
-    }
+      // Convert percentage coordinates to canvas coordinates
+      const bossX = (bossData.x / 100) * canvasWidth;
+      const bossY = canvasHeight - (bossData.y / 100) * canvasHeight; // Canvas Y is flipped
 
-    // Render boss image
-    let bossElement = existingBoss;
-    if (!bossElement) {
-      bossElement = document.createElement('img');
-      bossElement.setAttribute('data-boss-id', bossData.id);
-      bossElement.src = BOSS_CONFIG.img;
-      bossElement.alt = 'boss';
-      bossElement.className = 'absolute select-none pointer-events-none';
-      bossElement.style.width = `${BOSS_CONFIG.size}px`;
-      bossElement.style.height = `${BOSS_CONFIG.size}px`;
-      bossElement.style.transform = 'translateX(-50%)';
-      bossElement.style.zIndex = '20';
-      bossElement.style.userSelect = 'none';
-      bossElement.style.opacity = '1';
-      bossElement.style.filter = 'none';
-      gameAreaRef.current.appendChild(bossElement);
-    }
-
-    bossElement.style.left = `${bossData.x}%`;
-    bossElement.style.bottom = `${bossData.y}%`;
-
-    // Render HP bar only in 'active' phase
-    if (bossData.phase === 'active') {
-      let hpBarElement = existingHpBar;
-      if (!hpBarElement) {
-        hpBarElement = document.createElement('div');
-        hpBarElement.setAttribute('data-boss-hp-id', 'boss-hp');
-        hpBarElement.className = 'absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center';
-
-        const hpContainer = document.createElement('div');
-        hpContainer.className =
-          'w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative';
-
-        const hpFill = document.createElement('div');
-        hpFill.className = 'h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0';
-        hpFill.style.transition = 'width 0.2s';
-        hpFill.style.zIndex = '1';
-
-        const hpLabel = document.createElement('span');
-        hpLabel.className =
-          'absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg';
-        hpLabel.style.fontSize = '13px';
-        hpLabel.style.letterSpacing = '2px';
-        hpLabel.style.zIndex = '2';
-        hpLabel.textContent = 'Mothership';
-
-        hpContainer.appendChild(hpFill);
-        hpContainer.appendChild(hpLabel);
-        hpBarElement.appendChild(hpContainer);
-        gameAreaRef.current.appendChild(hpBarElement);
-      }
-
-      // Update HP bar width
-      const maxHP = params.boss?.bossHP || 30;
-      const hpPercentage = (bossData.hp / maxHP) * 100;
-      const hpFill = hpBarElement.querySelector('.bg-gradient-to-r') as HTMLDivElement;
-      if (hpFill) {
-        hpFill.style.width = `${hpPercentage}%`;
-      }
-    } else {
-      // Remove HP bar if not in active phase
-      if (existingHpBar) {
-        existingHpBar.remove();
-      }
+      // Draw boss image centered at the position
+      ctx.drawImage(
+        bossImageElement.current,
+        bossX - BOSS_CONFIG.size / 2, // Center horizontally
+        bossY - BOSS_CONFIG.size / 2, // Center vertically
+        BOSS_CONFIG.size,
+        BOSS_CONFIG.size,
+      );
     }
   };
 
@@ -2011,12 +1969,31 @@ export default function InGameScreen({
             ref={gameAreaRef}
             id="game-area"
             className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
-            {/* Canvas for rendering player */}
             <canvas
               ref={canvasRef}
               className="absolute top-0 left-0 w-full h-full pointer-events-none"
               style={{ zIndex: 10 }}
             />
+
+            {bossPhase === 'active' && (
+              <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
+                <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
+                  <div
+                    className="h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0"
+                    style={{
+                      width: `${(bossHP / (params.boss?.bossHP || 30)) * 100}%`,
+                      transition: 'width 0.2s',
+                      zIndex: 1,
+                    }}
+                  />
+                  <span
+                    className="absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg"
+                    style={{ fontSize: '13px', letterSpacing: '2px', zIndex: 2 }}>
+                    Mothership
+                  </span>
+                </div>
+              </div>
+            )}
 
             <MobileControls
               onPointer={(arrowKey, isPressed, intensity = 1) => {
