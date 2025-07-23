@@ -484,6 +484,13 @@ export default function InGameScreen({
     };
   };
 
+  const clearCanvas = () => {
+    if (!canvasContextRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
   const renderPlayer = () => {
     if (!canvasContextRef.current || !canvasRef.current || !playerImageElement.current) return;
     if (!playerExists || playerHP <= 0) return;
@@ -501,10 +508,6 @@ export default function InGameScreen({
     // Player position in percentage (0-100), convert to canvas pixels
     const playerX = (playerPositionRef.current.x / 100) * canvasWidth;
     const playerY = canvasHeight - (playerPositionRef.current.y / 100) * canvasHeight; // Canvas Y is flipped
-
-    // Clear the previous player area (with some padding for movement)
-    const clearSize = playerSize + 20;
-    ctx.clearRect(playerX - clearSize / 2, playerY - clearSize / 2, clearSize, clearSize);
 
     // Draw the player image centered at the position
     ctx.drawImage(
@@ -567,39 +570,45 @@ export default function InGameScreen({
   };
 
   const renderPlayerLasers = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current) return;
 
-    const existingLasers = gameAreaRef.current.querySelectorAll('[data-laser-id]');
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
-    const currentLaserIds = new Set(playerLasersDataRef.current.map((laser) => laser.id));
-
-    existingLasers.forEach((el) => {
-      const id = el.getAttribute('data-laser-id');
-
-      if (id && !currentLaserIds.has(id)) el.remove();
-    });
+    // Clear existing laser areas (we'll track previous positions later if needed)
+    // For now, we'll rely on the clear areas from other entities
 
     playerLasersDataRef.current.forEach((laser) => {
-      let laserElement = gameAreaRef.current!.querySelector(`[data-laser-id="${laser.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const laserX = (laser.x / 100) * canvasWidth;
+      const laserY = canvasHeight - (laser.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!laserElement) {
-        laserElement = document.createElement('div');
-        laserElement.setAttribute('data-laser-id', laser.id);
-        laserElement.className = 'absolute';
-        laserElement.style.width = `${PLAYER_LASER_WIDTH}px`;
-        laserElement.style.height = `${PLAYER_LASER_HEIGHT}px`;
-        laserElement.style.transform = 'translate(-50%, 0)';
-        laserElement.style.zIndex = '5';
-        gameAreaRef.current!.appendChild(laserElement);
+      // Set laser color based on booster status
+      const laserColor = activeBoosterRef.current ? PLAYER_LASER_COLOR_BOOST : PLAYER_LASER_COLOR;
+      ctx.fillStyle = laserColor;
+
+      // Draw laser as a rectangle
+      ctx.fillRect(
+        laserX - PLAYER_LASER_WIDTH / 2, // Center horizontally
+        laserY - PLAYER_LASER_HEIGHT / 2, // Center vertically
+        PLAYER_LASER_WIDTH,
+        PLAYER_LASER_HEIGHT,
+      );
+
+      // Add glow effect (simplified)
+      if (activeBoosterRef.current) {
+        ctx.shadowColor = laserColor;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(
+          laserX - PLAYER_LASER_WIDTH / 2,
+          laserY - PLAYER_LASER_HEIGHT / 2,
+          PLAYER_LASER_WIDTH,
+          PLAYER_LASER_HEIGHT,
+        );
+        ctx.shadowBlur = 0; // Reset shadow
       }
-
-      laserElement.style.left = `${laser.x}%`;
-      laserElement.style.bottom = `${laser.y}%`;
-      laserElement.style.backgroundColor = activeBoosterRef.current ? PLAYER_LASER_COLOR_BOOST : PLAYER_LASER_COLOR;
-
-      laserElement.style.boxShadow = activeBoosterRef.current
-        ? GAME_CONFIG.PLAYER_LASER_GLOW_BOOST
-        : GAME_CONFIG.PLAYER_LASER_GLOW;
     });
   };
 
@@ -645,35 +654,35 @@ export default function InGameScreen({
   };
 
   const renderPlayerRockets = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current) return;
 
-    const existingRockets = gameAreaRef.current.querySelectorAll('[data-rocket-id]');
-
-    const currentRocketIds = new Set(playerRocketsDataRef.current.map((rocket) => rocket.id));
-    existingRockets.forEach((el) => {
-      const id = el.getAttribute('data-rocket-id');
-      if (id && !currentRocketIds.has(id)) el.remove();
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     playerRocketsDataRef.current.forEach((rocket) => {
-      let rocketElement = gameAreaRef.current!.querySelector(`[data-rocket-id="${rocket.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const rocketX = (rocket.x / 100) * canvasWidth;
+      const rocketY = canvasHeight - (rocket.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!rocketElement) {
-        rocketElement = document.createElement('div');
-        rocketElement.setAttribute('data-rocket-id', rocket.id);
-        rocketElement.className = 'absolute rounded-full shadow-lg';
-        rocketElement.style.width = `${PLAYER_ROCKET_WIDTH}px`;
-        rocketElement.style.height = `${PLAYER_ROCKET_HEIGHT}px`;
-        rocketElement.style.transform = 'translateX(-50%)';
-        rocketElement.style.zIndex = '5';
-        rocketElement.style.opacity = '0.95';
-        gameAreaRef.current!.appendChild(rocketElement);
-      }
+      // Set rocket color
+      ctx.fillStyle = PLAYER_ROCKET_COLOR;
 
-      rocketElement.style.left = `${rocket.x}%`;
-      rocketElement.style.bottom = `${rocket.y}%`;
-      rocketElement.style.backgroundColor = PLAYER_ROCKET_COLOR;
-      rocketElement.style.boxShadow = GAME_CONFIG.PLAYER_ROCKET_GLOW;
+      // Draw rocket as a circle (simulating the rounded-full class)
+      const radius = Math.min(PLAYER_ROCKET_WIDTH, PLAYER_ROCKET_HEIGHT) / 2;
+
+      ctx.beginPath();
+      ctx.arc(rocketX, rocketY, radius, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Add glow effect
+      ctx.shadowColor = PLAYER_ROCKET_COLOR;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(rocketX, rocketY, radius, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0; // Reset shadow
     });
   };
 
@@ -1514,6 +1523,7 @@ export default function InGameScreen({
       updateBossRockets(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
       updateExplosions(); // no need if !explosionsDataRef.current.length
 
+      clearCanvas();
       renderPlayer();
       renderPlayerLasers();
       renderPlayerRockets();
