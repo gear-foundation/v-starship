@@ -5,7 +5,7 @@ import { GAME_CONFIG } from './game-config';
 const UPDATE_INTERVAL_MS = 1000;
 
 function useGameTime() {
-  const [gameTime, setGameTime] = useState(GAME_CONFIG.GAME_DURATION);
+  const [gameTime, setGameTime] = useState(5);
   const lastTimeRef = useRef(performance.now());
 
   const updateGameTime = (currentTime: number) => {

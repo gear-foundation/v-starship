@@ -11,6 +11,7 @@ import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
 import { SpaceBackground } from './space-background';
+import { useBackgroundMusic } from './use-background-music';
 import { useFps } from './use-fps';
 import { useGameTime } from './use-game-time';
 import { usePlaySound } from './use-play-sound';
@@ -176,10 +177,8 @@ export default function InGameScreen({
   const boosterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // === ЗВУКИ ===
+  useBackgroundMusic(!showResults);
   const playSound = usePlaySound();
-
-  // Фоновая музыка и звуки событий
-  const bgMusicRef = useRef<HTMLAudioElement | null>(null);
 
   /**
    * Централизованные уровни громкости для всех игровых звуков.
@@ -198,32 +197,6 @@ export default function InGameScreen({
     hitOnEnemy: GAME_CONFIG.VOLUME_ENEMY_HIT,
     boosterActivate: GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE,
   };
-
-  // Фоновая музыка — запускается при старте игры, останавливается при завершении
-  useEffect(() => {
-    if (showResults) {
-      if (bgMusicRef.current) {
-        bgMusicRef.current.pause();
-        bgMusicRef.current.currentTime = 0;
-      }
-      return;
-    }
-
-    if (!bgMusicRef.current) {
-      bgMusicRef.current = new Audio(GAME_CONFIG.SOUND_BG_MUSIC);
-      bgMusicRef.current.loop = true;
-      bgMusicRef.current.volume = soundVolumes.bgMusic;
-      bgMusicRef.current.play().catch(() => {});
-    }
-
-    return () => {
-      if (bgMusicRef.current) {
-        bgMusicRef.current.pause();
-        bgMusicRef.current.currentTime = 0;
-        bgMusicRef.current = null;
-      }
-    };
-  }, [showResults, soundVolumes.bgMusic]);
 
   // Вспомогательная функция для генерации частиц
   function spawnExplosionParticles(x: number, y: number, type: 'enemy' | 'asteroid' | 'mine' | 'player' | 'boss') {
