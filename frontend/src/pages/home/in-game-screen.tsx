@@ -44,7 +44,6 @@ const PLAYER_LASER_HEIGHT = GAME_CONFIG.PLAYER_LASER_HEIGHT;
 const PLAYER_ROCKET_WIDTH = GAME_CONFIG.PLAYER_ROCKET_WIDTH;
 const PLAYER_ROCKET_HEIGHT = GAME_CONFIG.PLAYER_ROCKET_HEIGHT;
 const ENEMY_LASER_WIDTH = GAME_CONFIG.ENEMY_LASER_WIDTH;
-const ENEMY_LASER_HEIGHT = GAME_CONFIG.ENEMY_LASER_HEIGHT;
 
 const ASTEROID_SPEED_MIN = GAME_CONFIG.ASTEROID_SPEED_MIN;
 const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
@@ -404,6 +403,15 @@ export default function InGameScreen({
         boosterImageElement.current = img;
       };
     }
+
+    // Load enemy image
+    if (!enemyImageElement.current) {
+      const img = new Image();
+      img.src = '/img/alien-ship.png';
+      img.onload = () => {
+        enemyImageElement.current = img;
+      };
+    }
   }, [shipLevel]);
 
   // Resize canvas to match game area
@@ -554,6 +562,7 @@ export default function InGameScreen({
   const asteroidImageElement = useRef<HTMLImageElement | null>(null);
   const mineImageElement = useRef<HTMLImageElement | null>(null);
   const boosterImageElement = useRef<HTMLImageElement | null>(null);
+  const enemyImageElement = useRef<HTMLImageElement | null>(null);
 
   const getUpdatePlayerLasers = () => {
     let lastSpawnTime = performance.now();
@@ -1048,38 +1057,26 @@ export default function InGameScreen({
   };
 
   const renderEnemies = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current || !enemyImageElement.current) return;
 
-    const existingEnemies = gameAreaRef.current.querySelectorAll('[data-enemy-id]');
-    const currentEnemyIds = new Set(enemiesDataRef.current.map((enemy) => enemy.id));
-
-    existingEnemies.forEach((element) => {
-      const enemyId = element.getAttribute('data-enemy-id');
-      if (!currentEnemyIds.has(enemyId!)) {
-        element.remove();
-      }
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     enemiesDataRef.current.forEach((enemy) => {
-      let enemyElement = gameAreaRef.current!.querySelector(`[data-enemy-id="${enemy.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const enemyX = (enemy.x / 100) * canvasWidth;
+      const enemyY = canvasHeight - (enemy.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!enemyElement) {
-        enemyElement = document.createElement('div');
-        enemyElement.setAttribute('data-enemy-id', enemy.id);
-        enemyElement.className = 'absolute pointer-events-none';
-        enemyElement.style.width = `${ENEMY_SIZE}px`;
-        enemyElement.style.height = `${ENEMY_SIZE}px`;
-        enemyElement.style.backgroundImage = 'url(/img/alien-ship.png)';
-        enemyElement.style.backgroundSize = 'contain';
-        enemyElement.style.backgroundRepeat = 'no-repeat';
-        enemyElement.style.backgroundPosition = 'center';
-        enemyElement.style.zIndex = '2';
-        gameAreaRef.current!.appendChild(enemyElement);
-      }
-
-      enemyElement.style.bottom = `${enemy.y}%`;
-      enemyElement.style.left = `${enemy.x}%`;
-      enemyElement.style.transform = 'translateX(-50%)';
+      // Draw enemy image centered at the position
+      ctx.drawImage(
+        enemyImageElement.current!,
+        enemyX - ENEMY_SIZE / 2, // Center horizontally
+        enemyY - ENEMY_SIZE / 2, // Center vertically
+        ENEMY_SIZE,
+        ENEMY_SIZE,
+      );
     });
   };
 
@@ -1137,60 +1134,59 @@ export default function InGameScreen({
   };
 
   const renderEnemyLasers = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current) return;
 
-    const existingLasers = gameAreaRef.current.querySelectorAll('[data-enemy-laser-id]');
-    const currentLaserIds = new Set(enemyLasersDataRef.current.map((laser) => laser.id));
-
-    existingLasers.forEach((element) => {
-      const laserId = element.getAttribute('data-enemy-laser-id');
-      if (!currentLaserIds.has(laserId!)) {
-        element.remove();
-      }
-    });
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
     enemyLasersDataRef.current.forEach((laser) => {
-      let laserElement = gameAreaRef.current!.querySelector(`[data-enemy-laser-id="${laser.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const laserX = (laser.x / 100) * canvasWidth;
+      const laserY = canvasHeight - (laser.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!laserElement) {
-        laserElement = document.createElement('div');
-        laserElement.setAttribute('data-enemy-laser-id', laser.id);
-        laserElement.className = 'absolute pointer-events-none';
+      // Handle different laser types
+      if (laser.type === 'bossLaser') {
+        // Boss laser
+        ctx.fillStyle = BOSS_CONFIG.laserColor;
 
-        // Conditional logic for boss types
-        if (laser.type === 'bossLaser') {
-          laserElement.style.width = `${BOSS_CONFIG.laserWidth}px`;
-          laserElement.style.height = `${BOSS_CONFIG.laserHeight}px`;
-          laserElement.style.background = BOSS_CONFIG.laserColor;
-          laserElement.style.boxShadow = GAME_CONFIG.BOSS_LASER_GLOW;
-          laserElement.style.borderRadius = '50%';
-          laserElement.style.opacity = '0.95';
-          laserElement.style.zIndex = '6';
-        } else if (laser.type === 'bossRocket') {
-          laserElement.style.width = `${BOSS_CONFIG.rocketWidth}px`;
-          laserElement.style.height = `${BOSS_CONFIG.rocketHeight}px`;
-          laserElement.style.background = BOSS_CONFIG.rocketColor;
-          laserElement.style.boxShadow = GAME_CONFIG.BOSS_ROCKET_GLOW;
-          laserElement.style.border = BOSS_CONFIG.rocketBorder;
-          laserElement.style.borderRadius = '50%';
-          laserElement.style.opacity = '0.98';
-          laserElement.style.zIndex = '7';
-        } else {
-          // Default enemy laser styling
-          laserElement.style.width = `${ENEMY_LASER_WIDTH}px`;
-          laserElement.style.height = `${ENEMY_LASER_HEIGHT}px`;
-          laserElement.style.backgroundColor = '#ff6b6b';
-          laserElement.style.borderRadius = '50%';
-          laserElement.style.boxShadow = '0 0 10px #ff6b6b';
-          laserElement.style.zIndex = '3';
-        }
+        // Add glow effect
+        ctx.shadowColor = BOSS_CONFIG.laserColor;
+        ctx.shadowBlur = 10;
 
-        gameAreaRef.current!.appendChild(laserElement);
+        ctx.beginPath();
+        ctx.arc(laserX, laserY, BOSS_CONFIG.laserWidth / 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.shadowBlur = 0; // Reset shadow
+      } else if (laser.type === 'bossRocket') {
+        // Boss rocket
+        ctx.fillStyle = BOSS_CONFIG.rocketColor;
+
+        // Add glow effect
+        ctx.shadowColor = BOSS_CONFIG.rocketColor;
+        ctx.shadowBlur = 8;
+
+        ctx.beginPath();
+        ctx.arc(laserX, laserY, BOSS_CONFIG.rocketWidth / 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.shadowBlur = 0; // Reset shadow
+      } else {
+        // Default enemy laser
+        ctx.fillStyle = '#ff6b6b';
+
+        // Add glow effect
+        ctx.shadowColor = '#ff6b6b';
+        ctx.shadowBlur = 10;
+
+        ctx.beginPath();
+        ctx.arc(laserX, laserY, ENEMY_LASER_WIDTH / 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.shadowBlur = 0; // Reset shadow
       }
-
-      laserElement.style.bottom = `${laser.y}%`;
-      laserElement.style.left = `${laser.x}%`;
-      laserElement.style.transform = 'translateX(-50%)';
     });
   };
 
