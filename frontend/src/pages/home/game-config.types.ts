@@ -38,8 +38,7 @@ export interface ShipLevel {
   enemyInterval: number;
   asteroidInterval: number;
   mineInterval: number;
-  // === Параметры босса для этого уровня ===
-  boss?: BossLevelConfig;
+  boss: BossLevelConfig;
 }
 
 // Конфиг для параметров босса на уровне
@@ -107,7 +106,7 @@ export interface BossTrajectoryConfig {
 // Общая конфигурация игры
 export interface GameConfig {
   // Игровые параметры
-  GAME_DURATION: number; // сек
+  GAME_DURATION_MS: number;
   INITIAL_PLAYER_HP: number;
   /**
    * Базовое количество HP (жизней) для обычных врагов
@@ -207,7 +206,7 @@ export interface GameConfig {
   // Конфигурации подсистем
   GAME_BG_CONFIG: GameBGConfig;
   BOOSTER_CONFIG: BoosterConfig;
-  SHIP_LEVELS: [Record<string, never>, ...ShipLevel[]]; // [0-10], 0 - пустой объект
+  SHIP_LEVELS: ShipLevel[];
 
   // Цвета снарядов
   PLAYER_LASER_COLOR: string;

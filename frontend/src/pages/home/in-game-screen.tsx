@@ -53,7 +53,7 @@ const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
 const BOOSTER_CONFIG = GAME_CONFIG.BOOSTER_CONFIG;
 
 const getBoosterSpawnTimings = () => {
-  const duration = GAME_CONFIG.GAME_DURATION;
+  const duration = GAME_CONFIG.GAME_DURATION_MS;
   const minT = duration * 0.1;
   const maxT = duration * 0.9;
   const arr: number[] = [];
@@ -1803,7 +1803,8 @@ export default function InGameScreen({
   }, []);
 
   // Форматирование времени для HUD
-  const formatTime = (seconds: number) => {
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;

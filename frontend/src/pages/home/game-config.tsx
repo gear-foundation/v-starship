@@ -62,8 +62,17 @@ export const BOOSTER_CONFIG: BoosterConfig = {
 
 // === ПАРАМЕТРЫ КОРАБЛЯ ПО УРОВНЯМ ===
 
-export const SHIP_LEVELS: [Record<string, never>, ...ShipLevel[]] = [
-  {},
+export const SHIP_LEVELS: ShipLevel[] = [
+  {
+    lasers: 0,
+    laserRate: 0,
+    rockets: 0,
+    rocketRate: 0,
+    enemyInterval: 0,
+    asteroidInterval: 0,
+    mineInterval: 0,
+    boss: { laserCount: 0, laserRate: 0, rocketCount: 0, rocketRate: 0, bossHP: 0 },
+  },
   {
     lasers: 1,
     laserRate: 500,
@@ -206,8 +215,8 @@ export const BOSS_CONFIG = {
 // === ОСНОВНАЯ КОНФИГУРАЦИЯ ИГРЫ ===
 export const GAME_CONFIG: GameConfig = {
   // Игровые параметры
-  GAME_DURATION: 60, // 1 минута
-  INITIAL_PLAYER_HP: 3,
+  GAME_DURATION_MS: 60000, // 1 минута
+  INITIAL_PLAYER_HP: 100,
   ENEMY_BASE_HP: 3, // HP обычного врага
   ASTEROID_BASE_HP: 3, // HP астероида
   MINE_BASE_HP: 1, // HP мины
