@@ -356,6 +356,52 @@ export default function InGameScreen({
     }
   }, [showResults]);
 
+  // Initialize canvas and player image
+  useEffect(() => {
+    if (canvasRef.current && !canvasContextRef.current) {
+      canvasContextRef.current = canvasRef.current.getContext('2d');
+    }
+
+    // Load player image
+    if (!playerImageElement.current) {
+      const img = new Image();
+      img.src = `/img/starship-${shipLevel}.png`;
+      img.onload = () => {
+        playerImageElement.current = img;
+      };
+    } else if (playerImageElement.current.src !== `/img/starship-${shipLevel}.png`) {
+      // Reload image if ship level changed
+      const img = new Image();
+      img.src = `/img/starship-${shipLevel}.png`;
+      img.onload = () => {
+        playerImageElement.current = img;
+      };
+    }
+  }, [shipLevel]);
+
+  // Resize canvas to match game area
+  useEffect(() => {
+    const resizeCanvas = () => {
+      if (canvasRef.current && gameAreaRef.current) {
+        const gameArea = gameAreaRef.current;
+        const rect = gameArea.getBoundingClientRect();
+        canvasRef.current.width = rect.width;
+        canvasRef.current.height = rect.height;
+      }
+    };
+
+    resizeCanvas();
+
+    const resizeObserver = new ResizeObserver(resizeCanvas);
+    if (gameAreaRef.current) {
+      resizeObserver.observe(gameAreaRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   // === ПАРАМЕТРЫ КОРАБЛЯ ПО УРОВНЯМ ===
   const SHIP_LEVELS = GAME_CONFIG.SHIP_LEVELS;
   const safeLevel = Math.max(1, Math.min(10, shipLevel || 1));
@@ -369,7 +415,6 @@ export default function InGameScreen({
 
   const playerPositionRef = useRef({ x: 50, y: 10 });
   const playerVelocityRef = useRef({ x: 0, y: 0 });
-  const playerImageRef = useRef<HTMLImageElement>(null);
 
   const getUpdatePlayerPosition = () => {
     const UPDATE_INTERVAL_MS = 16; // 60 FPS - legacy
@@ -440,14 +485,42 @@ export default function InGameScreen({
   };
 
   const renderPlayer = () => {
-    if (!playerImageRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current || !playerImageElement.current) return;
+    if (!playerExists || playerHP <= 0) return;
 
-    playerImageRef.current.style.bottom = `${playerPositionRef.current.y}%`;
-    playerImageRef.current.style.left = `${playerPositionRef.current.x}%`;
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+
+    // Calculate player size based on ship level
+    const playerSize = PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1);
+
+    // Convert percentage coordinates to canvas coordinates
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Player position in percentage (0-100), convert to canvas pixels
+    const playerX = (playerPositionRef.current.x / 100) * canvasWidth;
+    const playerY = canvasHeight - (playerPositionRef.current.y / 100) * canvasHeight; // Canvas Y is flipped
+
+    // Clear the previous player area (with some padding for movement)
+    const clearSize = playerSize + 20;
+    ctx.clearRect(playerX - clearSize / 2, playerY - clearSize / 2, clearSize, clearSize);
+
+    // Draw the player image centered at the position
+    ctx.drawImage(
+      playerImageElement.current,
+      playerX - playerSize / 2, // Center horizontally
+      playerY - playerSize / 2, // Center vertically
+      playerSize,
+      playerSize,
+    );
   };
 
   const playerLasersDataRef = useRef<{ id: string; x: number; y: number }[]>([]);
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const playerImageElement = useRef<HTMLImageElement | null>(null);
 
   const getUpdatePlayerLasers = () => {
     let lastSpawnTime = performance.now();
@@ -1914,30 +1987,12 @@ export default function InGameScreen({
             ref={gameAreaRef}
             id="game-area"
             className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
-            {/* Корабль игрока */}
-            {playerExists && playerHP > 0 && (
-              <>
-                <img
-                  src={`/img/starship-${shipLevel}.png`}
-                  alt="player"
-                  width={PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}
-                  height={PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}
-                  draggable={false}
-                  className="absolute select-none pointer-events-none"
-                  style={{
-                    width: `${PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                    height: `${PLAYER_SHIP_BASE_SIZE + PLAYER_SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                    transform: 'translateX(-50%)',
-                    zIndex: 10,
-                    userSelect: 'none',
-                    opacity: 1,
-                    background: 'none',
-                    boxShadow: 'none',
-                  }}
-                  ref={playerImageRef}
-                />
-              </>
-            )}
+            {/* Canvas for rendering player */}
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 10 }}
+            />
 
             <MobileControls
               onPointer={(arrowKey, isPressed, intensity = 1) => {
