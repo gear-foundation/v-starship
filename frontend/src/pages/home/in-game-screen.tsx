@@ -1420,41 +1420,41 @@ export default function InGameScreen({
 
   // Particles render function
   const renderExplosionParticles = () => {
-    if (!gameAreaRef.current) return;
+    if (!canvasContextRef.current || !canvasRef.current) return;
 
-    const existingParticles = gameAreaRef.current.querySelectorAll('[data-particle-id]');
-    const currentParticleIds = new Set(particlesDataRef.current.map((p) => p.id));
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
-    // Remove particles that no longer exist
-    existingParticles.forEach((element) => {
-      const particleId = element.getAttribute('data-particle-id');
-      if (!currentParticleIds.has(particleId!)) {
-        element.remove();
-      }
-    });
-
-    // Create/update existing particles
     particlesDataRef.current.forEach((particle) => {
-      let particleElement = gameAreaRef.current!.querySelector(`[data-particle-id="${particle.id}"]`) as HTMLDivElement;
+      // Convert percentage coordinates to canvas coordinates
+      const particleX = (particle.x / 100) * canvasWidth;
+      const particleY = canvasHeight - (particle.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      if (!particleElement) {
-        particleElement = document.createElement('div');
-        particleElement.setAttribute('data-particle-id', particle.id);
-        particleElement.className = 'absolute pointer-events-none';
-        particleElement.style.width = `${particle.size}px`;
-        particleElement.style.height = `${particle.size}px`;
-        particleElement.style.background = particle.color;
-        particleElement.style.borderRadius = '50%';
-        particleElement.style.opacity = '0.7';
-        particleElement.style.zIndex = '30';
-        particleElement.style.transform = 'translateX(-50%) translateY(50%)';
-        particleElement.style.boxShadow = `0 0 8px 2px ${particle.color}`;
-        particleElement.style.transition = 'opacity 0.2s';
-        gameAreaRef.current!.appendChild(particleElement);
-      }
+      // Calculate opacity based on particle life
+      const elapsedTime = Date.now() - particle.created;
+      const lifeProgress = elapsedTime / particle.life;
+      const opacity = Math.max(0, 1 - lifeProgress) * 0.7; // Base opacity is 0.7
 
-      particleElement.style.left = `${particle.x}%`;
-      particleElement.style.bottom = `${particle.y}%`;
+      if (opacity <= 0) return; // Skip particles that are fully faded
+
+      // Set particle color with opacity
+      ctx.fillStyle = particle.color;
+      ctx.globalAlpha = opacity;
+
+      // Add glow effect
+      ctx.shadowColor = particle.color;
+      ctx.shadowBlur = 8;
+
+      // Draw particle as a circle
+      ctx.beginPath();
+      ctx.arc(particleX, particleY, particle.size / 2, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Reset shadow and alpha
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
     });
   };
 
