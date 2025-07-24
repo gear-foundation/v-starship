@@ -793,7 +793,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (currentTime - lastSpawnTime < params.mineInterval) return;
+        if (bossDataRef.current || currentTime - lastSpawnTime < params.mineInterval) return;
         lastSpawnTime = currentTime;
 
         const id = `mine_${Math.random().toString(36).slice(2)}`;
@@ -972,7 +972,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (currentTime - lastSpawnTime < params.enemyInterval) return;
+        if (bossDataRef.current || currentTime - lastSpawnTime < params.enemyInterval) return;
         lastSpawnTime = currentTime;
 
         const cfg = GAME_CONFIG.ENEMY_TRAJECTORY_CONFIG;
@@ -1303,8 +1303,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (bossDataRef.current?.phase !== 'active') return;
-        if (currentTime - lastSpawnTime < bossParams.laserRate) return;
+        if (bossDataRef.current?.phase !== 'active' || currentTime - lastSpawnTime < bossParams.laserRate) return;
         lastSpawnTime = currentTime;
 
         const muzzleX = bossDataRef.current.x;
@@ -1341,8 +1340,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (bossDataRef.current?.phase !== 'active') return;
-        if (currentTime - lastSpawnTime < bossParams.rocketRate) return;
+        if (bossDataRef.current?.phase !== 'active' || currentTime - lastSpawnTime < bossParams.rocketRate) return;
         lastSpawnTime = currentTime;
 
         const muzzleX = bossDataRef.current.x;
@@ -1456,20 +1454,20 @@ export default function InGameScreen({
 
     function gameLoop(currentTime: number) {
       updateFps(currentTime);
-      updateGameTime(currentTime); // no need if showResults
+      updateGameTime(currentTime);
 
-      updatePlayerPosition(currentTime); // no need if showResults || !playerExists
-      updatePlayerLasers(currentTime); // no need if showResults || !playerExists
-      updatePlayerRockets(currentTime); // no need if showResults || !playerExists
-      updateAsteroids(currentTime); // no need if showResults
-      updateMines(currentTime); // no need if showResults || bossExists
-      updateBoosters(currentTime); // no need if showResults
-      updateEnemies(currentTime); // no need if showResults || bossExists
-      updateEnemyLasers(currentTime); // no need if showResults || !playerExists
-      updateBoss(currentTime); // no need if showResults
-      updateBossLasers(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      updateBossRockets(currentTime); // no need if !bossExists || bossPhase !== 'active' || !bossParams || !playerExists
-      updateExplosions(); // no need if !explosionsDataRef.current.length
+      updatePlayerPosition(currentTime);
+      updatePlayerLasers(currentTime);
+      updatePlayerRockets(currentTime);
+      updateAsteroids(currentTime);
+      updateMines(currentTime);
+      updateBoosters(currentTime);
+      updateEnemies(currentTime);
+      updateEnemyLasers(currentTime);
+      updateBoss(currentTime);
+      updateBossLasers(currentTime);
+      updateBossRockets(currentTime);
+      updateExplosions();
 
       clearCanvas();
       renderPlayer();
