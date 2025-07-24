@@ -84,20 +84,6 @@ export default function InGameScreen({
   const [isVictory, setIsVictory] = useState(true);
   const [ptsEarned, setPtsEarned] = useState(0);
 
-  const [bossHP, setBossHP] = useState(0);
-  const bossExists = bossHP > 0;
-
-  const [bossPhase, setBossPhase] = useState<'idle' | 'active' | 'exploding' | 'defeated' | 'appearing'>('idle');
-  const bossHPRef = useRef(bossHP);
-  const bossPhaseRef = useRef(bossPhase);
-
-  useEffect(() => {
-    bossHPRef.current = bossHP;
-  }, [bossHP]);
-  useEffect(() => {
-    bossPhaseRef.current = bossPhase;
-  }, [bossPhase]);
-
   // Ограничения движения
   const X_MIN = 0;
   const X_MAX = 100;
@@ -424,6 +410,12 @@ export default function InGameScreen({
   const safeLevel = Math.max(1, Math.min(10, shipLevel || 1));
   const params = React.useMemo(() => SHIP_LEVELS[safeLevel] || SHIP_LEVELS[1], [safeLevel]);
   const bossParams = params.boss;
+
+  const [bossHP, setBossHP] = useState(bossParams.bossHP);
+  const bossHPRef = useRef(bossHP);
+  useEffect(() => {
+    bossHPRef.current = bossHP;
+  }, [bossHP]);
 
   // === СЧЁТЧИКИ УНИЧТОЖЕННЫХ ===
   const [enemiesKilled, setEnemiesKilled] = useState(0);
@@ -1185,41 +1177,42 @@ export default function InGameScreen({
     ampY: number;
     phaseY: number;
     born: number;
-    hp: number;
-    exists: boolean;
-    phase: 'idle' | 'active' | 'exploding' | 'defeated' | 'appearing';
-  }>({
-    id: 'boss',
-    x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-    y: BOSS_CONFIG.trajectory.Y_APPEAR, // старт вне поля
-    speed: BOSS_CONFIG.speed,
-    x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
-    y0: BOSS_CONFIG.trajectory.Y_TARGET, // рабочая позиция по Y
-    ampX: BOSS_CONFIG.trajectory.AMP_X,
-    phaseX: BOSS_CONFIG.trajectory.PHASE_X,
-    ampY: BOSS_CONFIG.trajectory.AMP_Y,
-    phaseY: BOSS_CONFIG.trajectory.PHASE_Y,
-    born: Date.now(),
-    hp: 0,
-    exists: false,
-    phase: 'idle',
-  });
+    phase: 'appearing' | 'active' | 'defeated';
+  }>(undefined);
 
   const getUpdateBoss = () => {
     let lastUpdateTime = performance.now();
 
     return (currentTime: number) => {
       if (currentTime - lastUpdateTime < 16) return; // 60 FPS limit
+      const dt = (currentTime - lastUpdateTime) / 1000;
       lastUpdateTime = currentTime;
 
-      const bossData = bossDataRef.current;
-      if (!bossData.exists) return;
+      if (gameTimeRef.current !== 0) return;
 
-      const dt = (currentTime - lastUpdateTime) / 1000;
+      // spawn
+      if (!bossDataRef.current) {
+        bossDataRef.current = {
+          id: 'boss',
+          x: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
+          y: BOSS_CONFIG.trajectory.Y_APPEAR, // старт вне поля
+          speed: BOSS_CONFIG.speed,
+          x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2,
+          y0: BOSS_CONFIG.trajectory.Y_APPEAR, // рабочая позиция по Y
+          ampX: BOSS_CONFIG.trajectory.AMP_X,
+          phaseX: BOSS_CONFIG.trajectory.PHASE_X,
+          ampY: BOSS_CONFIG.trajectory.AMP_Y,
+          phaseY: BOSS_CONFIG.trajectory.PHASE_Y,
+          born: performance.now(),
+          phase: 'appearing',
+        };
 
-      if (bossData.phase === 'appearing') {
+        playSound(BOSS_CONFIG.soundAppear, GAME_CONFIG.VOLUME_BOSS_APPEAR);
+      }
+
+      if (bossDataRef.current.phase === 'appearing') {
         // === Анимация появления ===
-        const yNow = bossData.y;
+        const yNow = bossDataRef.current.y;
         const yTarget = BOSS_CONFIG.trajectory.Y_TARGET;
         const appearSpeed = BOSS_CONFIG.trajectory.APPEAR_SPEED * dt; // %/сек
         let newY = yNow + appearSpeed;
@@ -1228,9 +1221,9 @@ export default function InGameScreen({
           newY = yTarget;
           // Фиксируем x0/y0, сбрасываем фазы и born (для плавного старта синусоиды)
           bossDataRef.current = {
-            ...bossData,
+            ...bossDataRef.current,
             y: newY,
-            x0: bossData.x,
+            x0: bossDataRef.current.x,
             y0: newY,
             phaseX: 0,
             phaseY: 0,
@@ -1238,61 +1231,71 @@ export default function InGameScreen({
             phase: 'active',
           };
         } else {
-          bossDataRef.current = { ...bossData, y: newY };
+          bossDataRef.current = { ...bossDataRef.current, y: newY };
         }
 
         return;
       }
 
-      if (bossData.phase === 'active') {
-        // === Обычная траектория ===
-        const t = (Date.now() - (bossData.born || 0)) / 1000;
+      if (bossDataRef.current.phase === 'active') {
+        if (bossHPRef.current === 0) {
+          // move out of view
+          bossDataRef.current = { ...bossDataRef.current, y: 120, phase: 'defeated' };
+
+          spawnExplosion(bossDataRef.current.x, bossDataRef.current.y, 'boss');
+          playSound(BOSS_CONFIG.soundExplosion, 1);
+
+          setTimeout(() => {
+            setPtsEarned((prev) => prev + BOSS_CONFIG.reward);
+            setIsVictory(true);
+            setShowResults(true);
+          }, 2000);
+
+          return;
+        }
+
+        const t = (Date.now() - (bossDataRef.current.born || 0)) / 1000;
 
         // Y: синусоида вокруг y0
         const yAmp = BOSS_CONFIG.trajectory.AMP_Y;
         const newY =
-          (bossData.y0 ?? BOSS_CONFIG.trajectory.Y_TARGET) +
-          yAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossData.phaseY || 0));
+          (bossDataRef.current.y0 ?? BOSS_CONFIG.trajectory.Y_TARGET) +
+          yAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossDataRef.current.phaseY || 0));
 
         // X: синусоида вокруг x0
         const xAmp = BOSS_CONFIG.trajectory.AMP_X;
         const newX =
-          (bossData.x0 ?? (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2) +
-          xAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossData.phaseX || 0));
+          (bossDataRef.current.x0 ?? (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2) +
+          xAmp * Math.sin(t * BOSS_CONFIG.trajectory.SIN_FREQ + (bossDataRef.current.phaseX || 0));
 
-        bossDataRef.current = { ...bossData, x: newX, y: newY };
+        bossDataRef.current = { ...bossDataRef.current, x: newX, y: newY };
+
+        return;
       }
     };
   };
 
   const renderBoss = () => {
     const bossData = bossDataRef.current;
+    if (!bossData || !canvasContextRef.current || !canvasRef.current || !bossImageElement.current) return;
 
-    if (
-      canvasContextRef.current &&
-      canvasRef.current &&
-      bossImageElement.current &&
-      bossData.exists &&
-      (bossData.phase === 'appearing' || bossData.phase === 'active')
-    ) {
-      const canvas = canvasRef.current;
-      const ctx = canvasContextRef.current;
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
+    const canvas = canvasRef.current;
+    const ctx = canvasContextRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
-      // Convert percentage coordinates to canvas coordinates
-      const bossX = (bossData.x / 100) * canvasWidth;
-      const bossY = canvasHeight - (bossData.y / 100) * canvasHeight; // Canvas Y is flipped
+    // Convert percentage coordinates to canvas coordinates
+    const bossX = (bossData.x / 100) * canvasWidth;
+    const bossY = canvasHeight - (bossData.y / 100) * canvasHeight; // Canvas Y is flipped
 
-      // Draw boss image centered at the position
-      ctx.drawImage(
-        bossImageElement.current,
-        bossX - BOSS_CONFIG.size / 2, // Center horizontally
-        bossY - BOSS_CONFIG.size / 2, // Center vertically
-        BOSS_CONFIG.size,
-        BOSS_CONFIG.size,
-      );
-    }
+    // Draw boss image centered at the position
+    ctx.drawImage(
+      bossImageElement.current,
+      bossX - BOSS_CONFIG.size / 2, // Center horizontally
+      bossY - BOSS_CONFIG.size / 2, // Center vertically
+      BOSS_CONFIG.size,
+      BOSS_CONFIG.size,
+    );
   };
 
   const getUpdateBossLasers = () => {
@@ -1300,7 +1303,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (!bossParams || !bossDataRef.current.exists || bossDataRef.current.phase !== 'active') return;
+        if (bossDataRef.current?.phase !== 'active') return;
         if (currentTime - lastSpawnTime < bossParams.laserRate) return;
         lastSpawnTime = currentTime;
 
@@ -1338,7 +1341,7 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (!bossParams || !bossDataRef.current.exists || bossDataRef.current.phase !== 'active') return;
+        if (bossDataRef.current?.phase !== 'active') return;
         if (currentTime - lastSpawnTime < bossParams.rocketRate) return;
         lastSpawnTime = currentTime;
 
@@ -1372,7 +1375,7 @@ export default function InGameScreen({
   };
 
   const { fps, updateFps } = useFps();
-  const { gameTime, updateGameTime } = useGameTime();
+  const { gameTime, gameTimeRef, updateGameTime } = useGameTime();
 
   // Particles update function
   const updateExplosionParticles = () => {
@@ -1510,20 +1513,13 @@ export default function InGameScreen({
       for (let i = newPlayerLasers.length - 1; i >= 0; i--) {
         const laser = newPlayerLasers[i];
         // --- Босс ---
-        if (bossDataRef.current.exists && bossDataRef.current.phase === 'active') {
+        if (bossDataRef.current?.phase === 'active') {
           if (
             Math.abs(laser.x - bossDataRef.current.x) < BOSS_CONFIG.hitbox &&
             Math.abs(laser.y - bossDataRef.current.y) < BOSS_CONFIG.hitbox
           ) {
             setBossHP((prev) => Math.max(0, prev - 1));
-            bossDataRef.current.hp = Math.max(0, bossDataRef.current.hp - 1);
             newPlayerLasers.splice(i, 1);
-
-            // Если HP босса <= 0, запускаем фазу взрыва
-            if (bossDataRef.current.hp <= 0) {
-              setBossPhase('exploding');
-              bossDataRef.current.phase = 'exploding';
-            }
             continue;
           }
         }
@@ -1592,20 +1588,13 @@ export default function InGameScreen({
         const rocket = newPlayerRockets[i];
         let hit = false;
         // --- Босс ---
-        if (bossDataRef.current.exists && bossDataRef.current.phase === 'active') {
+        if (bossDataRef.current?.phase === 'active') {
           if (
             Math.abs(rocket.x - bossDataRef.current.x) < BOSS_CONFIG.hitbox &&
             Math.abs(rocket.y - bossDataRef.current.y) < BOSS_CONFIG.hitbox
           ) {
             setBossHP((prev) => Math.max(0, prev - 3));
-            bossDataRef.current.hp = Math.max(0, bossDataRef.current.hp - 3);
             newPlayerRockets.splice(i, 1);
-
-            // Если HP босса <= 0, запускаем фазу взрыва
-            if (bossDataRef.current.hp <= 0) {
-              setBossPhase('exploding');
-              bossDataRef.current.phase = 'exploding';
-            }
             continue;
           }
         }
@@ -1855,47 +1844,6 @@ export default function InGameScreen({
   const PLAYER_LASER_COLOR_BOOST = GAME_CONFIG.PLAYER_LASER_COLOR_BOOST;
   const PLAYER_ROCKET_COLOR = GAME_CONFIG.PLAYER_ROCKET_COLOR;
 
-  // === ЛОГИКА ПОЯВЛЕНИЯ БОССА ===
-  useEffect(() => {
-    if (showResults) {
-      // После показа окна результатов — сброс состояния происходит через resetGameState
-      return;
-    }
-    // Появление босса после таймера
-    if (gameTime === 0 && playerExists && !bossExists) {
-      bossDataRef.current = {
-        ...bossDataRef.current,
-        y: BOSS_CONFIG.trajectory.Y_APPEAR,
-        x0: (BOSS_CONFIG.trajectory.X_MIN + BOSS_CONFIG.trajectory.X_MAX) / 2, // центр по X
-        y0: BOSS_CONFIG.trajectory.Y_APPEAR, // стартовая позиция по Y
-        phaseX: 0,
-        phaseY: 0,
-        ampY: BOSS_CONFIG.trajectory.AMP_Y,
-        born: Date.now(),
-      };
-
-      setBossHP(params.boss?.bossHP || 30);
-      setBossPhase('appearing');
-      playSound(BOSS_CONFIG.soundAppear, GAME_CONFIG.VOLUME_BOSS_APPEAR);
-    }
-  }, [gameTime, playerExists, bossExists, showResults]);
-
-  // === ВЗРЫВ БОССА, ПОБЕДА, HUD ===
-  // Победа после уничтожения босса: взрыв, задержка 2 сек, начисление PTS, показ Victory
-  useEffect(() => {
-    if (bossPhase === 'exploding' && bossDataRef.current && bossExists) {
-      spawnExplosion(bossDataRef.current.x, bossDataRef.current.y, 'boss');
-      playSound(BOSS_CONFIG.soundExplosion, 1);
-
-      setTimeout(() => {
-        setPtsEarned((prev) => prev + BOSS_CONFIG.reward);
-        setIsVictory(true);
-        setShowResults(true);
-        setBossPhase('defeated');
-      }, 2000);
-    }
-  }, [bossPhase, bossExists]);
-
   return (
     <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
       {/* Viewport 20:9 */}
@@ -1949,7 +1897,7 @@ export default function InGameScreen({
               style={{ zIndex: 10 }}
             />
 
-            {bossPhase === 'active' && (
+            {bossDataRef.current?.phase === 'active' && (
               <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
                 <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
                   <div
