@@ -1,6 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Account } from '@gear-js/react-hooks';
 import { Heart, Zap } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
@@ -51,6 +48,8 @@ const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
 
 // === КОНФИГ ДЛЯ БУСТЕРОВ ===
 const BOOSTER_CONFIG = GAME_CONFIG.BOOSTER_CONFIG;
+
+const SHIP_LEVELS = GAME_CONFIG.SHIP_LEVELS;
 
 const getBoosterSpawnTimings = () => {
   const duration = GAME_CONFIG.GAME_DURATION_MS;
@@ -406,7 +405,6 @@ export default function InGameScreen({
   }, []);
 
   // === ПАРАМЕТРЫ КОРАБЛЯ ПО УРОВНЯМ ===
-  const SHIP_LEVELS = GAME_CONFIG.SHIP_LEVELS;
   const safeLevel = Math.max(1, Math.min(10, shipLevel || 1));
   const params = React.useMemo(() => SHIP_LEVELS[safeLevel] || SHIP_LEVELS[1], [safeLevel]);
   const bossParams = params.boss;
@@ -1437,6 +1435,8 @@ export default function InGameScreen({
   };
 
   useEffect(() => {
+    if (showResults) return;
+
     let requestId: number;
     let lastGameUpdate = Date.now();
 
@@ -1787,7 +1787,8 @@ export default function InGameScreen({
     return () => {
       cancelAnimationFrame(requestId);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResults]);
 
   // Форматирование времени для HUD
   const formatTime = (ms: number) => {
@@ -1862,7 +1863,7 @@ export default function InGameScreen({
           {/* Жизни, БУСТЕР и таймер */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-1">
-              {[...Array(3)].map((_, i) => (
+              {[...Array<undefined>(3)].map((_, i) => (
                 <Heart
                   key={i}
                   className={`h-6 w-6 ${i < playerHP ? 'text-red-500 fill-red-500 glow-red' : 'text-gray-600'}`}
