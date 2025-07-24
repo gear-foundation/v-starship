@@ -1,5 +1,5 @@
-.scrolling {
-  animation: vertical-scroll 10s linear infinite;
+.scroll-container {
+  animation: vertical-scroll linear infinite;
 }
 
 .star {
@@ -23,6 +23,7 @@
   from {
     transform: translateY(0);
   }
+
   to {
     transform: translateY(100%);
   }

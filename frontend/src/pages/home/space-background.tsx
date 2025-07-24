@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { CSSProperties, useRef } from 'react';
 
 import { GAME_CONFIG } from './game-config';
 import './space-background.css';
@@ -135,16 +135,37 @@ function SpaceBackground({ variant = 'default' }: Props) {
       />
     ));
 
+  const render = () => (
+    <>
+      {renderStars()}
+      {renderPlanets()}
+      {renderNebulas()}
+    </>
+  );
+
   return (
     <div
       className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden"
       style={{ background: background.current.fieldColor, borderRadius: 24, zIndex: 0 }}>
-      <div className="relative w-full h-full">
-        {renderStars()}
-        {renderPlanets()}
-        {renderNebulas()}
-      </div>
+      {variant === 'default' ? (
+        render()
+      ) : (
+        <div className="relative w-full h-full">
+          {/* locating container at the top because scroll is performed from top to bottom */}
+          <div
+            className="absolute bottom-full w-full h-full scroll-container"
+            style={{ animationDuration: `${GAME_CONFIG.BACKGROUND_SCROLL_SPEED}s` } as CSSProperties}>
+            {render()}
+          </div>
+          <div
+            className="w-full h-full scroll-container"
+            style={{ animationDuration: `${GAME_CONFIG.BACKGROUND_SCROLL_SPEED}s` } as CSSProperties}>
+            {render()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 export { SpaceBackground };

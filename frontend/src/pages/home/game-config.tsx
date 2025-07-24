@@ -215,7 +215,7 @@ export const BOSS_CONFIG = {
 export const GAME_CONFIG: GameConfig = {
   // Игровые параметры
   GAME_DURATION_MS: 60000, // 1 минута
-  INITIAL_PLAYER_HP: 100,
+  INITIAL_PLAYER_HP: 3,
   ENEMY_BASE_HP: 3, // HP обычного врага
   ASTEROID_BASE_HP: 3, // HP астероида
   MINE_BASE_HP: 1, // HP мины
@@ -266,7 +266,7 @@ export const GAME_CONFIG: GameConfig = {
   ASTEROID_SPEED_MAX: 45,
   ASTEROID_ROTATION_SPEED_MIN: 50, // Минимальная скорость вращения астероида (град/сек)
   ASTEROID_ROTATION_SPEED_MAX: 150, // Максимальная скорость вращения астероида (град/сек)
-  BACKGROUND_SCROLL_SPEED: 0.1,
+  BACKGROUND_SCROLL_SPEED: 10, // seconds to go from top to bottom
 
   // Звуки
   SOUND_PLAYER_LASER: '/sound/player-laser.mp3',
