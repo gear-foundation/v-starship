@@ -3,7 +3,6 @@ export interface GameBGConfig {
   starCount: { min: number; max: number };
   starSize: { min: number; max: number };
   starColors: string[];
-  starTwinkle: { min: number; max: number };
   planetCount: { min: number; max: number };
   planetSize: { min: number; max: number };
   planetColors: [string, string][];

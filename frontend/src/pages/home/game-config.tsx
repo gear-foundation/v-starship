@@ -16,7 +16,6 @@ export const GAME_BG_CONFIG: GameBGConfig = {
     '#b9fff7',
     '#ffb9b9',
   ],
-  starTwinkle: { min: 0.5, max: 1.0 },
   planetCount: { min: 1, max: 2 },
   planetSize: { min: 36, max: 80 },
   planetColors: [
