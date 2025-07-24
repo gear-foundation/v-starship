@@ -1338,7 +1338,15 @@ export default function InGameScreen({
 
     return (currentTime: number) => {
       const spawn = () => {
-        if (bossDataRef.current?.phase !== 'active' || currentTime - lastSpawnTime < bossParams.rocketRate) return;
+        const isAnyRocket = Boolean(bossParams.rocketCount && bossParams.rocketRate);
+
+        if (
+          bossDataRef.current?.phase !== 'active' ||
+          !isAnyRocket ||
+          currentTime - lastSpawnTime < bossParams.rocketRate
+        )
+          return;
+
         lastSpawnTime = currentTime;
 
         const muzzleX = bossDataRef.current.x;
