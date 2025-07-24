@@ -22,41 +22,48 @@ const SOUNDS = [
 
 function usePlaySound() {
   const alert = useAlert();
-  const audioCache = useRef<{ [key: string]: HTMLAudioElement[] }>({});
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const bufferCache = useRef<{ [key: string]: AudioBuffer | null }>({});
 
   useEffect(() => {
-    SOUNDS.forEach((src) => {
-      audioCache.current[src] = [];
+    audioContextRef.current = new AudioContext();
 
-      for (let i = 0; i < 2; i++) {
-        const audio = new Audio(src);
-        audio.preload = 'auto';
-        audioCache.current[src].push(audio);
-      }
+    SOUNDS.forEach((src) => {
+      fetch(src)
+        .then((response) => response.arrayBuffer())
+        .then((arrayBuffer) =>
+          audioContextRef.current!.decodeAudioData(arrayBuffer, (buffer) => {
+            bufferCache.current[src] = buffer;
+          }),
+        )
+        .catch(() => {
+          bufferCache.current[src] = null;
+        });
     });
 
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      Object.values(audioCache.current).forEach((audioArray) => {
-        audioArray.forEach((audio) => {
-          audio.pause();
-          audio.src = '';
-        });
+      audioContextRef.current?.close().catch((error) => {
+        console.error('Error closing audio context', error);
+        alert.error('Failed to close audio context');
       });
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (src: string, volume = 0.5) => {
     try {
-      const audioArray = audioCache.current[src];
-      if (!audioArray || audioArray.length === 0) throw new Error('Not found');
+      const ctx = audioContextRef.current;
+      const buffer = bufferCache.current[src];
+      if (!ctx || !buffer) throw new Error('Audio buffer not loaded');
 
-      const audio = audioArray.find((a) => a.paused || a.ended) || audioArray[0];
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
 
-      audio.currentTime = 0;
-      audio.volume = volume;
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = volume;
 
-      void audio.play();
+      source.connect(gainNode).connect(ctx.destination);
+      source.start(0);
     } catch (error) {
       console.error('Sound play error', src, error);
       alert.error('Failed to play sound');
