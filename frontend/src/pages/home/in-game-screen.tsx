@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 
+import { FPS } from './fps';
 import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
 import { ResultsScreen } from './results-screen';
@@ -1936,7 +1937,7 @@ export default function InGameScreen({
             />
           </div>
 
-          <div className="absolute top-0 right-0 p-2 text-white bg-black">{fps}</div>
+          <FPS value={fps} />
         </div>
       </div>
 
