@@ -23,7 +23,7 @@ const SOUNDS = [
 function usePlaySound() {
   const alert = useAlert();
   const audioContextRef = useRef<AudioContext | null>(null);
-  const bufferCache = useRef<{ [key: string]: AudioBuffer | null }>({});
+  const bufferCache = useRef<{ [key: string]: AudioBuffer }>({});
 
   useEffect(() => {
     audioContextRef.current = new AudioContext();
@@ -31,13 +31,14 @@ function usePlaySound() {
     SOUNDS.forEach((src) => {
       fetch(src)
         .then((response) => response.arrayBuffer())
-        .then((arrayBuffer) =>
-          audioContextRef.current!.decodeAudioData(arrayBuffer, (buffer) => {
-            bufferCache.current[src] = buffer;
-          }),
-        )
-        .catch(() => {
-          bufferCache.current[src] = null;
+        .then((arrayBuffer) => {
+          if (!audioContextRef.current) throw new Error('Audio context is not initialized');
+
+          return audioContextRef.current.decodeAudioData(arrayBuffer, (buffer) => (bufferCache.current[src] = buffer));
+        })
+        .catch((error) => {
+          console.error('Error loading sound', src, error);
+          alert.error('Failed to load sound');
         });
     });
 
@@ -54,7 +55,9 @@ function usePlaySound() {
     try {
       const ctx = audioContextRef.current;
       const buffer = bufferCache.current[src];
-      if (!ctx || !buffer) throw new Error('Audio buffer not loaded');
+
+      if (!ctx) throw new Error('Audio context is not initialized');
+      if (!buffer) throw new Error(`Audio buffer not loaded for source: ${src}`);
 
       const source = ctx.createBufferSource();
       source.buffer = buffer;
