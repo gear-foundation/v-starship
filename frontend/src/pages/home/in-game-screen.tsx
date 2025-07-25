@@ -500,8 +500,8 @@ export default function InGameScreen({
   };
 
   const renderPlayer = () => {
-    if (!canvasContextRef.current || !canvasRef.current || !playerImageElement.current) return;
-    if (!playerExists || playerHP <= 0) return;
+    if (!canvasContextRef.current || !canvasRef.current || !playerImageElement.current || playerHPRef.current <= 0)
+      return;
 
     const canvas = canvasRef.current;
     const ctx = canvasContextRef.current;
