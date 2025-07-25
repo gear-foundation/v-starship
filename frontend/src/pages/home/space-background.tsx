@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { CSSProperties, useRef } from 'react';
 
 import { GAME_CONFIG } from './game-config';
+import './space-background.css';
 
 const MAIN_SCREEN_BG_CONFIG = {
   ...GAME_CONFIG.GAME_BG_CONFIG,
@@ -21,7 +22,6 @@ function generateBackground(cfg = GAME_CONFIG.GAME_BG_CONFIG) {
     y: Math.random(),
     size: cfg.starSize.min + Math.random() * (cfg.starSize.max - cfg.starSize.min),
     color: cfg.starColors[Math.floor(Math.random() * cfg.starColors.length)],
-    twinkle: cfg.starTwinkle.min + Math.random() * (cfg.starTwinkle.max - cfg.starTwinkle.min),
     phase: Math.random() * Math.PI * 2,
   }));
 
@@ -69,56 +69,27 @@ type Props = {
 function SpaceBackground({ variant = 'default' }: Props) {
   const background = useRef(generateBackground(variant === 'default' ? MAIN_SCREEN_BG_CONFIG : undefined));
 
-  const [timeMs, setTimeMs] = useState(0);
-  const [offset, setOffset] = useState(0);
-
-  useEffect(() => {
-    let lastTime = Date.now();
-
-    function animate() {
-      const currentTime = Date.now();
-
-      setTimeMs(currentTime);
-
-      if (variant === 'game') {
-        const deltaTime = (currentTime - lastTime) / 1000;
-        lastTime = currentTime;
-
-        setOffset((prev) => (prev + GAME_CONFIG.BACKGROUND_SCROLL_SPEED * deltaTime * 100) % 100);
-      }
-
-      return requestAnimationFrame(animate);
-    }
-
-    const requestId = animate();
-
-    return () => {
-      cancelAnimationFrame(requestId);
-    };
-  }, [variant]);
-
-  const getYPosition = (value: number) => (value * 100 + offset) % 100;
-
   const renderStars = () => {
     return background.current.stars.map((star, i) => {
-      const pulse = 0.7 + star.twinkle * Math.sin(timeMs / 600 + star.phase);
-
       return (
         <div
           key={i}
-          style={{
-            position: 'absolute',
-            left: `${star.x * 100}%`,
-            top: `${getYPosition(star.y)}%`,
-            width: `${star.size * pulse}px`,
-            height: `${star.size * pulse}px`,
-            background: star.color,
-            borderRadius: '50%',
-            opacity: 0.7 + 0.3 * Math.sin(timeMs / 800 + star.phase),
-            filter: 'blur(0.5px)',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
+          className="star"
+          style={
+            {
+              position: 'absolute',
+              left: `${star.x * 100}%`,
+              top: `${star.y * 100}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              background: star.color,
+              borderRadius: '50%',
+              filter: 'blur(0.5px)',
+              zIndex: 1,
+              pointerEvents: 'none',
+              animationDelay: `${star.phase}s`,
+            } as React.CSSProperties
+          }
         />
       );
     });
@@ -131,7 +102,7 @@ function SpaceBackground({ variant = 'default' }: Props) {
         style={{
           position: 'absolute',
           left: `${nebula.x * 100}%`,
-          top: `${getYPosition(nebula.y)}%`,
+          top: `${nebula.y * 100}%`,
           width: `${nebula.size}px`,
           height: `${nebula.size}px`,
           background: `radial-gradient(circle, ${nebula.colorFrom} 0%, ${nebula.colorTo} 100%)`,
@@ -151,7 +122,7 @@ function SpaceBackground({ variant = 'default' }: Props) {
         style={{
           position: 'absolute',
           left: `${planet.x * 100}%`,
-          top: `${getYPosition(planet.y)}%`,
+          top: `${planet.y * 100}%`,
           width: `${planet.size}px`,
           height: `${planet.size}px`,
           background: `linear-gradient(135deg, ${planet.colorFrom}, ${planet.colorTo})`,
@@ -164,14 +135,37 @@ function SpaceBackground({ variant = 'default' }: Props) {
       />
     ));
 
+  const render = () => (
+    <>
+      {renderStars()}
+      {renderPlanets()}
+      {renderNebulas()}
+    </>
+  );
+
   return (
     <div
       className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden"
       style={{ background: background.current.fieldColor, borderRadius: 24, zIndex: 0 }}>
-      {renderStars()}
-      {renderPlanets()}
-      {renderNebulas()}
+      {variant === 'default' ? (
+        render()
+      ) : (
+        <div className="relative w-full h-full">
+          {/* locating container at the top because scroll is performed from top to bottom */}
+          <div
+            className="absolute bottom-full w-full h-full scroll-container"
+            style={{ animationDuration: `${GAME_CONFIG.BACKGROUND_SCROLL_SPEED}s` } as CSSProperties}>
+            {render()}
+          </div>
+          <div
+            className="w-full h-full scroll-container"
+            style={{ animationDuration: `${GAME_CONFIG.BACKGROUND_SCROLL_SPEED}s` } as CSSProperties}>
+            {render()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 export { SpaceBackground };
