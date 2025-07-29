@@ -107,166 +107,152 @@ export default function MainScreen({
 
   return (
     <>
-      <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
-        {/* Viewport 20:9 */}
-        <div className="game-viewport relative flex flex-col h-full w-full overflow-hidden">
-          <SpaceBackground />
+      <SpaceBackground />
 
-          {/* Main Content */}
-          <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
-            {/* Header: Wallet, PTS */}
-            <div className="flex flex-col items-center mb-4">
-              <div
-                className={`w-full flex items-center ${account ? 'justify-between' : 'justify-center'} wallet-custom-styles mb-2`}>
-                {account && (
-                  <p className="text-purple-300 font-bold text-lg glow-purple cursor-default">
-                    <span className="font-black tracking-wider">{integerBalanceDisplay.value}</span>{' '}
-                    {integerBalanceDisplay.unit}
-                  </p>
-                )}
-                <Wallet displayBalance={false} />
-              </div>
+      <div className="flex flex-col p-4 font-['Orbitron']">
+        <div className="flex flex-col items-center mb-4">
+          <div
+            className={`w-full flex items-center ${account ? 'justify-between' : 'justify-center'} wallet-custom-styles mb-2`}>
+            {account && (
+              <p className="text-purple-300 font-bold text-lg glow-purple cursor-default">
+                <span className="font-black tracking-wider">{integerBalanceDisplay.value}</span>{' '}
+                {integerBalanceDisplay.unit}
+              </p>
+            )}
+            <Wallet displayBalance={false} />
+          </div>
 
-              <div
-                className="text-cyan-400 font-bold text-lg glow-blue cursor-pointer hover:text-blue-300 hover:glow-blue-bright transition-all"
-                onClick={handlePTSClick}>
-                PTS: {formatNumber(playerPTS)}
-              </div>
-            </div>
+          <div
+            className="text-cyan-400 font-bold text-lg glow-blue cursor-pointer hover:text-blue-300 hover:glow-blue-bright transition-all"
+            onClick={handlePTSClick}>
+            PTS: {formatNumber(playerPTS)}
+          </div>
+        </div>
 
-            <div className="flex flex-col items-center justify-center text-center mt-8">
-              {/* Game Title */}
-              <div className="text-center mb-4">
-                <h1 className="text-3xl font-bold text-cyan-400 glow-blue tracking-wider">VARA STARSHIP</h1>
-              </div>
+        <div className="flex flex-col items-center justify-center text-center mt-8">
+          <div className="text-center mb-4">
+            <h1 className="text-3xl font-bold text-cyan-400 glow-blue tracking-wider">VARA STARSHIP</h1>
+          </div>
 
-              {/* Player Name */}
-              <div className="flex items-center justify-center gap-2 mb-6">
-                {editingName ? (
-                  <>
-                    <input
-                      type="text"
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      onKeyDown={handleInputKeyDown}
-                      maxLength={16}
-                      className="text-gray-300 text-lg bg-gray-900 border border-cyan-400 rounded px-2 py-1 outline-none glow-white focus:border-cyan-300 w-32 text-center"
-                      aria-label="Player name input"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-6 w-6 text-cyan-400 border border-cyan-400 glow-blue"
-                      onClick={handleSaveName}
-                      title="Save name">
-                      {isSettingName ? <Loader2 className="animate-spin" /> : <span className="font-bold">⏎</span>}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-6 w-6 text-gray-400 border border-gray-600 ml-1"
-                      onClick={() => setEditingName(false)}
-                      title="Отмена">
-                      <span className="font-bold">✕</span>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-gray-300 text-lg glow-white">{playerName}</span>
-
-                    {account && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
-                        onClick={() => setEditingName(true)}
-                        title="Edit name">
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* Player Ship */}
-              <div className="flex justify-center mb-4">
-                <img
-                  src={`/img/starship-${shipLevel}.png`}
-                  alt="player ship"
-                  width={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
-                  height={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
-                  className="select-none pointer-events-none"
-                  style={{
-                    width: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                    height: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                    userSelect: 'none',
-                  }}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {editingName ? (
+              <>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  maxLength={16}
+                  className="text-gray-300 text-lg bg-gray-900 border border-cyan-400 rounded px-2 py-1 outline-none glow-white focus:border-cyan-300 w-32 text-center"
+                  aria-label="Player name input"
                 />
-              </div>
-
-              {/* Ship Level */}
-              <div className="text-center mb-6">
-                <span className="text-white text-lg font-bold glow-white">Level {shipLevel}</span>
-              </div>
-            </div>
-
-            {/* Games, Timer, Boosters */}
-            <div className="text-center mt-auto">
-              <div className="mb-3">
-                <span className="text-cyan-400 text-base glow-blue">
-                  Games available: {gamesAvailable}
-                  {!timeLeftMs && ' of 3'}
-                </span>
-              </div>
-
-              {Boolean(timeLeftMs) && (
-                <div className="mb-3">
-                  <span className="text-gray-400 text-sm glow-gray">
-                    Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
-                    {String(timeLeft.minutes).padStart(2, '0')}
-                  </span>
-                </div>
-              )}
-
-              <div className="mb-8">
-                <div className="flex items-center justify-center gap-2">
-                  <Zap className="h-4 w-4 text-yellow-400" />
-                  <span className="text-yellow-400 text-base glow-yellow">Boosters: {boosterCount}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-4 px-2 mb-4 w-full max-w-md mx-auto">
-              <Button
-                onClick={onStartGame}
-                className="w-full bg-gradient-to-r from-red-500/80 to-cyan-400/80 border-2 border-red-500 text-white hover:bg-red-500/90 font-bold py-4 text-lg rounded-xl shadow-lg glow-red-border transition-all duration-300 mb-2"
-                style={{ minHeight: 56, fontSize: 22, letterSpacing: 2 }}
-                disabled={!IS_DEV_MODE_ENABLED && (gamesAvailable === 0 || !account)}>
-                START GAME
-              </Button>
-              <div className="flex gap-3 w-full">
                 <Button
-                  variant="outline"
-                  onClick={() => setShowShop(true)}
-                  className="flex-1 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/10 font-bold py-3 rounded-lg glow-blue-border transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/25"
-                  style={{ minWidth: 0 }}>
-                  SHOP
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-6 w-6 text-cyan-400 border border-cyan-400 glow-blue"
+                  onClick={handleSaveName}
+                  title="Save name">
+                  {isSettingName ? <Loader2 className="animate-spin" /> : <span className="font-bold">⏎</span>}
                 </Button>
                 <Button
-                  variant="outline"
-                  onClick={() => setShowLeaderboard(true)}
-                  className="flex-1 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/10 font-bold py-3 rounded-lg glow-blue-border transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/25"
-                  style={{ minWidth: 0 }}>
-                  LEADERBOARD
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-6 w-6 text-gray-400 border border-gray-600 ml-1"
+                  onClick={() => setEditingName(false)}
+                  title="Отмена">
+                  <span className="font-bold">✕</span>
                 </Button>
-              </div>
+              </>
+            ) : (
+              <>
+                <span className="text-gray-300 text-lg glow-white">{playerName}</span>
+
+                {account && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-6 w-6 text-gray-300 hover:text-cyan-400 border border-gray-600 hover:border-cyan-400 glow-white hover:glow-blue transition-all"
+                    onClick={() => setEditingName(true)}
+                    title="Edit name">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-center mb-4">
+            <img
+              src={`/img/starship-${shipLevel}.png`}
+              alt="player ship"
+              width={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
+              height={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
+              className="select-none pointer-events-none"
+              style={{
+                width: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
+                height: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
+                userSelect: 'none',
+              }}
+            />
+          </div>
+
+          <div className="text-center mb-6">
+            <span className="text-white text-lg font-bold glow-white">Level {shipLevel}</span>
+          </div>
+        </div>
+
+        <div className="text-center mt-auto">
+          <div className="mb-3">
+            <span className="text-cyan-400 text-base glow-blue">
+              Games available: {gamesAvailable}
+              {!timeLeftMs && ' of 3'}
+            </span>
+          </div>
+
+          {Boolean(timeLeftMs) && (
+            <div className="mb-3">
+              <span className="text-gray-400 text-sm glow-gray">
+                Next free games in: {String(timeLeft.hours).padStart(2, '0')}:
+                {String(timeLeft.minutes).padStart(2, '0')}
+              </span>
             </div>
+          )}
+
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-2">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              <span className="text-yellow-400 text-base glow-yellow">Boosters: {boosterCount}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 px-2 mb-4 w-full max-w-md mx-auto">
+          <Button
+            onClick={onStartGame}
+            className="w-full bg-gradient-to-r from-red-500/80 to-cyan-400/80 border-2 border-red-500 text-white hover:bg-red-500/90 font-bold py-4 text-lg rounded-xl shadow-lg glow-red-border transition-all duration-300 mb-2"
+            style={{ minHeight: 56, fontSize: 22, letterSpacing: 2 }}
+            disabled={!IS_DEV_MODE_ENABLED && (gamesAvailable === 0 || !account)}>
+            START GAME
+          </Button>
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="outline"
+              onClick={() => setShowShop(true)}
+              className="flex-1 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/10 font-bold py-3 rounded-lg glow-blue-border transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/25"
+              style={{ minWidth: 0 }}>
+              SHOP
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowLeaderboard(true)}
+              className="flex-1 bg-transparent border-2 border-cyan-400 text-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/10 font-bold py-3 rounded-lg glow-blue-border transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/25"
+              style={{ minWidth: 0 }}>
+              LEADERBOARD
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Dialog Overlays */}
       <ShopDialog
         isOpen={showShop}
         onClose={() => setShowShop(false)}

@@ -1853,95 +1853,84 @@ export default function InGameScreen({
   const PLAYER_ROCKET_COLOR = GAME_CONFIG.PLAYER_ROCKET_COLOR;
 
   return (
-    <div className="fixed inset-0 min-h-screen w-full flex items-center justify-center">
-      {/* Viewport 20:9 */}
-      <div className="game-viewport relative flex flex-col h-full w-full overflow-hidden">
-        <SpaceBackground variant="game" />
+    <>
+      <SpaceBackground variant="game" />
 
-        {/* HUD и игровая зона */}
-        <div className="relative z-10 flex flex-col h-full w-full p-4 font-['Orbitron']">
-          {/* Верхний HUD: PTS и VARA */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS}</div>
-            {account && (
-              <div className="text-gray-300 font-bold text-lg glow-white">
-                {integerBalanceDisplay.value} {integerBalanceDisplay.unit}
-              </div>
-            )}
-          </div>
-          {/* Жизни, БУСТЕР и таймер */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-1">
-              {[...Array<undefined>(3)].map((_, i) => (
-                <Heart
-                  key={i}
-                  className={`h-6 w-6 ${i < playerHP ? 'text-red-500 fill-red-500 glow-red' : 'text-gray-600'}`}
-                />
-              ))}
+      <div className="flex flex-col w-full p-4 font-['Orbitron']">
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS}</div>
+          {account && (
+            <div className="text-gray-300 font-bold text-lg glow-white">
+              {integerBalanceDisplay.value} {integerBalanceDisplay.unit}
             </div>
-            {/* Кнопка активации бустера */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1 h-8 w-8 text-yellow-400 border-2 border-yellow-400 glow-yellow-border hover:bg-yellow-500/10"
-                onClick={handleActivateBoosterByButton}
-                disabled={boosterCount === 0 || activeBooster}
-                title="Activate Booster">
-                <Zap className="h-5 w-5" />
-              </Button>
-              <span className="text-xl font-bold text-yellow-400 glow-yellow">x{boosterCount}</span>
-            </div>
-            <div className="text-cyan-400 font-bold text-xl glow-blue">{formatTime(gameTime)}</div>
-          </div>
-          {/* Игровая зона */}
-          <div
-            ref={gameAreaRef}
-            id="game-area"
-            className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 10 }}
-            />
-
-            {bossDataRef.current?.phase === 'active' && (
-              <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
-                <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0"
-                    style={{
-                      width: `${(bossHP / (params.boss?.bossHP || 30)) * 100}%`,
-                      transition: 'width 0.2s',
-                      zIndex: 1,
-                    }}
-                  />
-                  <span
-                    className="absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg"
-                    style={{ fontSize: '13px', letterSpacing: '2px', zIndex: 2 }}>
-                    Mothership
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <MobileControls
-              onPointer={(arrowKey, isPressed, intensity = 1) => {
-                pressedKeys.current[arrowKey] = isPressed;
-                if (isPressed) {
-                  trackpadIntensity.current[arrowKey] = intensity;
-                } else {
-                  delete trackpadIntensity.current[arrowKey];
-                }
-              }}
-            />
-          </div>
-
-          <FPS value={fps} />
+          )}
         </div>
+
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-1">
+            {[...Array<undefined>(3)].map((_, i) => (
+              <Heart
+                key={i}
+                className={`h-6 w-6 ${i < playerHP ? 'text-red-500 fill-red-500 glow-red' : 'text-gray-600'}`}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-1 h-8 w-8 text-yellow-400 border-2 border-yellow-400 glow-yellow-border hover:bg-yellow-500/10"
+              onClick={handleActivateBoosterByButton}
+              disabled={boosterCount === 0 || activeBooster}
+              title="Activate Booster">
+              <Zap className="h-5 w-5" />
+            </Button>
+            <span className="text-xl font-bold text-yellow-400 glow-yellow">x{boosterCount}</span>
+          </div>
+          <div className="text-cyan-400 font-bold text-xl glow-blue">{formatTime(gameTime)}</div>
+        </div>
+
+        <div
+          ref={gameAreaRef}
+          className="flex-1 flex relative border border-cyan-500/30 rounded-lg overflow-hidden bg-black/20">
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+
+          {bossDataRef.current?.phase === 'active' && (
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
+              <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
+                <div
+                  className="h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0"
+                  style={{
+                    width: `${(bossHP / (params.boss?.bossHP || 30)) * 100}%`,
+                    transition: 'width 0.2s',
+                    zIndex: 1,
+                  }}
+                />
+                <span
+                  className="absolute w-full text-center text-yellow-300 font-bold text-xs tracking-widest uppercase drop-shadow-lg"
+                  style={{ fontSize: '13px', letterSpacing: '2px', zIndex: 2 }}>
+                  Mothership
+                </span>
+              </div>
+            </div>
+          )}
+
+          <MobileControls
+            onPointer={(arrowKey, isPressed, intensity = 1) => {
+              pressedKeys.current[arrowKey] = isPressed;
+              if (isPressed) {
+                trackpadIntensity.current[arrowKey] = intensity;
+              } else {
+                delete trackpadIntensity.current[arrowKey];
+              }
+            }}
+          />
+        </div>
+
+        <FPS value={fps} />
       </div>
 
-      {/* Экран результатов */}
       <ResultsScreen
         isOpen={showResults}
         onClose={onBackToMenu}
@@ -1955,6 +1944,6 @@ export default function InGameScreen({
         minesKilled={minesKilled}
         activatedBoostersCount={activatedBoostersCount.current}
       />
-    </div>
+    </>
   );
 }

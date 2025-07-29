@@ -146,7 +146,7 @@ function SpaceBackground({ variant = 'default' }: Props) {
   return (
     <div
       className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden"
-      style={{ background: background.current.fieldColor, borderRadius: 24, zIndex: 0 }}>
+      style={{ background: background.current.fieldColor, zIndex: -1 }}>
       {variant === 'default' ? (
         render()
       ) : (
