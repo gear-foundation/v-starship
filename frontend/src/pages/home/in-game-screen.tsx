@@ -269,17 +269,13 @@ export default function InGameScreen({
 
   // Проверка завершения игры: по времени или по жизням
   useEffect(() => {
-    if (showResults) return;
-    // Если игрок погиб — поражение
-    if (playerHP === 0) {
-      setIsVictory(false);
-      setTimeout(() => {
-        setShowResults(true);
-      }, 2000);
-      return;
-    }
-    // Если время вышло, но босс ещё не побеждён — ничего не делаем, ждём фазу босса
-    // Victory наступает только после bossPhase === 'exploding' (см. отдельный useEffect)
+    if (playerHP !== 0) return;
+
+    setIsVictory(false);
+
+    setTimeout(() => {
+      setShowResults(true);
+    }, 2000);
   }, [playerHP, showResults]);
 
   // Обработка нажатий и отпусканий клавиш
@@ -1248,6 +1244,7 @@ export default function InGameScreen({
             setPtsEarned((prev) => prev + BOSS_CONFIG.reward);
             setIsVictory(true);
             setShowResults(true);
+            playSound(GAME_CONFIG.SOUND_VICTORY, GAME_CONFIG.VOLUME_VICTORY);
           }, 2000);
 
           return;

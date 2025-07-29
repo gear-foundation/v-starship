@@ -1,13 +1,11 @@
 import { useAlert } from '@gear-js/react-hooks';
 import { Trophy, Skull, RotateCcw, Home } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 import { useAddPoints } from '@/api/sails';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
 import { IS_DEV_MODE_ENABLED } from './dev-config';
-import { GAME_CONFIG } from './game-config';
 
 interface ResultsScreenProps {
   isOpen: boolean;
@@ -36,26 +34,6 @@ export function ResultsScreen({
   minesKilled,
   activatedBoostersCount,
 }: ResultsScreenProps) {
-  // Проигрывание звука победы только при победе
-  const victoryAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (isOpen && isVictory) {
-      if (!victoryAudioRef.current) {
-        victoryAudioRef.current = new Audio(GAME_CONFIG.SOUND_VICTORY);
-        victoryAudioRef.current.volume = GAME_CONFIG.VOLUME_VICTORY;
-        victoryAudioRef.current.loop = false;
-      }
-      victoryAudioRef.current.currentTime = 0;
-      victoryAudioRef.current.play().catch(() => {});
-    } else {
-      if (victoryAudioRef.current) {
-        victoryAudioRef.current.pause();
-        victoryAudioRef.current.currentTime = 0;
-      }
-    }
-  }, [isOpen, isVictory]);
-
   const alert = useAlert();
   const { sendTransactionAsync: addPlayerPTS, isPending: isAddingPTS } = useAddPoints();
 
