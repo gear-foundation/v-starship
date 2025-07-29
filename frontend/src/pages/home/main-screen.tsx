@@ -10,6 +10,7 @@ import { useSetPlayerName } from '@/api/sails';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
+import { IS_DEV_MODE_ENABLED } from './dev-config';
 import { GAME_CONFIG } from './game-config';
 import LeaderboardDialog from './leaderboard-dialog';
 import ShopDialog from './shop-dialog';
@@ -55,7 +56,6 @@ export default function MainScreen({
   valuePerPoint,
   integerBalanceDisplay,
 }: MainScreenProps) {
-  // const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showTokenExchange, setShowTokenExchange] = useState(false);
@@ -104,8 +104,6 @@ export default function MainScreen({
     setShowShop(false);
     setShowTokenExchange(true);
   };
-
-  console.log('render');
 
   return (
     <>
@@ -244,7 +242,7 @@ export default function MainScreen({
                 onClick={onStartGame}
                 className="w-full bg-gradient-to-r from-red-500/80 to-cyan-400/80 border-2 border-red-500 text-white hover:bg-red-500/90 font-bold py-4 text-lg rounded-xl shadow-lg glow-red-border transition-all duration-300 mb-2"
                 style={{ minHeight: 56, fontSize: 22, letterSpacing: 2 }}
-                disabled={gamesAvailable === 0 || !account}>
+                disabled={!IS_DEV_MODE_ENABLED && (gamesAvailable === 0 || !account)}>
                 START GAME
               </Button>
               <div className="flex gap-3 w-full">

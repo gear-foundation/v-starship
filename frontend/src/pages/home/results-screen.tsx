@@ -6,6 +6,7 @@ import { useAddPoints } from '@/api/sails';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
+import { IS_DEV_MODE_ENABLED } from './dev-config';
 import { GAME_CONFIG } from './game-config';
 
 interface ResultsScreenProps {
@@ -59,12 +60,16 @@ export function ResultsScreen({
   const { sendTransactionAsync: addPlayerPTS, isPending: isAddingPTS } = useAddPoints();
 
   const handleBackToMenu = () => {
+    if (IS_DEV_MODE_ENABLED) return onClose();
+
     addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
       .then(() => onClose())
       .catch((error) => alert.error(getErrorMessage(error)));
   };
 
   const handleReplay = () => {
+    if (IS_DEV_MODE_ENABLED) return onReplay?.();
+
     addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
       .then(() => onReplay?.())
       .catch((error) => alert.error(getErrorMessage(error)));
