@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 
 import { getErrorMessage } from '@/utils';
 
+import { IS_SOUND_ENABLED } from './dev-config';
 import { GAME_CONFIG } from './game-config';
 
 function useBackgroundMusic(isEnabled: boolean) {
@@ -17,7 +18,7 @@ function useBackgroundMusic(isEnabled: boolean) {
   };
 
   useEffect(() => {
-    if (!isEnabled) return pause();
+    if (!IS_SOUND_ENABLED || !isEnabled) return pause();
     if (ref.current) return;
 
     ref.current = new Audio(GAME_CONFIG.SOUND_BG_MUSIC);

@@ -1,6 +1,7 @@
 import { useAlert } from '@gear-js/react-hooks';
 import { useRef, useEffect } from 'react';
 
+import { IS_SOUND_ENABLED } from './dev-config';
 import { GAME_CONFIG, BOSS_CONFIG, BOOSTER_CONFIG } from './game-config';
 
 const SOUNDS = [
@@ -26,6 +27,8 @@ function usePlaySound() {
   const bufferCache = useRef<{ [key: string]: AudioBuffer }>({});
 
   useEffect(() => {
+    if (!IS_SOUND_ENABLED) return;
+
     audioContextRef.current = new AudioContext();
 
     SOUNDS.forEach((src) => {
@@ -52,6 +55,8 @@ function usePlaySound() {
   }, []);
 
   return (src: string, volume = 0.5) => {
+    if (!IS_SOUND_ENABLED) return;
+
     try {
       const ctx = audioContextRef.current;
       const buffer = bufferCache.current[src];
