@@ -78,13 +78,13 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen min-w-full p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-full min-w-full p-4">
       {/* Backdrop */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Leaderboard Dialog (рамка и содержимое по центру) */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-purple-600/10 rounded-lg blur-xl -z-10"></div>
 
@@ -111,7 +111,7 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
         </div>
 
         {/* Leaderboard Entries */}
-        <div className="max-h-96 overflow-y-auto">{render()}</div>
+        <div className="overflow-y-auto">{render()}</div>
 
         {/* Footer */}
         <div className="p-4 border-t border-cyan-400/20 text-center">

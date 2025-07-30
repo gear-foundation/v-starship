@@ -56,21 +56,14 @@ export function ResultsScreen({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen min-w-full p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-full min-w-full p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
       {/* Results Dialog (рамка и содержимое по центру) */}
       <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 rounded-lg backdrop-blur-md font-['Orbitron'] overflow-hidden  "
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 rounded-lg backdrop-blur-md font-['Orbitron'] ${isVictory ? 'from-cyan-400/10 to-purple-600/10' : 'from-red-500/10 to-purple-600/10'}`}
         style={{ borderColor: isVictory ? 'rgba(34,211,238,0.5)' : 'rgba(239,68,68,0.5)' }}>
-        {/* Glow effect */}
-        <div
-          className={`
-            absolute inset-0 bg-gradient-to-b rounded-lg blur-xl -z-10
-            ${isVictory ? 'from-cyan-400/10 to-purple-600/10' : 'from-red-500/10 to-purple-600/10'}
-          `}></div>
-
         {/* Header */}
         <div className="flex justify-between items-center p-4">
           <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS.toLocaleString()}</div>
@@ -104,7 +97,7 @@ export function ResultsScreen({
         </div>
 
         {/* PTS Earned */}
-        <div className="px-6 py-4 text-center flex flex-col items-center justify-center" style={{ minHeight: 180 }}>
+        <div className="px-6 py-4 text-center flex flex-col items-center justify-center overflow-y-auto">
           <div className="text-xl text-gray-300 glow-white mb-2">PTS EARNED</div>
           <div
             className={`

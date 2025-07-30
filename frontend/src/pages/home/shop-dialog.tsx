@@ -116,13 +116,13 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen min-w-full p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-full min-w-full p-4">
       {/* Backdrop */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Shop Dialog */}
-      <div className="relative w-full max-w-md bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
+      <div className="relative w-full max-w-md max-h-[90%] bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron'] flex flex-col">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-purple-600/10 rounded-lg blur-xl -z-10"></div>
 
@@ -154,7 +154,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
         </div>
 
         {/* Shop Items */}
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 overflow-y-auto">
           {shopItems.map((item) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div
