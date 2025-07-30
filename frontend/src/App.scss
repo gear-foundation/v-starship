@@ -13,8 +13,16 @@ main {
 }
 
 #root {
-  min-height: 100dvh;
+  min-height: 100svh;
 
   display: flex;
   flex-direction: column;
+
+  @media only screen and (min-width: 769px) {
+    max-width: 360px;
+    margin: 0 auto;
+
+    border-radius: 24px;
+    overflow: hidden;
+  }
 }

@@ -1,9 +1,10 @@
 import { Account } from '@gear-js/react-hooks';
-import { Heart, Zap } from 'lucide-react';
+import { Infinity as InfinityIcon, Heart, Zap } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 
+import { IS_PLAYER_IMMORTAL } from './dev-config';
 import { FPS } from './fps';
 import { GAME_CONFIG, BOSS_CONFIG } from './game-config';
 import { MobileControls } from './mobile-controls';
@@ -77,7 +78,7 @@ export default function InGameScreen({
 }: InGameScreenProps) {
   // === ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ НА ВЕРХНЕМ УРОВНЕ ===
   // Основное состояние игры
-  const [playerHP, setPlayerHP] = useState(GAME_CONFIG.INITIAL_PLAYER_HP);
+  const [playerHP, setPlayerHP] = useState(IS_PLAYER_IMMORTAL ? Infinity : GAME_CONFIG.INITIAL_PLAYER_HP);
   const playerExists = playerHP > 0;
 
   const [showResults, setShowResults] = useState(false);
@@ -1865,12 +1866,19 @@ export default function InGameScreen({
 
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-1">
-            {[...Array<undefined>(3)].map((_, i) => (
-              <Heart
-                key={i}
-                className={`h-6 w-6 ${i < playerHP ? 'text-red-500 fill-red-500 glow-red' : 'text-gray-600'}`}
-              />
-            ))}
+            {IS_PLAYER_IMMORTAL ? (
+              <>
+                <Heart className="text-red-500 fill-red-500 glow-red" />
+                <InfinityIcon />
+              </>
+            ) : (
+              [...Array<undefined>(3)].map((_, i) => (
+                <Heart
+                  key={i}
+                  className={`h-6 w-6 ${i < playerHP ? 'text-red-500 fill-red-500 glow-red' : 'text-gray-600'}`}
+                />
+              ))
+            )}
           </div>
 
           <div className="flex items-center gap-2">
