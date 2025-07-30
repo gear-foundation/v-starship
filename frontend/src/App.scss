@@ -5,16 +5,24 @@ body {
 
 main {
   flex: 1;
-  padding: 30px 0 60px;
-  position: relative; // for loaders
+
+  display: flex;
+  justify-content: center;
+
+  position: relative; // for loaders and background
 }
 
 #root {
-  max-width: 1200px;
-  min-height: 100vh;
-  margin: 0 auto;
-  padding: 0 16px;
+  min-height: 100svh;
+
   display: flex;
   flex-direction: column;
-  box-sizing: content-box;
+
+  @media only screen and (min-width: 769px) {
+    max-width: 360px;
+    margin: 0 auto;
+
+    border-radius: 24px;
+    overflow: hidden;
+  }
 }
