@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-
+import { HexString } from '@gear-js/api';
 import { Account, useAlert } from '@gear-js/react-hooks';
 import { Wallet } from '@gear-js/wallet-connect';
 import { Edit2, Loader2, Zap } from 'lucide-react';
@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
 import { IS_DEV_MODE_ENABLED } from './dev-config';
-import { GAME_CONFIG } from './game-config';
 import LeaderboardDialog from './leaderboard-dialog';
+import { PlayerShip } from './player-ship';
 import ShopDialog from './shop-dialog';
 import { SpaceBackground } from './space-background';
 import TokenExchangeDialog from './token-exchange-dialog';
@@ -25,6 +25,7 @@ interface MainScreenProps {
   gamesAvailable: number;
   timeToFreeAttempts: number;
   shipLevel: number;
+  shipNft: { programId: HexString; id: string; mediaUrl: string } | undefined;
   playerVARA: bigint;
   playerName: string;
   boosterCount: number;
@@ -38,17 +39,13 @@ function formatNumber(n: number) {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-// === ПАРАМЕТРЫ РАЗМЕРА КОРАБЛЯ ИГРОКА ===
-// Для главного экрана корабль в 2 раза больше, чем в игре
-const BASE_SHIP_SIZE = GAME_CONFIG.PLAYER_SHIP_BASE_SIZE * 2;
-const SHIP_SIZE_STEP = GAME_CONFIG.PLAYER_SHIP_SIZE_STEP * 2;
-
 export default function MainScreen({
   onStartGame,
   playerPTS,
   gamesAvailable,
   timeToFreeAttempts,
   shipLevel,
+  shipNft,
   playerVARA,
   playerName,
   boosterCount,
@@ -181,20 +178,7 @@ export default function MainScreen({
             )}
           </div>
 
-          <div className="flex justify-center mb-4">
-            <img
-              src={`/img/starship-${shipLevel}.png`}
-              alt="player ship"
-              width={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
-              height={BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}
-              className="select-none pointer-events-none"
-              style={{
-                width: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                height: `${BASE_SHIP_SIZE + SHIP_SIZE_STEP * (shipLevel - 1)}px`,
-                userSelect: 'none',
-              }}
-            />
-          </div>
+          <PlayerShip level={shipLevel} nft={shipNft} />
 
           <div className="text-center mb-6">
             <span className="text-white text-lg font-bold glow-white">Level {shipLevel}</span>
