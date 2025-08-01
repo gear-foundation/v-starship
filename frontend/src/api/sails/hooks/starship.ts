@@ -23,17 +23,19 @@ function useConfig() {
     serviceName: 'starship',
     functionName: 'config',
     args: [],
+
     query: {
       select: (data) => ({
         ftContract: data.ft_contract,
+        nftContract: data.nft_contract,
         valuePerPoint: BigInt(data.one_point_in_value),
-        maxShipLevel: data.max_level_ship,
+        maxShipLevel: data.max_level_ship + 1, // all of the logic is based on 1-indexed ship levels
 
         defaults: {
           name: data.default_name,
           attemptsCount: data.default_free_attempts,
           boostersCount: data.default_boosters,
-          shipLevel: data.default_level_ship,
+          shipLevel: data.default_level_ship + 1, // all of the logic is based on 1-indexed ship levels
         },
 
         prices: {
@@ -53,7 +55,7 @@ const formatPlayer = (address: HexString, player: PlayerInfo) => {
     earnedPoints: Number(player.earned_points),
     attemptsCount: player.number_of_attempts,
     boostersCount: player.number_of_boosters,
-    shipLevel: player.ship_level,
+    shipLevel: player.ship_level + 1, // all of the logic is based on 1-indexed ship levels
   };
 };
 

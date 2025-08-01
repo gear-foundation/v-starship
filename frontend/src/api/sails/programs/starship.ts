@@ -24,13 +24,11 @@ export interface Config {
   default_level_ship: number;
   max_level_ship: number;
   daily_reset_offset_ms: number | string | bigint;
-  img_links: Array<string>;
 }
 
 export interface PlayerInfo {
   player_name: string;
   earned_points: number | string | bigint;
-  nft_ids: Array<number | string | bigint>;
   number_of_attempts: number;
   number_of_boosters: number;
   ship_level: number;
@@ -60,12 +58,10 @@ export class SailsProgram {
         default_level_ship: 'u16',
         max_level_ship: 'u16',
         daily_reset_offset_ms: 'u64',
-        img_links: 'Vec<String>',
       },
       PlayerInfo: {
         player_name: 'String',
         earned_points: 'u128',
-        nft_ids: 'Vec<u64>',
         number_of_attempts: 'u16',
         number_of_boosters: 'u16',
         ship_level: 'u16',

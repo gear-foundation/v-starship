@@ -10,6 +10,7 @@ import {
   useBuyBooster,
   useBuyShip,
   usePointsBalance,
+  usePlayerNFT,
 } from './hooks';
 
 export {
@@ -24,4 +25,5 @@ export {
   useBuyBooster,
   useBuyShip,
   usePointsBalance,
+  usePlayerNFT,
 };
