@@ -1,6 +1,9 @@
 import { HexString } from '@gear-js/api';
-import { Modal, Button } from '@gear-js/vara-ui';
 import { useState } from 'react';
+
+import { Button, Dialog } from '@/components';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -31,16 +34,19 @@ function PlayerShip({ level, nft }: Props) {
       </button>
 
       {isModalOpen && (
-        <Modal close={closeModal} heading="Open NFT Showroom portal?" className="grid grid-cols-2 gap-8">
-          <Button onClick={closeModal}>No</Button>
+        <Dialog onClose={closeModal} title="Open NFT Showroom?" contentClassName="grid grid-cols-2">
+          <Button variant="link" onClick={closeModal}>
+            No
+          </Button>
 
           <a
             href={`https://nft-showroom.vara.network/nft/${nft?.programId}/${nft?.id}`}
             target="_blank"
-            rel="noreferrer">
+            rel="noreferrer"
+            className={cn(buttonVariants({ variant: 'link' }))}>
             Yes
           </a>
-        </Modal>
+        </Dialog>
       )}
     </>
   );
