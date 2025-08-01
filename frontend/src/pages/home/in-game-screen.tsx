@@ -21,6 +21,7 @@ interface InGameScreenProps {
   playerPTS: number;
   gamesAvailable: number;
   shipLevel: number;
+  shipImageUrl: string | undefined;
   boosterCount: number;
   account: Account | undefined;
   integerBalanceDisplay: {
@@ -72,6 +73,7 @@ export default function InGameScreen({
   playerPTS,
   gamesAvailable,
   shipLevel,
+  shipImageUrl,
   boosterCount,
   account,
   integerBalanceDisplay,
@@ -320,14 +322,7 @@ export default function InGameScreen({
     // Load player image
     if (!playerImageElement.current) {
       const img = new Image();
-      img.src = `/img/starship-${shipLevel}.png`;
-      img.onload = () => {
-        playerImageElement.current = img;
-      };
-    } else if (playerImageElement.current.src !== `/img/starship-${shipLevel}.png`) {
-      // Reload image if ship level changed
-      const img = new Image();
-      img.src = `/img/starship-${shipLevel}.png`;
+      img.src = shipImageUrl || '/img/starship-1.png';
       img.onload = () => {
         playerImageElement.current = img;
       };
@@ -377,7 +372,7 @@ export default function InGameScreen({
         bossImageElement.current = img;
       };
     }
-  }, [shipLevel]);
+  }, [shipImageUrl]);
 
   // Resize canvas to match game area
   useEffect(() => {

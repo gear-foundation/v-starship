@@ -74,6 +74,7 @@ function Home() {
         playerPTS={playerPTS}
         gamesAvailable={gamesAvailable}
         shipLevel={shipLevel}
+        shipImageUrl={playerNFT?.mediaUrl}
         boosterCount={boosterCount}
         account={account}
         integerBalanceDisplay={formattedBalance}
