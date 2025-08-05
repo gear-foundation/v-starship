@@ -22,7 +22,7 @@ function Dialog({ onClose, title, children, className = '', contentClassName = '
       {/* Dialog Container */}
       <div
         className={`
-          absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 
+          relative
           w-full max-w-md max-h-[90%] 
           flex flex-col 
           bg-gradient-to-b from-slate-900/95 to-purple-950/95 
