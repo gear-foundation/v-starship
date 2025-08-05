@@ -25,7 +25,13 @@ function AlertProvider({ children }: ProviderProps) {
   );
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function QueryProvider({ children }: ProviderProps) {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

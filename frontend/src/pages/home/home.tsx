@@ -3,7 +3,7 @@ import { Loader } from 'lucide-react';
 import { useState } from 'react';
 
 import { useVaraBalance } from '@/api/gear';
-import { useConfig, usePlayer, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
+import { useConfig, usePlayer, usePlayerNFT, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
 import { isNullOrUndefined, isUndefined } from '@/utils';
 
 import InGameScreen from './in-game-screen';
@@ -21,7 +21,8 @@ function Home() {
   const { data: config } = useConfig();
   const { data: playerPTS = 0 } = usePointsBalance();
 
-  const { data: player, isPending: isPlayerFetching } = usePlayer();
+  const { data: player, isPending: isPlayerPending } = usePlayer();
+  const { data: playerNFT, isPending: isPlayerNFTPending } = usePlayerNFT();
   const { data: timeToFreeAttempts = 0 } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
@@ -31,7 +32,8 @@ function Home() {
     (isUndefined(playerPTS) ||
       !config ||
       isNullOrUndefined(balance) ||
-      isPlayerFetching ||
+      isPlayerPending ||
+      isPlayerNFTPending ||
       isUndefined(timeToFreeAttempts))
   )
     return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
@@ -72,6 +74,7 @@ function Home() {
         playerPTS={playerPTS}
         gamesAvailable={gamesAvailable}
         shipLevel={shipLevel}
+        shipImageUrl={playerNFT?.mediaUrl}
         boosterCount={boosterCount}
         account={account}
         integerBalanceDisplay={formattedBalance}
@@ -86,6 +89,7 @@ function Home() {
       gamesAvailable={gamesAvailable}
       timeToFreeAttempts={timeToFreeAttempts}
       shipLevel={shipLevel}
+      shipNft={playerNFT}
       playerVARA={balance}
       playerName={playerName}
       boosterCount={boosterCount}

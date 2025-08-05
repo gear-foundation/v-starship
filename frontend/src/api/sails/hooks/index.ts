@@ -1,3 +1,4 @@
+import { usePlayerNFT } from './nft';
 import {
   useConfig,
   usePlayer,
@@ -24,4 +25,5 @@ export {
   useBuyBooster,
   useBuyShip,
   usePointsBalance,
+  usePlayerNFT,
 };

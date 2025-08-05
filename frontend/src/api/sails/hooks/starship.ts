@@ -23,9 +23,11 @@ function useConfig() {
     serviceName: 'starship',
     functionName: 'config',
     args: [],
+
     query: {
       select: (data) => ({
         ftContract: data.ft_contract,
+        nftContract: data.nft_contract,
         valuePerPoint: BigInt(data.one_point_in_value),
         maxShipLevel: data.max_level_ship,
 
