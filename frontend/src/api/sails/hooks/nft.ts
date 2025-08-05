@@ -48,7 +48,7 @@ function usePlayerNFT() {
       ? {
           programId,
           id: tokenId.toString(),
-          mediaUrl: token.media_url,
+          mediaUrl: `${token.media_url}?img-width=192&img-height=192`,
         }
       : undefined;
 
