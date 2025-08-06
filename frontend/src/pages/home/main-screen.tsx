@@ -188,10 +188,7 @@ export default function MainScreen({
 
         <div className="text-center mt-auto">
           <div className="mb-3">
-            <span className="text-cyan-400 text-base glow-blue">
-              Games available: {gamesAvailable}
-              {!timeLeftMs && ' of 3'}
-            </span>
+            <span className="text-cyan-400 text-base glow-blue">Games available: {gamesAvailable}</span>
           </div>
 
           {Boolean(timeLeftMs) && (

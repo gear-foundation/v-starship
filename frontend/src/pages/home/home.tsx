@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import { useVaraBalance } from '@/api/gear';
 import { useConfig, usePlayer, usePlayerNFT, usePointsBalance, useTimeToFreeAttempts } from '@/api/sails';
-import { isNullOrUndefined, isUndefined } from '@/utils';
 
 import InGameScreen from './in-game-screen';
 import MainScreen from './main-screen';
@@ -17,24 +16,20 @@ function Home() {
   const { account } = useAccount();
   const { getFormattedBalance } = useBalanceFormat();
 
-  const { data: balance = 0n } = useVaraBalance();
+  const { data: balance = 0n, isPending: isBalancePending } = useVaraBalance();
   const { data: config } = useConfig();
-  const { data: playerPTS = 0 } = usePointsBalance();
+  const { data: playerPTS = 0, isPending: isPlayerPTSPending } = usePointsBalance();
 
   const { data: player, isPending: isPlayerPending } = usePlayer();
   const { data: playerNFT, isPending: isPlayerNFTPending } = usePlayerNFT();
-  const { data: timeToFreeAttempts = 0 } = useTimeToFreeAttempts();
+  const { data: timeToFreeAttempts = 0, isPending: isTimeToFreeAttemptsPending } = useTimeToFreeAttempts();
 
   const [gameSessionId, setGameSessionId] = useState(0);
 
   if (
-    account &&
-    (isUndefined(playerPTS) ||
-      !config ||
-      isNullOrUndefined(balance) ||
-      isPlayerPending ||
-      isPlayerNFTPending ||
-      isUndefined(timeToFreeAttempts))
+    !config ||
+    (account &&
+      (isBalancePending || isPlayerPTSPending || isPlayerPending || isPlayerNFTPending || isTimeToFreeAttemptsPending))
   )
     return <Loader className="size-8 animate-spin absolute inset-0 m-auto" />;
 
@@ -43,7 +38,7 @@ function Home() {
     shipLevel,
     attemptsCount: gamesAvailable,
     boostersCount: boosterCount,
-  } = player || config?.defaults || { name: 'Player', shipLevel: 1, attemptsCount: 0, boostersCount: 0 };
+  } = player || config.defaults;
 
   function handleStartGame() {
     if (gamesAvailable > 0) {
@@ -96,7 +91,7 @@ function Home() {
       boosterCount={boosterCount}
       account={account}
       integerBalanceDisplay={integerBalance}
-      valuePerPoint={config?.valuePerPoint || 1n}
+      valuePerPoint={config.valuePerPoint}
     />
   );
 }

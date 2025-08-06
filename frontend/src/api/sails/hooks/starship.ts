@@ -1,6 +1,5 @@
 import { HexString } from '@gear-js/api';
 import { useAccount, useProgram, useProgramQuery, useSendProgramTransaction } from '@gear-js/react-hooks';
-import { useEffect } from 'react';
 import { ZERO_ADDRESS } from 'sails-js';
 
 import { StarshipProgram } from '../programs';
@@ -68,61 +67,39 @@ function usePlayer() {
     serviceName: 'starship',
     functionName: 'playerInfo',
     args: [account?.decodedAddress || ZERO_ADDRESS],
+    watch: true,
     query: {
       enabled: Boolean(account),
       select: (data) => formatPlayer(account?.decodedAddress || ZERO_ADDRESS, data),
-
-      // if player has not played yet, there's gonna be an error
-      // and usePlayer in children components gonna be retried by default,
-      // resulting in infinite loop considering loading check at the root component
-      // source: https://github.com/TanStack/query/discussions/2755
-      retryOnMount: false,
     },
-    watch: true,
   });
 }
 
 function usePlayers() {
   const { data: program } = useStarshipProgram();
-  const { data: player } = usePlayer();
 
-  const query = useProgramQuery({
+  return useProgramQuery({
     program,
     serviceName: 'starship',
     functionName: 'allPlayersInfo',
     args: [],
+    watch: true,
     query: { select: (data) => data.map(([address, _player]) => formatPlayer(address, _player)) },
   });
-
-  useEffect(() => {
-    if (player?.name) void query.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player?.name]);
-
-  return query;
 }
 
 function useTimeToFreeAttempts() {
   const { account } = useAccount();
   const { data: program } = useStarshipProgram();
 
-  const { data: player } = usePlayer();
-  const { attemptsCount } = player || {};
-
-  const query = useProgramQuery({
+  return useProgramQuery({
     program,
     serviceName: 'starship',
     functionName: 'timeToFreeAttempts',
     args: [account?.decodedAddress || ZERO_ADDRESS],
+    watch: true,
     query: { enabled: Boolean(account), select: (data) => Number(data) },
   });
-
-  useEffect(() => {
-    if (attemptsCount === 0) void query.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attemptsCount]);
-
-  return query;
 }
 
 function useSetPlayerName() {
