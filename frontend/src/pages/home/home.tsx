@@ -64,6 +64,7 @@ function Home() {
   }
 
   const formattedBalance = getFormattedBalance(balance);
+  const integerBalance = { ...formattedBalance, value: formattedBalance.value.split('.')[0] };
 
   if (currentScreen === 'game') {
     return (
@@ -77,7 +78,7 @@ function Home() {
         shipImageUrl={playerNFT?.mediaUrl}
         boosterCount={boosterCount}
         account={account}
-        integerBalanceDisplay={formattedBalance}
+        integerBalanceDisplay={integerBalance}
       />
     );
   }
@@ -94,7 +95,7 @@ function Home() {
       playerName={playerName}
       boosterCount={boosterCount}
       account={account}
-      integerBalanceDisplay={formattedBalance}
+      integerBalanceDisplay={integerBalance}
       valuePerPoint={config?.valuePerPoint || 1n}
     />
   );

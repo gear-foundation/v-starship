@@ -116,6 +116,7 @@ export default function MainScreen({
                 {integerBalanceDisplay.unit}
               </p>
             )}
+
             <Wallet displayBalance={false} />
           </div>
 
