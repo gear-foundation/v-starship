@@ -52,7 +52,6 @@ const formatPlayer = (address: HexString, player: PlayerInfo) => {
     address,
     name: player.player_name,
     earnedPoints: Number(player.earned_points),
-    attemptsCount: player.number_of_attempts,
     boostersCount: player.number_of_boosters,
     shipLevel: player.ship_level,
   };
@@ -85,6 +84,21 @@ function usePlayers() {
     args: [],
     watch: true,
     query: { select: (data) => data.map(([address, _player]) => formatPlayer(address, _player)) },
+  });
+}
+
+// using standalone method because PlayerInfo property is not getting reset unless addPoints is called
+function useAttemptsCount() {
+  const { account } = useAccount();
+  const { data: program } = useStarshipProgram();
+
+  return useProgramQuery({
+    program,
+    serviceName: 'starship',
+    functionName: 'numberOfAttempts',
+    args: [account?.decodedAddress || ZERO_ADDRESS],
+    watch: true,
+    query: { enabled: Boolean(account) },
   });
 }
 
@@ -166,6 +180,7 @@ export {
   useConfig,
   usePlayer,
   usePlayers,
+  useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,
   useAddPoints,

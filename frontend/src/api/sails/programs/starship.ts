@@ -275,6 +275,28 @@ export class Starship {
     return result[2].toJSON() as unknown as Config;
   }
 
+  public async numberOfAttempts(
+    player: ActorId,
+    originAddress?: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<number> {
+    const payload = this._program.registry
+      .createType('(String, String, [u8;32])', ['Starship', 'NumberOfAttempts', player])
+      .toHex();
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
+    const result = this._program.registry.createType('(String, String, u16)', reply.payload);
+    return result[2].toNumber() as unknown as number;
+  }
+
   public async playerInfo(
     player: ActorId,
     originAddress?: string,

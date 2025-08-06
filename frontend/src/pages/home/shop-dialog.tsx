@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
+import { IS_SOUND_ENABLED } from './dev-config';
 
 interface ShopItem {
   id: string;
@@ -72,6 +73,8 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
 
   // Универсальная функция для проигрывания звуков
   function playSound(src: string, volume = 0.7) {
+    if (!IS_SOUND_ENABLED) return;
+
     try {
       const audio = new Audio(src);
       audio.volume = volume;
@@ -83,28 +86,31 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
 
   const handlePurchase = () => {
     if (selectedItem === 'extra-game' && selectedItemData && playerPTS >= selectedItemData.cost && gamesAvailable < 3) {
-      playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
-
       return buyAttempt({ args: [] })
-        .then(() => onClose())
+        .then(() => {
+          playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
+          onClose();
+        })
         .catch((error) => {
           alert.error(getErrorMessage(error));
         });
     }
 
     if (selectedItem === 'ship-upgrade' && canUpgrade && selectedItemData && playerPTS >= selectedItemData.cost) {
-      playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
-
       return buyShip({ args: [] })
-        .then(() => onClose())
+        .then(() => {
+          playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
+          onClose();
+        })
         .catch((error) => alert.error(getErrorMessage(error)));
     }
 
     if (selectedItem === 'booster' && selectedItemData && playerPTS >= selectedItemData.cost) {
-      playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
-
       return buyBooster({ args: [] })
-        .then(() => onClose())
+        .then(() => {
+          playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
+          onClose();
+        })
         .catch((error) => alert.error(getErrorMessage(error)));
     }
 
