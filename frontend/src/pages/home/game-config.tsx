@@ -186,16 +186,16 @@ export const BOSS_CONFIG = {
   soundExplosion: '/sound/boss-explosion.mp3',
   soundAppear: '/sound/boss-raise.mp3', // Звук появления босса
   // ---  параметры визуала снарядов босса ---
-  laserWidth: 3, // px
-  laserHeight: 10, // px
-  laserColor: 'linear-gradient(180deg, #ffea00 0%, #ff1744 100%)',
-  rocketWidth: 5, // px
-  rocketHeight: 12, // px
-  rocketColor: 'linear-gradient(180deg, #00e5ff 0%, #ff9100 100%)',
+  laserWidth: 4, // px (увеличиваем для теста)
+  laserHeight: 14, // px (увеличиваем для теста)
+  laserColor: '#00FF84', // Яркий зеленый цвет для лазера босса
+  rocketWidth: 5, // px (увеличиваем для теста)
+  rocketHeight: 16, // px (увеличиваем для теста)
+  rocketColor: '#FF7700', // Яркий красный цвет для ракеты босса
   rocketBorder: '1px solid #fff',
   // ---  параметры скорости снарядов босса ---
-  laserSpeed: 2.0, // %/тик (ускоренный лазер босса)
-  rocketSpeed: 1.5, // %/тик (скорость ракеты босса)
+  laserSpeed: 1.6, // %/тик (ускоренный лазер босса)
+  rocketSpeed: 1.2, // %/тик (скорость ракеты босса)
   // --- параметры траектории и появления ---
   trajectory: {
     X_MIN: 10, // Минимальное положение по X (% ширины поля)
@@ -237,9 +237,9 @@ export const GAME_CONFIG: GameConfig = {
   PLAYER_MAX_SPEED_Y: 1.6,
   PLAYER_FRICTION_X: 0.5,
   PLAYER_FRICTION_Y: 0.5,
-  ENEMY_LASER_SPEED: 2.0,
-  PLAYER_LASER_SPEED: 2.8, // %/тик (скорость лазера игрока)
-  PLAYER_ROCKET_SPEED: 2.0, // %/тик (скорость ракеты игрока)
+  ENEMY_LASER_SPEED: 1.6,
+  PLAYER_LASER_SPEED: 2, // %/тик (скорость лазера игрока)
+  PLAYER_ROCKET_SPEED: 1.8, // %/тик (скорость ракеты игрока)
 
   // Награды
   ENEMY_REWARD: 50,
@@ -253,12 +253,12 @@ export const GAME_CONFIG: GameConfig = {
   ASTEROID_SIZE_MIN: 24,
   ASTEROID_SIZE_MAX: 48,
   MINE_SIZE: 32,
-  PLAYER_LASER_WIDTH: 2,
-  PLAYER_LASER_HEIGHT: 14,
-  PLAYER_ROCKET_WIDTH: 6,
-  PLAYER_ROCKET_HEIGHT: 20,
-  ENEMY_LASER_WIDTH: 3,
-  ENEMY_LASER_HEIGHT: 14,
+  PLAYER_LASER_WIDTH: 3,
+  PLAYER_LASER_HEIGHT: 10,
+  PLAYER_ROCKET_WIDTH: 5, // Увеличиваем ширину для теста
+  PLAYER_ROCKET_HEIGHT: 15, // Увеличиваем высоту для теста
+  ENEMY_LASER_WIDTH: 4, // Увеличиваем ширину для теста
+  ENEMY_LASER_HEIGHT: 12, // Увеличиваем высоту для теста
 
   // Скорости
   MINE_SPEED: 23,
@@ -266,7 +266,7 @@ export const GAME_CONFIG: GameConfig = {
   ASTEROID_SPEED_MAX: 45,
   ASTEROID_ROTATION_SPEED_MIN: 50, // Минимальная скорость вращения астероида (град/сек)
   ASTEROID_ROTATION_SPEED_MAX: 150, // Максимальная скорость вращения астероида (град/сек)
-  BACKGROUND_SCROLL_SPEED: 10, // seconds to go from top to bottom
+  BACKGROUND_SCROLL_SPEED: 5.6, // seconds to go from top to bottom
 
   // Звуки
   SOUND_PLAYER_LASER: '/sound/player-laser.mp3',
@@ -294,7 +294,7 @@ export const GAME_CONFIG: GameConfig = {
   VOLUME_ASTEROID_EXPLOSION: 0.5,
   VOLUME_MINE_EXPLOSION: 0.6,
   VOLUME_BG_MUSIC: 0.8,
-  VOLUME_BOOSTER_ACTIVATE: 0.1,
+  VOLUME_BOOSTER_ACTIVATE: 0.2,
   VOLUME_BOOSTER_DEACTIVATE: 0.5,
   VOLUME_VICTORY: 1,
   VOLUME_GAME_PURCHASE: 0.6,
@@ -304,8 +304,8 @@ export const GAME_CONFIG: GameConfig = {
   // Цвета снарядов
   PLAYER_LASER_COLOR: '#0ff',
   PLAYER_LASER_COLOR_BOOST: '#ff9900',
-  PLAYER_ROCKET_COLOR: '#ff9900', // bg-yellow-400
-  ENEMY_LASER_COLOR: '#85d2ff', // bg-red-500
+  PLAYER_ROCKET_COLOR: '#FF7700', // bg-yellow-400
+  ENEMY_LASER_COLOR: '#00FF84', // bg-red-500
   // Удаляю строку ENEMY_ROCKET_COLOR: '#00bcd4', // Цвет ракет врага
 
   // Конфигурации подсистем
@@ -330,11 +330,11 @@ export const GAME_CONFIG: GameConfig = {
   },
   ENEMY_FIRE_Y_MIN: 60, // Минимальное значение Y (в %), при котором враг может стрелять
   // === Свечение (boxShadow) для снарядов ===
-  PLAYER_LASER_GLOW: '0 0 4px 1px #44e8fa', // Свечение лазера игрока
+  PLAYER_LASER_GLOW: '0 0 6px 2px #44e8fa', // Свечение лазера игрока
   PLAYER_LASER_GLOW_BOOST: '0 0 8px 2px #ff9100', // Свечение лазера игрока с бустером
-  PLAYER_ROCKET_GLOW: '0 0 12px 2px #fff', // Свечение ракеты игрока
+  PLAYER_ROCKET_GLOW: '0 0 10px 2px #fff', // Свечение ракеты игрока
   ENEMY_LASER_GLOW: '0 0 6px 1px #00e5ff', // Свечение лазера врага
   ENEMY_ROCKET_GLOW: '0 0 12px 3px #00bcd4', // Свечение ракеты врага
-  BOSS_LASER_GLOW: '0 0 12px 3px #ff1744', // Свечение лазера босса
-  BOSS_ROCKET_GLOW: '0 0 18px 6px #ff9100', // Свечение ракеты босса
+  BOSS_LASER_GLOW: '0 0 10px 3px #00FF84', // Свечение лазера босса (зеленое)
+  BOSS_ROCKET_GLOW: '0 0 14px 6px #ff7373', // Свечение ракеты босса (красное)
 };

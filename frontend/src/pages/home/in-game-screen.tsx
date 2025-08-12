@@ -45,6 +45,8 @@ const PLAYER_LASER_HEIGHT = GAME_CONFIG.PLAYER_LASER_HEIGHT;
 const PLAYER_ROCKET_WIDTH = GAME_CONFIG.PLAYER_ROCKET_WIDTH;
 const PLAYER_ROCKET_HEIGHT = GAME_CONFIG.PLAYER_ROCKET_HEIGHT;
 const ENEMY_LASER_WIDTH = GAME_CONFIG.ENEMY_LASER_WIDTH;
+const ENEMY_LASER_HEIGHT = GAME_CONFIG.ENEMY_LASER_HEIGHT;
+const ENEMY_LASER_COLOR = GAME_CONFIG.ENEMY_LASER_COLOR;
 
 const ASTEROID_SPEED_MIN = GAME_CONFIG.ASTEROID_SPEED_MIN;
 const ASTEROID_SPEED_MAX = GAME_CONFIG.ASTEROID_SPEED_MAX;
@@ -674,19 +676,18 @@ export default function InGameScreen({
       // Set rocket color
       ctx.fillStyle = PLAYER_ROCKET_COLOR;
 
-      // Draw rocket as a circle (simulating the rounded-full class)
-      const radius = Math.min(PLAYER_ROCKET_WIDTH, PLAYER_ROCKET_HEIGHT) / 2;
-
-      ctx.beginPath();
-      ctx.arc(rocketX, rocketY, radius, 0, 2 * Math.PI);
-      ctx.fill();
-
       // Add glow effect
       ctx.shadowColor = PLAYER_ROCKET_COLOR;
       ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(rocketX, rocketY, radius, 0, 2 * Math.PI);
-      ctx.fill();
+
+      // Draw rocket as a rectangle (like other projectiles)
+      ctx.fillRect(
+        rocketX - PLAYER_ROCKET_WIDTH / 2, // Center horizontally
+        rocketY - PLAYER_ROCKET_HEIGHT / 2, // Center vertically
+        PLAYER_ROCKET_WIDTH,
+        PLAYER_ROCKET_HEIGHT,
+      );
+
       ctx.shadowBlur = 0; // Reset shadow
     });
   };
@@ -1121,9 +1122,13 @@ export default function InGameScreen({
         ctx.shadowColor = BOSS_CONFIG.laserColor;
         ctx.shadowBlur = 10;
 
-        ctx.beginPath();
-        ctx.arc(laserX, laserY, BOSS_CONFIG.laserWidth / 2, 0, 2 * Math.PI);
-        ctx.fill();
+        // Draw boss laser as a rectangle (like player lasers)
+        ctx.fillRect(
+          laserX - BOSS_CONFIG.laserWidth / 2, // Center horizontally
+          laserY - BOSS_CONFIG.laserHeight / 2, // Center vertically
+          BOSS_CONFIG.laserWidth,
+          BOSS_CONFIG.laserHeight,
+        );
 
         ctx.shadowBlur = 0; // Reset shadow
       } else if (laser.type === 'bossRocket') {
@@ -1134,22 +1139,30 @@ export default function InGameScreen({
         ctx.shadowColor = BOSS_CONFIG.rocketColor;
         ctx.shadowBlur = 8;
 
-        ctx.beginPath();
-        ctx.arc(laserX, laserY, BOSS_CONFIG.rocketWidth / 2, 0, 2 * Math.PI);
-        ctx.fill();
+        // Draw boss rocket as a rectangle (like player rockets)
+        ctx.fillRect(
+          laserX - BOSS_CONFIG.rocketWidth / 2, // Center horizontally
+          laserY - BOSS_CONFIG.rocketHeight / 2, // Center vertically
+          BOSS_CONFIG.rocketWidth,
+          BOSS_CONFIG.rocketHeight,
+        );
 
         ctx.shadowBlur = 0; // Reset shadow
       } else {
         // Default enemy laser
-        ctx.fillStyle = '#ff6b6b';
+        ctx.fillStyle = ENEMY_LASER_COLOR;
 
         // Add glow effect
-        ctx.shadowColor = '#ff6b6b';
+        ctx.shadowColor = ENEMY_LASER_COLOR;
         ctx.shadowBlur = 10;
 
-        ctx.beginPath();
-        ctx.arc(laserX, laserY, ENEMY_LASER_WIDTH / 2, 0, 2 * Math.PI);
-        ctx.fill();
+        // Draw enemy laser as a rectangle (like player lasers)
+        ctx.fillRect(
+          laserX - ENEMY_LASER_WIDTH / 2, // Center horizontally
+          laserY - ENEMY_LASER_HEIGHT / 2, // Center vertically
+          ENEMY_LASER_WIDTH,
+          ENEMY_LASER_HEIGHT,
+        );
 
         ctx.shadowBlur = 0; // Reset shadow
       }
