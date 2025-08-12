@@ -51,7 +51,7 @@ export const BOOSTER_CONFIG: BoosterConfig = {
   countPerGame: 2,
   appearTimeRange: [10, 50],
   speed: 20,
-  size: 40,
+  size: 48,
   rotationSpeed: 0.7,
   effectDuration: 7000, // 7 секунд
   icon: '/img/booster.png',
