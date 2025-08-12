@@ -852,7 +852,7 @@ export default function InGameScreen({
       const spawn = () => {
         if (boosterIndex >= timings.length) return;
 
-        const appearTime = timings[boosterIndex] * 1000; // Convert to milliseconds
+        const appearTime = timings[boosterIndex];
         if (currentTime - lastSpawnTime < appearTime) return;
 
         boostersDataRef.current.push({
