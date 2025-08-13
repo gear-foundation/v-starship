@@ -1,163 +1,100 @@
-import { useRef, useCallback, useState } from 'react';
+import { RefObject, useRef, useState } from 'react';
 
-// Configuration constants
 const TRACKPAD_CONFIG = {
-  MAX_RADIUS: 150, // Max distance from center (trackpad is 128px, so radius is 64, leave some padding)
-  DEAD_ZONE: 0, // Minimum distance to register movement (reduced from 15 for smaller deadzone)
-  HORIZONTAL_THRESHOLD: 0, // Sensitivity for horizontal movement detection
-  VERTICAL_THRESHOLD: 0, // Sensitivity for vertical movement detection
+  MAX_RADIUS: 150,
+  DEAD_ZONE: 0,
+  IS_LINEAR_INTENSITY: true,
+  SENSITIVITY: 0.5,
 };
 
 type Props = {
-  onPointer: (
-    arrowKey: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight',
-    isPressed: boolean,
-    intensity?: number,
-  ) => void;
+  inputIntensity: RefObject<{ x: number; y: number }>;
 };
 
-type TrackpadProps = {
-  onPointer: Props['onPointer'];
-};
-
-function MobileControls({ onPointer }: TrackpadProps) {
+function MobileControls({ inputIntensity }: Props) {
   const trackpadRef = useRef<HTMLDivElement>(null);
   const virtualTrackpadRef = useRef<HTMLDivElement>(null);
-  const activeKeys = useRef<Set<string>>(new Set());
   const [isVisible, setIsVisible] = useState(false);
   const [trackpadPosition, setTrackpadPosition] = useState({ x: 0, y: 0 });
   const [touchStartPosition, setTouchStartPosition] = useState({ x: 0, y: 0 });
   const [trackballPosition, setTrackballPosition] = useState({ x: 0, y: 0 });
 
-  const calculateDirection = useCallback(
-    (clientX: number, clientY: number) => {
-      // Use the touch start position as the center instead of screen center
-      const centerX = touchStartPosition.x;
-      const centerY = touchStartPosition.y;
+  const updateControls = (clientX: number, clientY: number) => {
+    const centerX = touchStartPosition.x;
+    const centerY = touchStartPosition.y;
 
-      const deltaX = clientX - centerX;
-      const deltaY = clientY - centerY;
+    const deltaX = clientX - centerX;
+    const deltaY = clientY - centerY;
 
-      // Calculate trackball position (constrained within trackpad bounds)
-      const maxRadius = TRACKPAD_CONFIG.MAX_RADIUS;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    // Calculate trackball position (constrained within trackpad bounds)
+    const maxRadius = TRACKPAD_CONFIG.MAX_RADIUS;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-      let ballX = 0;
-      let ballY = 0;
+    let ballX = 0;
+    let ballY = 0;
 
-      if (distance > 0) {
-        const constrainedDistance = Math.min(distance, maxRadius);
-        const ratio = constrainedDistance / distance;
-        ballX = deltaX * ratio;
-        ballY = deltaY * ratio;
-      }
+    if (distance > 0) {
+      const constrainedDistance = Math.min(distance, maxRadius);
+      const ratio = constrainedDistance / distance;
+      ballX = deltaX * ratio;
+      ballY = deltaY * ratio;
+    }
 
-      // Update trackball position (relative to trackpad center)
-      setTrackballPosition({ x: ballX, y: ballY });
+    // Update trackball position (relative to trackpad center)
+    setTrackballPosition({ x: ballX, y: ballY });
 
-      // Apply configurable deadzone threshold
-      const threshold = TRACKPAD_CONFIG.DEAD_ZONE;
+    if (distance < TRACKPAD_CONFIG.DEAD_ZONE) {
+      inputIntensity.current.x = 0;
+      inputIntensity.current.y = 0;
+      return;
+    }
 
-      if (distance < threshold) return null;
+    let normalizedX = 0;
+    let normalizedY = 0;
 
-      // Calculate intensity based on distance from center
-      const intensity = Math.min(distance / maxRadius, 1.0);
+    if (TRACKPAD_CONFIG.IS_LINEAR_INTENSITY) {
+      normalizedX = distance > 0 ? deltaX / distance : 0;
+      normalizedY = distance > 0 ? deltaY / distance : 0;
+    } else {
+      normalizedX = Math.max(-1, Math.min(1, deltaX / maxRadius));
+      normalizedY = Math.max(-1, Math.min(1, deltaY / maxRadius));
+    }
 
-      const directions: { direction: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'; intensity: number }[] = [];
+    inputIntensity.current.x = normalizedX * TRACKPAD_CONFIG.SENSITIVITY;
+    inputIntensity.current.y = -normalizedY * TRACKPAD_CONFIG.SENSITIVITY;
+  };
 
-      // Use configurable detection thresholds
-      const horizontalThreshold = TRACKPAD_CONFIG.HORIZONTAL_THRESHOLD;
-      const verticalThreshold = TRACKPAD_CONFIG.VERTICAL_THRESHOLD;
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
 
-      // Horizontal movement
-      if (Math.abs(deltaX) > Math.abs(deltaY) * horizontalThreshold) {
-        const horizontalIntensity = intensity * (Math.abs(deltaX) / distance);
-        if (deltaX > 0) directions.push({ direction: 'ArrowRight', intensity: horizontalIntensity });
-        else directions.push({ direction: 'ArrowLeft', intensity: horizontalIntensity });
-      }
+    const rect = trackpadRef.current?.getBoundingClientRect();
 
-      // Vertical movement
-      if (Math.abs(deltaY) > Math.abs(deltaX) * verticalThreshold) {
-        const verticalIntensity = intensity * (Math.abs(deltaY) / distance);
-        if (deltaY > 0) directions.push({ direction: 'ArrowDown', intensity: verticalIntensity });
-        else directions.push({ direction: 'ArrowUp', intensity: verticalIntensity });
-      }
+    if (rect) {
+      const relativeX = e.clientX - rect.left;
+      const relativeY = e.clientY - rect.top;
 
-      return directions;
-    },
-    [touchStartPosition],
-  );
+      setTouchStartPosition({ x: e.clientX, y: e.clientY });
+      setTrackpadPosition({ x: relativeX, y: relativeY });
+      setIsVisible(true);
+    }
 
-  const updateControls = useCallback(
-    (clientX: number, clientY: number) => {
-      const directionData = calculateDirection(clientX, clientY) || [];
-      const newKeys = new Set(directionData.map((d) => d.direction));
+    updateControls(e.clientX, e.clientY);
+  };
 
-      // Release keys that are no longer active
-      activeKeys.current.forEach((key: string) => {
-        if (!newKeys.has(key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight')) {
-          onPointer(key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', false);
-        }
-      });
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (e.buttons <= 0) return;
 
-      // Press keys that are newly active or update intensity for existing keys
-      directionData.forEach(({ direction, intensity }) => {
-        if (!activeKeys.current.has(direction)) {
-          onPointer(direction, true, intensity);
-        } else {
-          // Update intensity for already active direction
-          onPointer(direction, true, intensity);
-        }
-      });
+    e.preventDefault();
+    updateControls(e.clientX, e.clientY);
+  };
 
-      activeKeys.current = new Set(directionData.map((d) => d.direction));
-    },
-    [calculateDirection, onPointer],
-  );
+  const handlePointerEnd = () => {
+    inputIntensity.current.x = 0;
+    inputIntensity.current.y = 0;
 
-  const releaseAllKeys = useCallback(() => {
-    activeKeys.current.forEach((key: string) => {
-      onPointer(key as 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', false, 0);
-    });
-    activeKeys.current.clear();
-  }, [onPointer]);
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-
-      // Show trackpad at touch location
-      const rect = trackpadRef.current?.getBoundingClientRect();
-      if (rect) {
-        const relativeX = e.clientX - rect.left;
-        const relativeY = e.clientY - rect.top;
-
-        setTouchStartPosition({ x: e.clientX, y: e.clientY });
-        setTrackpadPosition({ x: relativeX, y: relativeY });
-        setIsVisible(true);
-      }
-
-      updateControls(e.clientX, e.clientY);
-    },
-    [updateControls],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (e.buttons > 0) {
-        // Only if pointer is pressed
-        e.preventDefault();
-        updateControls(e.clientX, e.clientY);
-      }
-    },
-    [updateControls],
-  );
-
-  const handlePointerEnd = useCallback(() => {
-    releaseAllKeys();
     setIsVisible(false);
-    setTrackballPosition({ x: 0, y: 0 }); // Reset trackball to center
-  }, [releaseAllKeys]);
+    setTrackballPosition({ x: 0, y: 0 });
+  };
 
   return (
     <>
@@ -179,9 +116,9 @@ function MobileControls({ onPointer }: TrackpadProps) {
           ref={virtualTrackpadRef}
           className="absolute w-32 h-32 rounded-full border-2 border-cyan-400/50 bg-black/30 backdrop-blur-sm pointer-events-none select-none opacity-25"
           style={{
-            left: trackpadPosition.x - 64, // Center the 128px trackpad on touch point
+            left: trackpadPosition.x - 64,
             top: trackpadPosition.y - 64,
-            transform: 'translateZ(0)', // Hardware acceleration
+            transform: 'translateZ(0)',
             transition: 'opacity 0.1s ease-out',
           }}>
           {/* Center dot */}

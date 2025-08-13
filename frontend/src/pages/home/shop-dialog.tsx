@@ -7,8 +7,8 @@ import { useBuyAttempt, useBuyBooster, useBuyShip, useConfig } from '@/api/sails
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils';
 
-import { GAME_CONFIG } from './game-config';
 import { IS_SOUND_ENABLED } from './dev-config';
+import { GAME_CONFIG } from './game-config';
 
 interface ShopItem {
   id: string;
