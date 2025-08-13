@@ -11,38 +11,47 @@ const KEYS: string[] = Object.values(KEY);
 
 function useKeyboardControls(inputIntensity: RefObject<{ x: number; y: number }>) {
   useEffect(() => {
-    const setIntensity = (key: string, value: number) => {
-      switch (key) {
-        case KEY.LEFT:
-          inputIntensity.current.x = -value;
-          break;
-
-        case KEY.RIGHT:
-          inputIntensity.current.x = value;
-          break;
-
-        case KEY.UP:
-          inputIntensity.current.y = value;
-          break;
-
-        case KEY.DOWN:
-          inputIntensity.current.y = -value;
-          break;
-      }
-    };
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!KEYS.includes(e.key)) return;
 
       e.preventDefault();
-      setIntensity(e.key, 1);
+
+      switch (e.key) {
+        case KEY.LEFT:
+          inputIntensity.current.x = -1;
+          break;
+        case KEY.RIGHT:
+          inputIntensity.current.x = 1;
+          break;
+        case KEY.UP:
+          inputIntensity.current.y = 1;
+          break;
+        case KEY.DOWN:
+          inputIntensity.current.y = -1;
+          break;
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (!KEYS.includes(e.key)) return;
 
       e.preventDefault();
-      setIntensity(e.key, 0);
+
+      // only reset if the released key matches current direction
+      switch (e.key) {
+        case KEY.LEFT:
+          if (inputIntensity.current.x < 0) inputIntensity.current.x = 0;
+          break;
+        case KEY.RIGHT:
+          if (inputIntensity.current.x > 0) inputIntensity.current.x = 0;
+          break;
+        case KEY.UP:
+          if (inputIntensity.current.y > 0) inputIntensity.current.y = 0;
+          break;
+        case KEY.DOWN:
+          if (inputIntensity.current.y < 0) inputIntensity.current.y = 0;
+          break;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);

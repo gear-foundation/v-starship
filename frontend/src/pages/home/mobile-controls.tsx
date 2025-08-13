@@ -89,7 +89,7 @@ function MobileControls({ inputIntensity }: Props) {
       {/* Invisible touch area covering the entire game field */}
       <div
         ref={trackpadRef}
-        className="absolute inset-0 w-full h-full select-none touch-none"
+        className="absolute inset-0 w-full h-full select-none touch-none md:hidden"
         style={{ background: 'transparent' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
