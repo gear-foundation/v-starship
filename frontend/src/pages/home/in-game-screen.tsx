@@ -1880,26 +1880,7 @@ export default function InGameScreen({
             </div>
           )}
 
-          <MobileControls
-            onPointer={(arrowKey, isPressed, intensity = 1) => {
-              const value = isPressed ? intensity : 0;
-
-              switch (arrowKey) {
-                case 'ArrowLeft':
-                  inputIntensity.current.x = -value;
-                  break;
-                case 'ArrowRight':
-                  inputIntensity.current.x = value;
-                  break;
-                case 'ArrowUp':
-                  inputIntensity.current.y = value;
-                  break;
-                case 'ArrowDown':
-                  inputIntensity.current.y = -value;
-                  break;
-              }
-            }}
-          />
+          <MobileControls inputIntensity={inputIntensity} />
         </div>
 
         <FPS value={fps} />
