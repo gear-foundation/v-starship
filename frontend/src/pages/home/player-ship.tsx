@@ -16,6 +16,8 @@ type Props = {
 const BASE_SIZE = GAME_CONFIG.PLAYER_SHIP_BASE_SIZE * 2;
 const SIZE_STEP = GAME_CONFIG.PLAYER_SHIP_SIZE_STEP * 2;
 
+const NFT_SHOWROOM_URL = import.meta.env.VITE_NFT_SHOWROOM_URL as string;
+
 function PlayerShip({ level, nft }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
@@ -40,7 +42,7 @@ function PlayerShip({ level, nft }: Props) {
           </Button>
 
           <a
-            href={`https://nft-showroom.vara.network/nft/${nft?.programId}/${nft?.id}`}
+            href={`${NFT_SHOWROOM_URL}/nft/${nft?.programId}/${nft?.id}`}
             target="_blank"
             rel="noreferrer"
             className={cn(buttonVariants({ variant: 'link' }))}>
