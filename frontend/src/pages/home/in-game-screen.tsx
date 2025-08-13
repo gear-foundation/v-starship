@@ -13,6 +13,7 @@ import { SpaceBackground } from './space-background';
 import { useBackgroundMusic } from './use-background-music';
 import { useFps } from './use-fps';
 import { useGameTime } from './use-game-time';
+import { useKeyboardControls } from './use-keyboard-controls';
 import { usePlaySound } from './use-play-sound';
 
 interface InGameScreenProps {
@@ -95,11 +96,8 @@ export default function InGameScreen({
   const Y_MIN = 5;
   const Y_MAX = 60;
 
-  // Управление игроком
-  const pressedKeys = useRef<{ [key: string]: boolean }>({});
-
-  // Trackpad input intensities (0-1, where 1 is maximum intensity)
-  const trackpadIntensity = useRef<{ [key: string]: number }>({});
+  const inputIntensity = useRef({ x: 0, y: 0 });
+  useKeyboardControls(inputIntensity);
 
   const PLAYER_MOVE = {
     accelX: GAME_CONFIG.PLAYER_ACCEL_X,
@@ -283,38 +281,6 @@ export default function InGameScreen({
     }, 2000);
   }, [playerHP, showResults]);
 
-  // Обработка нажатий и отпусканий клавиш
-  useEffect(() => {
-    if (showResults) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-        pressedKeys.current[e.key] = true;
-        e.preventDefault();
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-        pressedKeys.current[e.key] = false;
-        e.preventDefault();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [showResults]);
-
-  // При завершении игры сбрасываем скорости и клавиши
-  useEffect(() => {
-    if (showResults) {
-      pressedKeys.current = {};
-      trackpadIntensity.current = {};
-      // should entities be cleared here? no need any changes for now
-    }
-  }, [showResults]);
-
   // Initialize canvas and load images
   useEffect(() => {
     if (canvasRef.current && !canvasContextRef.current) {
@@ -429,23 +395,8 @@ export default function InGameScreen({
       let vx = playerVelocityRef.current.x;
       let vy = playerVelocityRef.current.y;
 
-      // Calculate input intensity for X axis
-      let xIntensity = 0;
-
-      if (pressedKeys.current['ArrowLeft']) {
-        xIntensity = -(trackpadIntensity.current['ArrowLeft'] || 1); // Negative for left
-      } else if (pressedKeys.current['ArrowRight']) {
-        xIntensity = trackpadIntensity.current['ArrowRight'] || 1; // Positive for right
-      }
-
-      // Calculate input intensity for Y axis
-      let yIntensity = 0;
-
-      if (pressedKeys.current['ArrowUp']) {
-        yIntensity = trackpadIntensity.current['ArrowUp'] || 1; // Positive for up
-      } else if (pressedKeys.current['ArrowDown']) {
-        yIntensity = -(trackpadIntensity.current['ArrowDown'] || 1); // Negative for down
-      }
+      const xIntensity = inputIntensity.current.x;
+      const yIntensity = inputIntensity.current.y;
 
       // Apply movement with intensity-based acceleration and max speed
       if (xIntensity !== 0) {
@@ -1931,11 +1882,21 @@ export default function InGameScreen({
 
           <MobileControls
             onPointer={(arrowKey, isPressed, intensity = 1) => {
-              pressedKeys.current[arrowKey] = isPressed;
-              if (isPressed) {
-                trackpadIntensity.current[arrowKey] = intensity;
-              } else {
-                delete trackpadIntensity.current[arrowKey];
+              const value = isPressed ? intensity : 0;
+
+              switch (arrowKey) {
+                case 'ArrowLeft':
+                  inputIntensity.current.x = -value;
+                  break;
+                case 'ArrowRight':
+                  inputIntensity.current.x = value;
+                  break;
+                case 'ArrowUp':
+                  inputIntensity.current.y = value;
+                  break;
+                case 'ArrowDown':
+                  inputIntensity.current.y = -value;
+                  break;
               }
             }}
           />
