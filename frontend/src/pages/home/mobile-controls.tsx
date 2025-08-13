@@ -3,6 +3,8 @@ import { RefObject, useRef, useState } from 'react';
 const TRACKPAD_CONFIG = {
   MAX_RADIUS: 150,
   DEAD_ZONE: 0,
+  IS_LINEAR_INTENSITY: true,
+  SENSITIVITY: 0.5,
 };
 
 type Props = {
@@ -47,9 +49,19 @@ function MobileControls({ inputIntensity }: Props) {
       return;
     }
 
-    // Calculate normalized intensity (-1 to 1 for each axis)
-    inputIntensity.current.x = Math.max(-1, Math.min(1, deltaX / maxRadius));
-    inputIntensity.current.y = Math.max(-1, Math.min(1, -deltaY / maxRadius)); // Negative because screen Y is inverted
+    let normalizedX = 0;
+    let normalizedY = 0;
+
+    if (TRACKPAD_CONFIG.IS_LINEAR_INTENSITY) {
+      normalizedX = distance > 0 ? deltaX / distance : 0;
+      normalizedY = distance > 0 ? deltaY / distance : 0;
+    } else {
+      normalizedX = Math.max(-1, Math.min(1, deltaX / maxRadius));
+      normalizedY = Math.max(-1, Math.min(1, deltaY / maxRadius));
+    }
+
+    inputIntensity.current.x = normalizedX * TRACKPAD_CONFIG.SENSITIVITY;
+    inputIntensity.current.y = -normalizedY * TRACKPAD_CONFIG.SENSITIVITY;
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
