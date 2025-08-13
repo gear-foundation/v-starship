@@ -2,7 +2,7 @@ import { RefObject, useRef, PointerEvent } from 'react';
 
 const MOVEMENT_CONFIG = {
   SENSITIVITY: 0.1,
-  DEAD_ZONE: 0,
+  DEAD_ZONE: 1,
   SMOOTHING: 0,
 } as const;
 
