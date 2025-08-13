@@ -84,6 +84,7 @@ jobs:
           build-args: |
             VITE_CONTRACT_ADDRESS=${{ secrets.VITE_CONTRACT_ADDRESS }}
             VITE_NODE_ADDRESS=${{ secrets.VITE_NODE_ADDRESS }}
+            VITE_NFT_SHOWROOM_URL=${{ secrets.VITE_NFT_SHOWROOM_URL }}
           tags: ${{ needs.prepair.outputs.image_name }}
 
   deploy-to-k8s:
