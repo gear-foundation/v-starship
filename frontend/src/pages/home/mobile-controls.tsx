@@ -2,10 +2,10 @@ import { useRef, useCallback, useState } from 'react';
 
 // Configuration constants
 const TRACKPAD_CONFIG = {
-  MAX_RADIUS: 48, // Max distance from center (trackpad is 128px, so radius is 64, leave some padding)
-  DEAD_ZONE: 5, // Minimum distance to register movement (reduced from 15 for smaller deadzone)
-  HORIZONTAL_THRESHOLD: 0.2, // Sensitivity for horizontal movement detection
-  VERTICAL_THRESHOLD: 0.2, // Sensitivity for vertical movement detection
+  MAX_RADIUS: 150, // Max distance from center (trackpad is 128px, so radius is 64, leave some padding)
+  DEAD_ZONE: 0, // Minimum distance to register movement (reduced from 15 for smaller deadzone)
+  HORIZONTAL_THRESHOLD: 0, // Sensitivity for horizontal movement detection
+  VERTICAL_THRESHOLD: 0, // Sensitivity for vertical movement detection
 };
 
 type Props = {

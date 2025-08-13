@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "vite",
+    "start:local": "vite --host localhost",
     "build": "vite build",
     "preview": "vite preview"
   },
