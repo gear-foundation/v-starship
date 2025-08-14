@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, Dialog } from '@/components';
 import { buttonVariants } from '@/components/ui/button';
 import { NFT_SHOWROOM_ADDRESS } from '@/consts';
-import { cn, getIpfsUrl } from '@/utils';
+import { cn } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -28,7 +28,7 @@ function PlayerShip({ level, nft }: Props) {
     <>
       <button type="button" className="flex justify-center mb-4" disabled={!nft} onClick={openModal}>
         <img
-          src={nft?.mediaUrl ? getIpfsUrl(nft.mediaUrl) : '/img/starship-1.png'}
+          src={nft?.mediaUrl || '/img/starship-1.png'}
           alt="player ship"
           style={{ width: `${size}px`, height: `${size}px` }}
         />

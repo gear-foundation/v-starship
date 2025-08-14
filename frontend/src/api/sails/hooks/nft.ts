@@ -1,7 +1,7 @@
 import { useAccount, useProgram, useProgramQuery } from '@gear-js/react-hooks';
 import { ZERO_ADDRESS } from 'sails-js';
 
-import { isUndefined } from '@/utils';
+import { getIpfsUrl, isUndefined } from '@/utils';
 
 import { NFTProgram } from '../programs';
 
@@ -48,7 +48,7 @@ function usePlayerNFT() {
       ? {
           programId,
           id: tokenId.toString(),
-          mediaUrl: `${token.media_url}?img-width=192&img-height=192`,
+          mediaUrl: `${getIpfsUrl(token.media_url)}?img-width=192&img-height=192`,
         }
       : undefined;
 
