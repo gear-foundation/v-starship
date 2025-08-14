@@ -179,7 +179,7 @@ export const BOSS_CONFIG = {
   speed: 12, // %/сек
   size: 96,
   hitbox: 7.0,
-  reward: 1000,
+  reward: 300,
   img: '/img/mothership.png',
   soundLaser: '/sound/boss-laser.mp3',
   soundRocket: '/sound/boss-rocket.mp3',
@@ -242,9 +242,9 @@ export const GAME_CONFIG: GameConfig = {
   PLAYER_ROCKET_SPEED: 1.8, // %/тик (скорость ракеты игрока)
 
   // Награды
-  ENEMY_REWARD: 50,
-  ASTEROID_REWARD: 30,
-  MINE_REWARD: 20,
+  ENEMY_REWARD: 20,
+  ASTEROID_REWARD: 15,
+  MINE_REWARD: 10,
 
   // Размеры
   PLAYER_SHIP_BASE_SIZE: 56,

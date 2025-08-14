@@ -1,9 +1,9 @@
 import { RefObject, useRef, PointerEvent } from 'react';
 
 const MOVEMENT_CONFIG = {
-  SENSITIVITY: 0.1,
+  SENSITIVITY: 0.2,
   DEAD_ZONE: 1,
-  SMOOTHING: 0,
+  SMOOTHING: 0.6,
 } as const;
 
 type Props = {
