@@ -36,6 +36,7 @@ export interface AdditionalLinks {
 
 export interface ImageData {
   limit_copies: number | null;
+  name: string | null;
 }
 
 export interface NftState {
@@ -100,7 +101,7 @@ export class SailsProgram {
         medium: 'Option<String>',
         discord: 'Option<String>',
       },
-      ImageData: { limit_copies: 'Option<u32>' },
+      ImageData: { limit_copies: 'Option<u32>', name: 'Option<String>' },
       NftState: {
         tokens: 'Vec<(u64, NftData)>',
         owners: 'Vec<([u8;32], Vec<u64>)>',
@@ -545,6 +546,28 @@ export class Nft {
     throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
     const result = this._program.registry.createType('(String, String, Vec<u64>)', reply.payload);
     return result[2].toJSON() as unknown as Array<number | string | bigint>;
+  }
+
+  public async getTokensInfoByOwner(
+    owner_id: ActorId,
+    originAddress?: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<Array<NftData>> {
+    const payload = this._program.registry
+      .createType('(String, String, [u8;32])', ['Nft', 'GetTokensInfoByOwner', owner_id])
+      .toHex();
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
+    const result = this._program.registry.createType('(String, String, Vec<NftData>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<NftData>;
   }
 
   public async imgLinksAndData(
