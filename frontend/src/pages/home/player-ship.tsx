@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import { Button, Dialog } from '@/components';
 import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/utils';
+import { NFT_SHOWROOM_ADDRESS } from '@/consts';
+import { cn, getIpfsUrl } from '@/utils';
 
 import { GAME_CONFIG } from './game-config';
 
@@ -16,8 +17,6 @@ type Props = {
 const BASE_SIZE = GAME_CONFIG.PLAYER_SHIP_BASE_SIZE * 2;
 const SIZE_STEP = GAME_CONFIG.PLAYER_SHIP_SIZE_STEP * 2;
 
-const NFT_SHOWROOM_URL = import.meta.env.VITE_NFT_SHOWROOM_URL as string;
-
 function PlayerShip({ level, nft }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
@@ -29,7 +28,7 @@ function PlayerShip({ level, nft }: Props) {
     <>
       <button type="button" className="flex justify-center mb-4" disabled={!nft} onClick={openModal}>
         <img
-          src={nft?.mediaUrl || '/img/starship-1.png'}
+          src={nft?.mediaUrl ? getIpfsUrl(nft.mediaUrl) : '/img/starship-1.png'}
           alt="player ship"
           style={{ width: `${size}px`, height: `${size}px` }}
         />
@@ -42,7 +41,7 @@ function PlayerShip({ level, nft }: Props) {
           </Button>
 
           <a
-            href={`${NFT_SHOWROOM_URL}/nft/${nft?.programId}/${nft?.id}`}
+            href={`${NFT_SHOWROOM_ADDRESS}/nft/${nft?.programId}/${nft?.id}`}
             target="_blank"
             rel="noreferrer"
             className={cn(buttonVariants({ variant: 'link' }))}>
