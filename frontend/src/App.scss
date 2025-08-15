@@ -27,6 +27,17 @@ main {
   }
 }
 
+// TODO: remove after @gear-js/vara-ui update
+#alert-root {
+  width: 100%;
+  max-width: 480px;
+
+  padding: 5px 22px;
+
+  bottom: 0;
+  right: 0;
+}
+
 button {
   &:not(:disabled) {
     cursor: pointer;

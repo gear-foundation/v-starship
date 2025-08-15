@@ -1,4 +1,3 @@
-import { useAlert } from '@gear-js/react-hooks';
 import { useRef, useEffect } from 'react';
 
 import { IS_SOUND_ENABLED } from './dev-config';
@@ -23,7 +22,6 @@ const SOUNDS = [
 ];
 
 function usePlaySound() {
-  const alert = useAlert();
   const audioContextRef = useRef<AudioContext | null>(null);
   const bufferCache = useRef<{ [key: string]: AudioBuffer }>({});
 
@@ -42,17 +40,14 @@ function usePlaySound() {
         })
         .catch((error) => {
           console.error('Error loading sound', src, error);
-          alert.error('Failed to load sound');
         });
     });
 
     return () => {
       audioContextRef.current?.close().catch((error) => {
         console.error('Error closing audio context', error);
-        alert.error('Failed to close audio context');
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (src: string, volume = 0.5) => {
@@ -75,7 +70,6 @@ function usePlaySound() {
       source.start(0);
     } catch (error) {
       console.error('Sound play error', src, error);
-      alert.error('Failed to play sound');
     }
   };
 }
