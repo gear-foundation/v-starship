@@ -10,7 +10,7 @@ import { GAME_CONFIG } from './game-config';
 
 type Props = {
   level: number;
-  nft: { programId: HexString; id: string; mediaUrl: string } | undefined;
+  nft: { programId: HexString; id: string } | undefined;
 };
 
 // for the main screen ship is 2x bigger
@@ -27,11 +27,7 @@ function PlayerShip({ level, nft }: Props) {
   return (
     <>
       <button type="button" className="flex justify-center mb-4" disabled={!nft} onClick={openModal}>
-        <img
-          src={nft?.mediaUrl || '/img/starship-1.png'}
-          alt="player ship"
-          style={{ width: `${size}px`, height: `${size}px` }}
-        />
+        <img src={`/img/starship-${level}.png`} alt="player ship" style={{ width: `${size}px`, height: `${size}px` }} />
       </button>
 
       {isModalOpen && (

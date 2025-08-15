@@ -25,7 +25,7 @@ interface MainScreenProps {
   gamesAvailable: number;
   timeToFreeAttempts: number;
   shipLevel: number;
-  shipNft: { programId: HexString; id: string; mediaUrl: string } | undefined;
+  shipNft: { programId: HexString; id: string } | undefined;
   playerVARA: bigint;
   playerName: string;
   boosterCount: number;

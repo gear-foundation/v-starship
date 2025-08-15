@@ -1,7 +1,7 @@
 import { useAccount, useProgram, useProgramQuery } from '@gear-js/react-hooks';
 import { ZERO_ADDRESS } from 'sails-js';
 
-import { getIpfsUrl, isUndefined } from '@/utils';
+import { isUndefined } from '@/utils';
 
 import { NFTProgram } from '../programs';
 
@@ -43,15 +43,7 @@ function usePlayerNFT() {
   const { tokens } = nft || {};
   const [tokenId, token] = tokens?.find(([id]) => id === lastTokenID) || [undefined, undefined];
 
-  const data =
-    programId && !isUndefined(tokenId) && token
-      ? {
-          programId,
-          id: tokenId.toString(),
-          mediaUrl: `${getIpfsUrl(token.media_url)}?img-width=192&img-height=192`,
-        }
-      : undefined;
-
+  const data = programId && !isUndefined(tokenId) && token ? { programId, id: tokenId.toString() } : undefined;
   const isPending = !tokenIDs || !nft;
 
   return { data, isPending };
