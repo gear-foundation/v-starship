@@ -1,0 +1,56 @@
+type Config = struct {
+  ft_contract: actor_id,
+  nft_contract: actor_id,
+  ship_price: u128,
+  attempt_price: u128,
+  booster_price: u128,
+  one_point_in_value: u128,
+  default_name: str,
+  default_free_attempts: u16,
+  default_boosters: u16,
+  default_level_ship: u16,
+  max_level_ship: u16,
+  daily_reset_offset_ms: u64,
+};
+
+type PlayerInfo = struct {
+  player_name: str,
+  earned_points: u128,
+  number_of_attempts: u16,
+  number_of_boosters: u16,
+  ship_level: u16,
+  attempt_timestamp: u64,
+};
+
+constructor {
+  New : (config: Config);
+};
+
+service Starship {
+  AddPoints : (points: u128, num_spent_boosters: u16) -> null;
+  BuyAttempt : () -> null;
+  BuyBooster : () -> null;
+  BuyNewShip : () -> null;
+  BuyPoints : (points_amount: u128) -> null;
+  ChangeAdmin : (new_admin: actor_id) -> null;
+  ChangeConfig : (config: Config) -> null;
+  SetName : (name: str) -> null;
+  WithdrawalOfValues : (to: actor_id) -> null;
+  query AllPlayersInfo : () -> vec struct { actor_id, PlayerInfo };
+  query Config : () -> Config;
+  query NumberOfAttempts : (player: actor_id) -> u16;
+  query PlayerInfo : (player: actor_id) -> PlayerInfo;
+  query TimeToFreeAttempts : (player: actor_id) -> u64;
+
+  events {
+    PointsAdded: u128;
+    PointsBought: u128;
+    NewShipBought;
+    ValuesHaveBeenWithdrawn;
+    ConfigChanged: Config;
+    AdminChanged: actor_id;
+    NameSet: str;
+    AttemptBought;
+    BoosterBought;
+  }
+};

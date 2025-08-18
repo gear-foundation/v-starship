@@ -82,11 +82,10 @@ db/migrations/         # Database migration files
 ### 1. Define Your Data Model
 
 - Create database entites in `src/model/entities` directory.
-- All entities fields should use *snake_case* naming convention. Set it via `name` property in the `@Column` decorator
-- All entities should also use *snake_case* naming convention. Set it via `name` property in the `@Column` decorator
+- All entities fields should use _snake_case_ naming convention. Set it via `name` property in the `@Column` decorator
+- All entities should also use _snake_case_ naming convention. Set it via `name` property in the `@Column` decorator
 - Export all your entities from `src/model/index.ts` file.
-- Specify all your entities in `src/mode/dataSource.ts` file in the `entities` field.
-
+- Specify all your entities in `src/mode/data-source.ts` file in the `entities` field.
 
 ### 2. Create a Handler
 
@@ -251,13 +250,13 @@ Then visit `http://localhost:4350/graphql` to explore your data.
 
 ## Environment Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VARA_ARCHIVE_URL` | Subsquid archive URL | Vara testnet archive |
-| `VARA_RPC_URL` | Gear network RPC URL | Vara testnet RPC |
-| `VARA_RPC_RATE_LIMIT` | RPC request rate limit | 20 |
-| `VARA_FROM_BLOCK` | Starting block number | 0 |
-| `DB_*` | Database connection settings | PostgreSQL defaults |
+| Variable              | Description                  | Default              |
+| --------------------- | ---------------------------- | -------------------- |
+| `VARA_ARCHIVE_URL`    | Subsquid archive URL         | Vara testnet archive |
+| `VARA_RPC_URL`        | Gear network RPC URL         | Vara testnet RPC     |
+| `VARA_RPC_RATE_LIMIT` | RPC request rate limit       | 20                   |
+| `VARA_FROM_BLOCK`     | Starting block number        | 0                    |
+| `DB_*`                | Database connection settings | PostgreSQL defaults  |
 
 ## Development Tips
 

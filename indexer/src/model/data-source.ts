@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
-import { VftTransfer } from './entities';
+import { Player } from './entities';
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ const AppDataSource = new DataSource({
   synchronize: false,
   migrationsRun: true,
   logging: process.env.NODE_ENV === 'development',
-  entities: [VftTransfer], // TODO: Specify all other entities here
+  entities: [Player],
   migrations: ['db/migrations/*.js'],
 });
 

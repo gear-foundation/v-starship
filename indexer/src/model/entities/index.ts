@@ -1,2 +1,3 @@
-// TODO: replace with your own entities
-export * from './transfer';
+import { Player } from './player';
+
+export { Player };

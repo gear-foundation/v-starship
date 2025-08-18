@@ -1,3 +1,3 @@
-export * from './stub';
+import { LeaderboardHandler } from './leaderboard';
 
-// TODO: export all created handlers here
+export { LeaderboardHandler };

@@ -8,8 +8,8 @@
   "scripts": {
     "build": "rm -rf lib && tsc",
     "run": "node lib/api.js",
-    "migration:generate": "npm run build && npx typeorm migration:generate -d lib/model/dataSource.js -o db/migrations/$NAME",
-    "migration:run": "typeorm migration:run -d lib/model/dataSource.js",
+    "migration:generate": "npm run build && npx typeorm migration:generate -d lib/model/data-source.js -o db/migrations/$NAME",
+    "migration:run": "typeorm migration:run -d lib/model/data-source.js",
     "serve": "node lib/api.js"
   },
   "dependencies": {
