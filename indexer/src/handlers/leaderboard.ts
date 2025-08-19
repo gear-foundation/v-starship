@@ -32,7 +32,7 @@ class LeaderboardHandler extends BaseHandler {
     if (service !== 'Starship' || method !== 'PointsAdded') return;
 
     if (typeof payload !== 'object' || payload === null || !('player' in payload) || !('points' in payload))
-      return ctx.log.fatal('Invalid payload structure for PointsAdded event');
+      return ctx.log.error('Invalid payload structure for PointsAdded event');
 
     const playerAddress = String(payload.player);
     const points = Number(payload.points);
