@@ -16,4 +16,5 @@ export const config = {
   rateLimit: Number(getEnv('VARA_RPC_RATE_LIMIT', '20')),
   fromBlock: Number(getEnv('VARA_FROM_BLOCK', '0')),
   programId: getEnv('PROGRAM_ID'),
+  dbUrl: getEnv('DB_URL', 'postgres://postgres:postgres@localhost:5432/gear_monitoring'),
 };

@@ -3,13 +3,14 @@ import { postgraphile, PostGraphileOptions } from 'postgraphile';
 import dotenv from 'dotenv';
 import ConnectionFilterPlugin from 'postgraphile-plugin-connection-filter';
 import { createServer } from 'node:http';
+import { config } from './config';
 
 dotenv.config();
 
 const isDev = process.env.NODE_ENV === 'development';
 
 async function main() {
-  const database = process.env.DATABASE_URL || 'indexer';
+  const database = config.dbUrl;
 
   const options: PostGraphileOptions = {
     watchPg: isDev,
