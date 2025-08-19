@@ -43,7 +43,10 @@ service Starship {
   query TimeToFreeAttempts : (player: actor_id) -> u64;
 
   events {
-    PointsAdded: u128;
+    PointsAdded: struct {
+      player: actor_id,
+      points: u128,
+    };
     PointsBought: u128;
     NewShipBought;
     ValuesHaveBeenWithdrawn;

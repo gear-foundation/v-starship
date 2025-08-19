@@ -1,5 +1,6 @@
 import { Logger } from '@subsquid/logger';
 import { ProcessorContext } from '../processor';
+import { config } from '../config';
 
 export abstract class BaseHandler {
   protected events: string[];
@@ -8,7 +9,11 @@ export abstract class BaseHandler {
   protected _logger: Logger;
   protected _ctx: ProcessorContext;
 
-  constructor() {}
+  constructor() {
+    this.events = [];
+    this.userMessageSentProgramIds = [config.programId];
+    this.messageQueuedProgramIds = [];
+  }
 
   public getEvents(): string[] {
     return this.events;

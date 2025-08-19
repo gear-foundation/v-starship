@@ -1,8 +1,8 @@
-import { getBlockCommonData, isSailsEvent, isUserMessageSentEvent } from '../helpers';
+import { isSailsEvent, isUserMessageSentEvent } from '../helpers';
 import { Player } from '../model';
 import { ProcessorContext } from '../processor';
 import { SailsDecoder } from '../sails-decoder';
-import { BlockCommonData, UserMessageSentEvent } from '../types';
+import { UserMessageSentEvent } from '../types';
 import { BaseHandler } from './base';
 
 class LeaderboardHandler extends BaseHandler {
@@ -11,6 +11,7 @@ class LeaderboardHandler extends BaseHandler {
 
   public async init() {
     this._decoder = await SailsDecoder.new('assets/starship.idl');
+    this._data = new Map();
   }
 
   public async clear() {
@@ -20,38 +21,42 @@ class LeaderboardHandler extends BaseHandler {
   public async save() {
     const values = this._data.values();
 
-    this._ctx.store.save(Array.from(values));
+    await this._ctx.store.save(Array.from(values));
   }
 
-  private _handleUserMessageSentEvent(event: UserMessageSentEvent, ctx: ProcessorContext) {
+  private _handleUserMessageSentEvent(event: UserMessageSentEvent) {
     if (!isSailsEvent(event)) return;
 
-    const { destination } = event.args.message;
     const { service, method, payload } = this._decoder.decodeEvent(event);
 
     if (service !== 'Starship' || method !== 'PointsAdded') return;
 
-    const player = this._data.get(destination);
-    const points = Number(payload);
+    if (typeof payload !== 'object' || payload === null || !('player' in payload) || !('points' in payload))
+      throw new Error('Invalid payload structure');
 
-    ctx.log.info(typeof points);
-    ctx.log.info(`Player ${destination} has been awarded ${points} points.`);
+    const playerAddress = String(payload.player);
+    const points = Number(payload.points);
+    const player = this._data.get(playerAddress);
 
     if (player) {
       player.score += points;
     } else {
-      this._data.set(destination, { id: destination, score: points });
+      this._data.set(playerAddress, new Player({ id: playerAddress, score: points }));
     }
   }
 
   public async process(ctx: ProcessorContext) {
     await super.process(ctx);
 
+    // @ts-ignore
+    const storedPlayers = await ctx.store.find(Player);
+    this._data = new Map(storedPlayers.map((player) => [player.id, player]));
+
     for (const block of ctx.blocks) {
       for (const event of block.events) {
-        if (!isUserMessageSentEvent(event)) return;
+        if (!isUserMessageSentEvent(event)) continue;
 
-        this._handleUserMessageSentEvent(event, ctx);
+        this._handleUserMessageSentEvent(event);
       }
     }
   }
