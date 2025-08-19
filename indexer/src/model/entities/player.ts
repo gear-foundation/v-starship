@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 class Player {
-  constructor(props: Partial<Player>) {
+  constructor(props?: Partial<Player>) {
     Object.assign(this, props);
   }
 

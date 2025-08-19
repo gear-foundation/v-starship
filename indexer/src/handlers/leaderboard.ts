@@ -48,7 +48,6 @@ class LeaderboardHandler extends BaseHandler {
   public async process(ctx: ProcessorContext) {
     await super.process(ctx);
 
-    // @ts-ignore
     const storedPlayers = await ctx.store.find(Player);
     this._data = new Map(storedPlayers.map((player) => [player.id, player]));
 
