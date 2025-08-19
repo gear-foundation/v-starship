@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rm -rf lib && tsc",
     "processor:run": "node -r dotenv/config lib/main.js",
-    "migration:generate": "npm run build && npx typeorm migration:generate -d lib/model/data-source.js -o db/migrations/$NAME",
+    "migration:generate": "typeorm migration:generate -d lib/model/data-source.js -o db/migrations/$NAME",
     "migration:run": "typeorm migration:run -d lib/model/data-source.js",
     "serve": "node lib/api.js"
   },

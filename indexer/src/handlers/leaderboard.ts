@@ -24,7 +24,7 @@ class LeaderboardHandler extends BaseHandler {
     await this._ctx.store.save(Array.from(values));
   }
 
-  private _handleUserMessageSentEvent(event: UserMessageSentEvent) {
+  private _handleUserMessageSentEvent(event: UserMessageSentEvent, ctx: ProcessorContext) {
     if (!isSailsEvent(event)) return;
 
     const { service, method, payload } = this._decoder.decodeEvent(event);
@@ -32,16 +32,21 @@ class LeaderboardHandler extends BaseHandler {
     if (service !== 'Starship' || method !== 'PointsAdded') return;
 
     if (typeof payload !== 'object' || payload === null || !('player' in payload) || !('points' in payload))
-      throw new Error('Invalid payload structure');
+      return ctx.log.fatal('Invalid payload structure for PointsAdded event');
 
     const playerAddress = String(payload.player);
     const points = Number(payload.points);
     const player = this._data.get(playerAddress);
 
     if (player) {
+      const prevScore = player.score;
       player.score += points;
+
+      ctx.log.info(`Player updated ${playerAddress}: ${prevScore} -> ${player.score} (+${points})`);
     } else {
       this._data.set(playerAddress, new Player({ id: playerAddress, score: points }));
+
+      ctx.log.info(`New player ${playerAddress} added with ${points} points`);
     }
   }
 
@@ -55,7 +60,7 @@ class LeaderboardHandler extends BaseHandler {
       for (const event of block.events) {
         if (!isUserMessageSentEvent(event)) continue;
 
-        this._handleUserMessageSentEvent(event);
+        this._handleUserMessageSentEvent(event, ctx);
       }
     }
   }
