@@ -85,6 +85,7 @@ jobs:
             VITE_CONTRACT_ADDRESS=${{ secrets.VITE_CONTRACT_ADDRESS }}
             VITE_NODE_ADDRESS=${{ secrets.VITE_NODE_ADDRESS }}
             VITE_NFT_SHOWROOM_ADDRESS=${{ secrets.VITE_NFT_SHOWROOM_ADDRESS }}
+            VITE_INDEXER_ADDRESS=${{ secrets.VITE_INDEXER_ADDRESS }}
           tags: ${{ needs.prepair.outputs.image_name }}
 
   deploy-to-k8s:
