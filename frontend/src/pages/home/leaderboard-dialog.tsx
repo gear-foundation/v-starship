@@ -1,21 +1,23 @@
 import { useAccount } from '@gear-js/react-hooks';
-import { X, Trophy, Medal, Award } from 'lucide-react';
+import { X, Trophy, Medal, Award, Loader } from 'lucide-react';
 
-import { usePlayers } from '@/api/sails';
+import { usePlayers } from '@/api/graphql';
 import { Button } from '@/components/ui/button';
 
+import { ScrollObserver } from './scroll-observer';
+
 interface LeaderboardDialogProps {
-  isOpen: boolean;
   onClose: () => void;
 }
 
-export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialogProps) {
-  const { account } = useAccount();
-  const { data: players } = usePlayers();
+const getTruncatedText = (value: string, prefixLength: number = 6) =>
+  `${value.substring(0, prefixLength)}...${value.slice(-prefixLength)}`;
 
-  const rankedPlayers =
-    players?.sort((a, b) => b.earnedPoints - a.earnedPoints).map((player, index) => ({ ...player, rank: index + 1 })) ||
-    [];
+export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
+  const { account } = useAccount();
+  const { data: players, hasNextPage, isFetchingNextPage, fetchNextPage } = usePlayers();
+
+  const rankedPlayers = players?.map((player, index) => ({ ...player, rank: index + 1 }));
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -39,7 +41,7 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
   };
 
   const render = () =>
-    rankedPlayers.map(({ address, name, rank, shipLevel, earnedPoints }) => {
+    rankedPlayers?.map(({ address, name, rank, shipLevel, score }) => {
       const isUser = account?.decodedAddress === address;
 
       return (
@@ -52,30 +54,30 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
           <div className="grid grid-cols-12 gap-2 items-center">
             <div className="col-span-2 flex justify-center">{getRankIcon(rank)}</div>
 
-            <div className="col-span-4">
+            <div className="col-span-4 flex items-center gap-1">
               <span
                 className={`
                     font-bold
                     ${isUser ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
+                     break-all
                   `}>
-                {name}
+                {name || getTruncatedText(address)}
               </span>
-              {isUser && <span className="ml-2 text-xs text-cyan-300">(YOU)</span>}
+
+              {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}
             </div>
 
             <div className="col-span-3 text-center">
-              <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LV {shipLevel}</span>
+              <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LVL {shipLevel}</span>
             </div>
 
             <div className="col-span-3 text-right">
-              <span className="text-green-400 font-bold glow-green">{earnedPoints}</span>
+              <span className="text-green-400 font-bold glow-green">{score}</span>
             </div>
           </div>
         </div>
       );
     });
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center min-h-full min-w-full p-4">
@@ -105,13 +107,22 @@ export default function LeaderboardDialog({ isOpen, onClose }: LeaderboardDialog
           <div className="grid grid-cols-12 gap-2 text-sm font-bold text-cyan-400 glow-blue">
             <div className="col-span-2 text-center">RANK</div>
             <div className="col-span-4">PLAYER</div>
-            <div className="col-span-3 text-center">SHIP LV</div>
+            <div className="col-span-3 text-center">SHIP LVL</div>
             <div className="col-span-3 text-right">PTS</div>
           </div>
         </div>
 
         {/* Leaderboard Entries */}
-        <div className="overflow-y-auto">{render()}</div>
+        <div className="overflow-y-auto">
+          {rankedPlayers &&
+            (rankedPlayers.length ? render() : <div className="p-4 text-center text-gray-400">No players found</div>)}
+
+          {!rankedPlayers || isFetchingNextPage ? (
+            <Loader className="animate-spin mx-auto my-4" />
+          ) : (
+            hasNextPage && <ScrollObserver onIntersection={fetchNextPage} />
+          )}
+        </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-cyan-400/20 text-center">

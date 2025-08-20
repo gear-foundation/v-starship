@@ -243,7 +243,7 @@ export default function MainScreen({
         shipLevel={shipLevel}
       />
 
-      <LeaderboardDialog isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
+      {showLeaderboard && <LeaderboardDialog onClose={() => setShowLeaderboard(false)} />}
 
       <TokenExchangeDialog
         isOpen={showTokenExchange}

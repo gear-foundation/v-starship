@@ -74,19 +74,6 @@ function usePlayer() {
   });
 }
 
-function usePlayers() {
-  const { data: program } = useStarshipProgram();
-
-  return useProgramQuery({
-    program,
-    serviceName: 'starship',
-    functionName: 'allPlayersInfo',
-    args: [],
-    watch: true,
-    query: { select: (data) => data.map(([address, _player]) => formatPlayer(address, _player)) },
-  });
-}
-
 // using standalone method because PlayerInfo property is not getting reset unless addPoints is called
 function useAttemptsCount() {
   const { account } = useAccount();
@@ -179,7 +166,6 @@ function useBuyShip() {
 export {
   useConfig,
   usePlayer,
-  usePlayers,
   useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,
