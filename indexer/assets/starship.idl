@@ -48,11 +48,17 @@ service Starship {
       points: u128,
     };
     PointsBought: u128;
-    NewShipBought;
+    NewShipBought: struct {
+      player: actor_id,
+      level: u16,
+    };
     ValuesHaveBeenWithdrawn;
     ConfigChanged: Config;
     AdminChanged: actor_id;
-    NameSet: str;
+    NameSet: struct {
+      player: actor_id,
+      name: str,
+    };
     AttemptBought;
     BoosterBought;
   }

@@ -5,6 +5,16 @@ import { SailsDecoder } from '../sails-decoder';
 import { UserMessageSentEvent } from '../types';
 import { BaseHandler } from './base';
 
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const getPlayerProps = (props: { address: string; score?: number; shipLevel?: number; name?: string }): Player => ({
+  id: props.address,
+  address: props.address,
+  score: props.score ?? 0,
+  shipLevel: props.shipLevel ?? 1,
+  name: props.name ?? null,
+});
+
 class LeaderboardHandler extends BaseHandler {
   private _decoder: SailsDecoder;
   private _data: Map<string, Player>;
@@ -24,14 +34,8 @@ class LeaderboardHandler extends BaseHandler {
     await this._ctx.store.save(Array.from(values));
   }
 
-  private _handleUserMessageSentEvent(event: UserMessageSentEvent, ctx: ProcessorContext) {
-    if (!isSailsEvent(event)) return;
-
-    const { service, method, payload } = this._decoder.decodeEvent(event);
-
-    if (service !== 'Starship' || method !== 'PointsAdded') return;
-
-    if (typeof payload !== 'object' || payload === null || !('player' in payload) || !('points' in payload))
+  private _updateScore(payload: unknown, ctx: ProcessorContext) {
+    if (!isObject(payload) || !('player' in payload) || !('points' in payload))
       return ctx.log.error('Invalid payload structure for PointsAdded event');
 
     const playerAddress = String(payload.player);
@@ -40,13 +44,79 @@ class LeaderboardHandler extends BaseHandler {
 
     if (player) {
       const prevScore = player.score;
+
       player.score += points;
 
-      ctx.log.info(`Player updated ${playerAddress}: ${prevScore} -> ${player.score} (+${points})`);
+      ctx.log.info(`Player ${playerAddress} updated: ${prevScore} -> ${player.score} (+${points})`);
     } else {
-      this._data.set(playerAddress, new Player({ id: playerAddress, score: points }));
+      const props = getPlayerProps({ address: playerAddress, score: points });
 
-      ctx.log.info(`New player ${playerAddress} added with ${points} points`);
+      this._data.set(playerAddress, new Player(props));
+
+      ctx.log.info(`Player added as a result of PointsAdded event: ${JSON.stringify(props)}`);
+    }
+  }
+
+  private _updateShipLevel(payload: unknown, ctx: ProcessorContext) {
+    if (!isObject(payload) || !('player' in payload) || !('level' in payload))
+      return ctx.log.error('Invalid payload structure for NewShipBought event');
+
+    const playerAddress = String(payload.player);
+    const level = Number(payload.level);
+    const player = this._data.get(playerAddress);
+
+    if (player) {
+      const prevShipLevel = player.shipLevel;
+
+      player.shipLevel = level;
+
+      ctx.log.info(`Player ${playerAddress} ship level updated: ${prevShipLevel} -> ${level}`);
+    } else {
+      const props = getPlayerProps({ address: playerAddress, shipLevel: level });
+
+      this._data.set(playerAddress, new Player(props));
+
+      ctx.log.warn(`Player added as a result of NewShipBought event: ${JSON.stringify(props)}`);
+    }
+  }
+
+  private _updateName(payload: unknown, ctx: ProcessorContext) {
+    if (!isObject(payload) || !('player' in payload) || !('name' in payload))
+      return ctx.log.error('Invalid payload structure for NameSet event');
+
+    const playerAddress = String(payload.player);
+    const name = String(payload.name);
+    const player = this._data.get(playerAddress);
+
+    if (player) {
+      const prevName = player.name;
+
+      player.name = name;
+
+      ctx.log.info(`Player ${playerAddress} name updated: ${prevName} -> ${name}`);
+    } else {
+      const props = getPlayerProps({ address: playerAddress, name });
+
+      this._data.set(playerAddress, new Player(props));
+
+      ctx.log.warn(`Player added as a result of NameSet event: ${JSON.stringify(props)}`);
+    }
+  }
+
+  private _updatePlayer(event: UserMessageSentEvent, ctx: ProcessorContext) {
+    if (!isSailsEvent(event)) return;
+
+    const { service, method, payload } = this._decoder.decodeEvent(event);
+
+    if (service !== 'Starship') return;
+
+    switch (method) {
+      case 'PointsAdded':
+        return this._updateScore(payload, ctx);
+      case 'NewShipBought':
+        return this._updateShipLevel(payload, ctx);
+      case 'NameSet':
+        return this._updateName(payload, ctx);
     }
   }
 
@@ -60,7 +130,7 @@ class LeaderboardHandler extends BaseHandler {
       for (const event of block.events) {
         if (!isUserMessageSentEvent(event)) continue;
 
-        this._handleUserMessageSentEvent(event, ctx);
+        this._updatePlayer(event, ctx);
       }
     }
   }
