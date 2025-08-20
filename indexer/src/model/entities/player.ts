@@ -15,7 +15,7 @@ class Player {
   @Column('int4')
   score: number;
 
-  @Column('int2')
+  @Column('int2', { name: 'ship_level' })
   shipLevel: number;
 
   @Column('varchar', { nullable: true })
