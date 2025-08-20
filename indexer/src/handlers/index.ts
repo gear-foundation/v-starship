@@ -1,3 +1,3 @@
-import { LeaderboardHandler } from './leaderboard';
+import { PlayerHandler } from './player';
 
-export { LeaderboardHandler };
+export { PlayerHandler };

@@ -15,7 +15,7 @@ const getPlayerProps = (props: { address: string; score?: number; shipLevel?: nu
   name: props.name ?? null,
 });
 
-class LeaderboardHandler extends BaseHandler {
+class PlayerHandler extends BaseHandler {
   private _decoder: SailsDecoder;
   private _data: Map<string, Player>;
 
@@ -136,4 +136,4 @@ class LeaderboardHandler extends BaseHandler {
   }
 }
 
-export { LeaderboardHandler };
+export { PlayerHandler };
