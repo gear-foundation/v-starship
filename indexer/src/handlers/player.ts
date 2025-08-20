@@ -47,7 +47,7 @@ class PlayerHandler extends BaseHandler {
 
       player.score += points;
 
-      ctx.log.info(`Player ${playerAddress} updated: ${prevScore} -> ${player.score} (+${points})`);
+      ctx.log.info(`Player ${playerAddress} score updated: ${prevScore} -> ${player.score} (+${points})`);
     } else {
       const props = getPlayerProps({ address: playerAddress, score: points });
 
