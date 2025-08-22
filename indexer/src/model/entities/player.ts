@@ -9,9 +9,6 @@ export class Player {
   @PrimaryColumn()
   id: string;
 
-  @Column('varchar')
-  address: string;
-
   @Column('int4')
   score: number;
 

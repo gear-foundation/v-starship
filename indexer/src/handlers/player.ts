@@ -9,7 +9,6 @@ const isObject = (value: unknown): value is Record<string, unknown> => typeof va
 
 const getPlayerProps = (props: { address: string; score?: number; shipLevel?: number; name?: string }): Player => ({
   id: props.address,
-  address: props.address,
   score: props.score ?? 0,
   shipLevel: props.shipLevel ?? 1,
   name: props.name ?? null,
@@ -24,7 +23,7 @@ export class PlayerHandler extends BaseHandler {
     this._data = new Map();
   }
 
-  public async clear() {
+  public clear() {
     this._data.clear();
   }
 
