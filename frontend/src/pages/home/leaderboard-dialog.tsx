@@ -41,12 +41,12 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
   };
 
   const render = () =>
-    rankedPlayers?.map(({ address, name, rank, shipLevel, score }) => {
-      const isUser = account?.decodedAddress === address;
+    rankedPlayers?.map(({ id, name, rank, shipLevel, score }) => {
+      const isUser = account?.decodedAddress === id;
 
       return (
         <div
-          key={address}
+          key={id}
           className={`
                 px-4 py-3 border-b border-gray-700/30 transition-all duration-200
                 ${isUser ? 'bg-cyan-400/10 border-cyan-400/30 glow-blue-bg' : 'hover:bg-gray-800/30'}
@@ -61,7 +61,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
                     ${isUser ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
                      break-all
                   `}>
-                {name || getTruncatedText(address)}
+                {name || getTruncatedText(id)}
               </span>
 
               {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}

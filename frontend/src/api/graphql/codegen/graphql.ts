@@ -170,7 +170,6 @@ export type PageInfo = {
 
 export type Player = Node & {
   __typename?: 'Player';
-  address: Scalars['String']['output'];
   id: Scalars['String']['output'];
   name?: Maybe<Scalars['String']['output']>;
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -181,8 +180,6 @@ export type Player = Node & {
 
 /** A condition to be used against `Player` object types. All fields are tested for equality and combined with a logical ‘and.’ */
 export type PlayerCondition = {
-  /** Checks for equality with the object’s `address` field. */
-  address?: InputMaybe<Scalars['String']['input']>;
   /** Checks for equality with the object’s `id` field. */
   id?: InputMaybe<Scalars['String']['input']>;
   /** Checks for equality with the object’s `name` field. */
@@ -195,8 +192,6 @@ export type PlayerCondition = {
 
 /** A filter to be used against `Player` object types. All fields are combined with a logical ‘and.’ */
 export type PlayerFilter = {
-  /** Filter by the object’s `address` field. */
-  address?: InputMaybe<StringFilter>;
   /** Checks for all expressions in this list. */
   and?: InputMaybe<Array<PlayerFilter>>;
   /** Filter by the object’s `id` field. */
@@ -237,8 +232,6 @@ export type PlayersEdge = {
 
 /** Methods to use when ordering `Player`. */
 export enum PlayersOrderBy {
-  AddressAsc = 'ADDRESS_ASC',
-  AddressDesc = 'ADDRESS_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
   NameAsc = 'NAME_ASC',
@@ -413,14 +406,7 @@ export type PlayersQueryQuery = {
   allPlayers?: {
     __typename?: 'PlayersConnection';
     totalCount: number;
-    nodes: Array<{
-      __typename?: 'Player';
-      id: string;
-      address: string;
-      name?: string | null;
-      shipLevel: number;
-      score: number;
-    }>;
+    nodes: Array<{ __typename?: 'Player'; id: string; name?: string | null; shipLevel: number; score: number }>;
   } | null;
 };
 
@@ -476,7 +462,6 @@ export const PlayersQueryDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'address' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'shipLevel' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'score' } },

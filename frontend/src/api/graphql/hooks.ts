@@ -11,7 +11,6 @@ const PLAYERS_QUERY = graphql(`
     allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {
       nodes {
         id
-        address
         name
         shipLevel
         score

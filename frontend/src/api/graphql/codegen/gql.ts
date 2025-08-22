@@ -14,10 +14,10 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-  '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        address\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n': typeof types.PlayersQueryDocument;
+  '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n': typeof types.PlayersQueryDocument;
 };
 const documents: Documents = {
-  '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        address\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n':
+  '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n':
     types.PlayersQueryDocument,
 };
 
@@ -39,8 +39,8 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        address\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n',
-): (typeof documents)['\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        address\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n'];
+  source: '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n',
+): (typeof documents)['\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
