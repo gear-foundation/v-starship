@@ -88,21 +88,21 @@ export class PlayerHandler extends BaseHandler {
 
       switch (method) {
         case 'PointsAdded': {
-          if (!this._isValidPayload(payload, 'points', method)) break;
+          if (!this._isValidPayload(payload, 'points', method)) continue;
 
           player.score += Number(payload.points);
           break;
         }
 
         case 'NewShipBought': {
-          if (!this._isValidPayload(payload, 'level', method)) break;
+          if (!this._isValidPayload(payload, 'level', method)) continue;
 
           player.shipLevel = Number(payload.level);
           break;
         }
 
         case 'NameSet': {
-          if (!this._isValidPayload(payload, 'name', method)) break;
+          if (!this._isValidPayload(payload, 'name', method)) continue;
 
           player.name = String(payload.name);
           break;
