@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-class Player {
+export class Player {
   constructor(props?: Player) {
     Object.assign(this, props);
   }
@@ -21,5 +21,3 @@ class Player {
   @Column('varchar', { nullable: true })
   name: string | null;
 }
-
-export { Player };

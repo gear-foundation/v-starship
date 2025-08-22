@@ -1,3 +1,1 @@
-import { PlayerHandler } from './player';
-
-export { PlayerHandler };
+export { PlayerHandler } from './player';
