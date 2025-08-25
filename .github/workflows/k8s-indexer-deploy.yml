@@ -77,7 +77,9 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-indexer-starship:${{ env.DEPLOY_ENV }}-${{ env.COMMIT_SHA }}
 
   deploy-to-k8s:
-    needs: build-image
+    needs: 
+      - build-image
+      - set-env
     runs-on: ubuntu-latest
     env:
       DEPLOY_ENV: ${{ needs.set-env.outputs.environment }}
