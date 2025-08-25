@@ -1,4 +1,5 @@
 FROM node:20-alpine
+MAINTAINER GEAR
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
