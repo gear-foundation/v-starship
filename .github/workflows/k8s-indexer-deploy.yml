@@ -7,6 +7,16 @@ on:
       - release
     paths:
       - indexer/**
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'stg'
+        type: choice
+        options:
+          - stg
+          - prod
   
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,11 +35,13 @@ jobs:
   set-env:
     runs-on: ubuntu-latest
     outputs:
-      environment: ${{ steps.set.outputs.environment }}
+      environment: ${{ steps.export-env.outputs.environment }}
     steps:
-      - id: set
+      - id: export-env
         run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> "${GITHUB_OUTPUT}"
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "environment=stg" >> "${GITHUB_OUTPUT}"
           elif [[ "${GITHUB_REF}" == "refs/heads/release" ]]; then
             echo "environment=prod" >> "${GITHUB_OUTPUT}"
