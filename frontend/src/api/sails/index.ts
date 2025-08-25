@@ -1,7 +1,6 @@
 import {
   useConfig,
   usePlayer,
-  usePlayers,
   useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,
@@ -17,7 +16,6 @@ import {
 export {
   useConfig,
   usePlayer,
-  usePlayers,
   useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,

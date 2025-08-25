@@ -2,7 +2,6 @@ import { usePlayerNFT } from './nft';
 import {
   useConfig,
   usePlayer,
-  usePlayers,
   useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,
@@ -17,7 +16,6 @@ import { usePointsBalance } from './vft';
 export {
   useConfig,
   usePlayer,
-  usePlayers,
   useAttemptsCount,
   useTimeToFreeAttempts,
   useBuyPoints,
