@@ -90,26 +90,6 @@ async function main() {
     }
   }
 
-  let isShuttingDown = false;
-  
-  const gracefulShutdown = (signal: string) => {
-    if (isShuttingDown) {
-      console.log(`[*] Force shutdown on ${signal}`);
-      process.exit(1);
-    }
-    
-    isShuttingDown = true;
-    console.log(`[*] Received ${signal}, starting graceful shutdown...`);
-    
-    setTimeout(() => {
-      console.log(`[*] Graceful shutdown completed`);
-      process.exit(0);
-    }, 5000);
-  };
-
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  
   await processor.run();
 }
 
