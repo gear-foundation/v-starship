@@ -1,0 +1,6 @@
+type Player @entity {
+  id: ID!
+  score: Int!
+  shipLevel: Int!
+  name: String
+}
