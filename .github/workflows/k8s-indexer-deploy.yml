@@ -8,7 +8,6 @@ on:
     paths:
       - indexer/**
   
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -31,9 +30,9 @@ jobs:
       - id: set
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "environment=stg" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_REF}" == refs/heads/release/* ]]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "environment=stg" >> "${GITHUB_OUTPUT}"
+          elif [[ "${GITHUB_REF}" == "refs/heads/release" ]]; then
+            echo "environment=prod" >> "${GITHUB_OUTPUT}"
           fi
 
   build-image:
@@ -83,6 +82,7 @@ jobs:
         uses: sergeyfilyanin/kubectl-aws-eks@master
         with:
           args: rollout restart deployment starship-indexer-${{ env.DEPLOY_ENV }} starship-graphql-${{ env.DEPLOY_ENV }} -n vara
+
       - name: Check rollout status
         uses: sergeyfilyanin/kubectl-aws-eks@master
         with:
