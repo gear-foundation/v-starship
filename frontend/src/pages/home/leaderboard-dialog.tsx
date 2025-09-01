@@ -126,8 +126,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
 
         {/* Footer */}
         <div className="p-4 border-t border-cyan-400/20 text-center">
-          <div className="text-gray-400 text-sm">Rankings updated every 24 hours</div>
-          <div className="text-cyan-400 text-xs mt-1 glow-blue">Compete with players worldwide!</div>
+          <div className="text-cyan-400 text-sm mt-1 glow-blue">Compete with players worldwide!</div>
         </div>
       </div>
     </div>
