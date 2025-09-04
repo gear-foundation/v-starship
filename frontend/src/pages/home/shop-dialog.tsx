@@ -1,4 +1,4 @@
-import { useAlert } from '@gear-js/react-hooks';
+import { useAccount, useAlert } from '@gear-js/react-hooks';
 import { X, Gamepad2, Zap, Rocket, Plus } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
@@ -28,6 +28,7 @@ interface ShopDialogProps {
 
 export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipLevel }: ShopDialogProps) {
   const alert = useAlert();
+  const { account } = useAccount();
 
   const { sendTransactionAsync: buyShip, isPending: isBuyingShip } = useBuyShip();
   const { sendTransactionAsync: buyAttempt, isPending: isBuyingAttempt } = useBuyAttempt();
@@ -235,17 +236,19 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
                   : 'bg-gray-800 border-2 border-gray-600 text-gray-500 cursor-not-allowed'
               }
             `}>
-            {isPending
-              ? 'PROCESSING...'
-              : selectedItem === 'ship-upgrade'
-                ? shipLevel === maxShipLevel
-                  ? 'MAX LEVEL'
-                  : canUpgrade
-                    ? 'UPGRADE'
-                    : 'INSUFFICIENT PTS'
-                : canAfford
-                  ? 'PURCHASE'
-                  : 'INSUFFICIENT PTS'}
+            {!account
+              ? 'CONNECT WALLET FIRST'
+              : isPending
+                ? 'PROCESSING...'
+                : selectedItem === 'ship-upgrade'
+                  ? shipLevel === maxShipLevel
+                    ? 'MAX LEVEL'
+                    : canUpgrade
+                      ? 'UPGRADE'
+                      : 'INSUFFICIENT PTS'
+                  : canAfford
+                    ? 'PURCHASE'
+                    : 'INSUFFICIENT PTS'}
           </Button>
         </div>
       </div>
