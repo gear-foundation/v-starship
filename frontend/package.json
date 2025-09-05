@@ -11,12 +11,11 @@
     "codegen": "graphql-codegen --require dotenv/config"
   },
   "dependencies": {
-    "@gear-js/api": "0.42.0",
-    "@gear-js/frontend-configs": "0.1.2",
-    "@gear-js/react-hooks": "0.17.0",
+    "@gear-js/api": "0.44.0",
+    "@gear-js/react-hooks": "0.18.2",
     "@gear-js/ui": "0.7.0",
     "@gear-js/vara-ui": "0.3.1",
-    "@gear-js/wallet-connect": "0.4.1",
+    "@gear-js/wallet-connect": "0.4.2",
     "@radix-ui/react-slot": "1.2.3",
     "@tanstack/react-query": "5.81.5",
     "class-variance-authority": "0.7.1",
@@ -27,10 +26,11 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-router-dom": "7.6.3",
-    "sails-js": "0.4.2",
+    "sails-js": "0.4.3",
     "tailwind-merge": "3.3.1"
   },
   "devDependencies": {
+    "@gear-js/frontend-configs": "0.1.2",
     "@graphql-codegen/cli": "5.0.7",
     "@tailwindcss/vite": "4.1.11",
     "@types/react": "19.1.8",

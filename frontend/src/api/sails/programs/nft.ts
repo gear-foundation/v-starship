@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GearApi, Program, HexString, decodeAddress } from '@gear-js/api';
+import { GearApi, BaseGearProgram, HexString, decodeAddress } from '@gear-js/api';
 import { TypeRegistry } from '@polkadot/types';
 import {
   TransactionBuilder,
@@ -73,7 +73,7 @@ export interface TokenInfo {
 export class SailsProgram {
   public readonly registry: TypeRegistry;
   public readonly nft: Nft;
-  private _program!: Program;
+  private _program!: BaseGearProgram;
 
   constructor(
     public api: GearApi,
@@ -136,7 +136,7 @@ export class SailsProgram {
     this.registry.setKnownTypes({ types });
     this.registry.register(types);
     if (programId) {
-      this._program = new Program(programId, api);
+      this._program = new BaseGearProgram(programId, api);
     }
 
     this.nft = new Nft(this);
@@ -158,12 +158,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'upload_program',
-      ['New', collection_owner, config, img_links_and_data, permission_to_mint],
-      '(String, [u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
+      undefined,
+      'New',
+      [collection_owner, config, img_links_and_data, permission_to_mint],
+      '([u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
       'String',
       code,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -180,12 +182,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'create_program',
-      ['New', collection_owner, config, img_links_and_data, permission_to_mint],
-      '(String, [u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
+      undefined,
+      'New',
+      [collection_owner, config, img_links_and_data, permission_to_mint],
+      '([u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
       'String',
       codeId,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -201,8 +205,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'AddAdmin', admin],
-      '(String, String, [u8;32])',
+      'Nft',
+      'AddAdmin',
+      admin,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -214,8 +220,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'AddMetadata', nft_id, metadata],
-      '(String, String, u64, String)',
+      'Nft',
+      'AddMetadata',
+      [nft_id, metadata],
+      '(u64, String)',
       'Null',
       this._program.programId,
     );
@@ -227,8 +235,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'AddUsersForMint', users],
-      '(String, String, Vec<[u8;32]>)',
+      'Nft',
+      'AddUsersForMint',
+      users,
+      'Vec<[u8;32]>',
       'Null',
       this._program.programId,
     );
@@ -240,8 +250,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'Approve', to, token_id],
-      '(String, String, [u8;32], u64)',
+      'Nft',
+      'Approve',
+      [to, token_id],
+      '([u8;32], u64)',
       'Null',
       this._program.programId,
     );
@@ -253,8 +265,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'ChangeConfig', config],
-      '(String, String, Config)',
+      'Nft',
+      'ChangeConfig',
+      config,
+      'Config',
       'Null',
       this._program.programId,
     );
@@ -266,8 +280,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'ChangeImgLink', nft_id, img_link],
-      '(String, String, u64, String)',
+      'Nft',
+      'ChangeImgLink',
+      [nft_id, img_link],
+      '(u64, String)',
       'Null',
       this._program.programId,
     );
@@ -279,8 +295,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'ChangeMetadata', nft_id, metadata],
-      '(String, String, u64, Vec<String>)',
+      'Nft',
+      'ChangeMetadata',
+      [nft_id, metadata],
+      '(u64, Vec<String>)',
       'Null',
       this._program.programId,
     );
@@ -292,8 +310,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'DeleteMetadata', nft_id],
-      '(String, String, u64)',
+      'Nft',
+      'DeleteMetadata',
+      nft_id,
+      'u64',
       'Null',
       this._program.programId,
     );
@@ -305,8 +325,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'DeleteUserForMint', user],
-      '(String, String, [u8;32])',
+      'Nft',
+      'DeleteUserForMint',
+      user,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -318,8 +340,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'Expand', additional_links],
-      '(String, String, Vec<(String, ImageData)>)',
+      'Nft',
+      'Expand',
+      additional_links,
+      'Vec<(String, ImageData)>',
       'Null',
       this._program.programId,
     );
@@ -331,8 +355,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'LiftRestrictionsMint'],
-      '(String, String)',
+      'Nft',
+      'LiftRestrictionsMint',
+      undefined,
+      'Null',
       'Null',
       this._program.programId,
     );
@@ -344,8 +370,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'Mint', minter, img_link_id],
-      '(String, String, [u8;32], Option<u64>)',
+      'Nft',
+      'Mint',
+      [minter, img_link_id],
+      '([u8;32], Option<u64>)',
       'Null',
       this._program.programId,
     );
@@ -357,8 +385,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'RemoveAdmin', admin],
-      '(String, String, [u8;32])',
+      'Nft',
+      'RemoveAdmin',
+      admin,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -370,8 +400,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'RevokeApprove', token_id],
-      '(String, String, u64)',
+      'Nft',
+      'RevokeApprove',
+      token_id,
+      'u64',
       'Null',
       this._program.programId,
     );
@@ -383,8 +415,10 @@ export class Nft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Nft', 'TransferFrom', from, to, token_id],
-      '(String, String, [u8;32], [u8;32], u64)',
+      'Nft',
+      'TransferFrom',
+      [from, to, token_id],
+      '([u8;32], [u8;32], u64)',
       'Null',
       this._program.programId,
     );

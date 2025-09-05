@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GearApi, Program, HexString, decodeAddress } from '@gear-js/api';
+import { GearApi, BaseGearProgram, HexString, decodeAddress } from '@gear-js/api';
 import { TypeRegistry } from '@polkadot/types';
 import {
   TransactionBuilder,
@@ -14,7 +14,7 @@ import {
 export class SailsProgram {
   public readonly registry: TypeRegistry;
   public readonly vft: Vft;
-  private _program!: Program;
+  private _program!: BaseGearProgram;
 
   constructor(
     public api: GearApi,
@@ -26,7 +26,7 @@ export class SailsProgram {
     this.registry.setKnownTypes({ types });
     this.registry.register(types);
     if (programId) {
-      this._program = new Program(programId, api);
+      this._program = new BaseGearProgram(programId, api);
     }
 
     this.vft = new Vft(this);
@@ -47,12 +47,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'upload_program',
-      ['New', name, symbol, decimals],
-      '(String, String, String, u8)',
+      undefined,
+      'New',
+      [name, symbol, decimals],
+      '(String, String, u8)',
       'String',
       code,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -63,12 +65,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'create_program',
-      ['New', name, symbol, decimals],
-      '(String, String, String, u8)',
+      undefined,
+      'New',
+      [name, symbol, decimals],
+      '(String, String, u8)',
       'String',
       codeId,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -84,8 +88,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'Burn', from, value],
-      '(String, String, [u8;32], U256)',
+      'Vft',
+      'Burn',
+      [from, value],
+      '([u8;32], U256)',
       'bool',
       this._program.programId,
     );
@@ -97,8 +103,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'GrantAdminRole', to],
-      '(String, String, [u8;32])',
+      'Vft',
+      'GrantAdminRole',
+      to,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -110,8 +118,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'GrantBurnerRole', to],
-      '(String, String, [u8;32])',
+      'Vft',
+      'GrantBurnerRole',
+      to,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -123,8 +133,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'GrantMinterRole', to],
-      '(String, String, [u8;32])',
+      'Vft',
+      'GrantMinterRole',
+      to,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -136,8 +148,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'Mint', to, value],
-      '(String, String, [u8;32], U256)',
+      'Vft',
+      'Mint',
+      [to, value],
+      '([u8;32], U256)',
       'bool',
       this._program.programId,
     );
@@ -149,8 +163,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'RevokeAdminRole', from],
-      '(String, String, [u8;32])',
+      'Vft',
+      'RevokeAdminRole',
+      from,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -162,8 +178,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'RevokeBurnerRole', from],
-      '(String, String, [u8;32])',
+      'Vft',
+      'RevokeBurnerRole',
+      from,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -175,8 +193,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'RevokeMinterRole', from],
-      '(String, String, [u8;32])',
+      'Vft',
+      'RevokeMinterRole',
+      from,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -188,8 +208,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'Approve', spender, value],
-      '(String, String, [u8;32], U256)',
+      'Vft',
+      'Approve',
+      [spender, value],
+      '([u8;32], U256)',
       'bool',
       this._program.programId,
     );
@@ -201,8 +223,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'Transfer', to, value],
-      '(String, String, [u8;32], U256)',
+      'Vft',
+      'Transfer',
+      [to, value],
+      '([u8;32], U256)',
       'bool',
       this._program.programId,
     );
@@ -214,8 +238,10 @@ export class Vft {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'TransferFrom', from, to, value],
-      '(String, String, [u8;32], [u8;32], U256)',
+      'Vft',
+      'TransferFrom',
+      [from, to, value],
+      '([u8;32], [u8;32], U256)',
       'bool',
       this._program.programId,
     );

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GearApi, Program, HexString, decodeAddress } from '@gear-js/api';
+import { GearApi, BaseGearProgram, HexString, decodeAddress } from '@gear-js/api';
 import { TypeRegistry } from '@polkadot/types';
 import {
   TransactionBuilder,
@@ -38,7 +38,7 @@ export interface PlayerInfo {
 export class SailsProgram {
   public readonly registry: TypeRegistry;
   public readonly starship: Starship;
-  private _program!: Program;
+  private _program!: BaseGearProgram;
 
   constructor(
     public api: GearApi,
@@ -73,7 +73,7 @@ export class SailsProgram {
     this.registry.setKnownTypes({ types });
     this.registry.register(types);
     if (programId) {
-      this._program = new Program(programId, api);
+      this._program = new BaseGearProgram(programId, api);
     }
 
     this.starship = new Starship(this);
@@ -89,12 +89,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'upload_program',
-      ['New', config],
-      '(String, Config)',
+      undefined,
+      'New',
+      config,
+      'Config',
       'String',
       code,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -105,12 +107,14 @@ export class SailsProgram {
       this.api,
       this.registry,
       'create_program',
-      ['New', config],
-      '(String, Config)',
+      undefined,
+      'New',
+      config,
+      'Config',
       'String',
       codeId,
       async (programId) => {
-        this._program = await Program.new(programId, this.api);
+        this._program = await BaseGearProgram.new(programId, this.api);
       },
     );
     return builder;
@@ -126,8 +130,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'AddPoints', points, num_spent_boosters],
-      '(String, String, u128, u16)',
+      'Starship',
+      'AddPoints',
+      [points, num_spent_boosters],
+      '(u128, u16)',
       'Null',
       this._program.programId,
     );
@@ -139,8 +145,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'BuyAttempt'],
-      '(String, String)',
+      'Starship',
+      'BuyAttempt',
+      undefined,
+      'Null',
       'Null',
       this._program.programId,
     );
@@ -152,8 +160,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'BuyBooster'],
-      '(String, String)',
+      'Starship',
+      'BuyBooster',
+      undefined,
+      'Null',
       'Null',
       this._program.programId,
     );
@@ -165,8 +175,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'BuyNewShip'],
-      '(String, String)',
+      'Starship',
+      'BuyNewShip',
+      undefined,
+      'Null',
       'Null',
       this._program.programId,
     );
@@ -178,8 +190,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'BuyPoints', points_amount],
-      '(String, String, u128)',
+      'Starship',
+      'BuyPoints',
+      points_amount,
+      'u128',
       'Null',
       this._program.programId,
     );
@@ -191,8 +205,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'ChangeAdmin', new_admin],
-      '(String, String, [u8;32])',
+      'Starship',
+      'ChangeAdmin',
+      new_admin,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -204,8 +220,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'ChangeConfig', config],
-      '(String, String, Config)',
+      'Starship',
+      'ChangeConfig',
+      config,
+      'Config',
       'Null',
       this._program.programId,
     );
@@ -217,8 +235,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'SetName', name],
-      '(String, String, String)',
+      'Starship',
+      'SetName',
+      name,
+      'String',
       'Null',
       this._program.programId,
     );
@@ -230,8 +250,10 @@ export class Starship {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Starship', 'WithdrawalOfValues', to],
-      '(String, String, [u8;32])',
+      'Starship',
+      'WithdrawalOfValues',
+      to,
+      '[u8;32]',
       'Null',
       this._program.programId,
     );
@@ -341,7 +363,9 @@ export class Starship {
     return result[2].toBigInt() as unknown as bigint;
   }
 
-  public subscribeToPointsAddedEvent(callback: (data: bigint) => void | Promise<void>): Promise<() => void> {
+  public subscribeToPointsAddedEvent(
+    callback: (data: { player: ActorId; points: number | string | bigint }) => void | Promise<void>,
+  ): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -351,8 +375,8 @@ export class Starship {
       if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'PointsAdded') {
         callback(
           this._program.registry
-            .createType('(String, String, u128)', message.payload)[2]
-            .toBigInt() as unknown as bigint,
+            .createType('(String, String, {"player":"[u8;32]","points":"u128"})', message.payload)[2]
+            .toJSON() as unknown as { player: ActorId; points: number | string | bigint },
         );
       }
     });
@@ -375,7 +399,9 @@ export class Starship {
     });
   }
 
-  public subscribeToNewShipBoughtEvent(callback: (data: null) => void | Promise<void>): Promise<() => void> {
+  public subscribeToNewShipBoughtEvent(
+    callback: (data: { player: ActorId; level: number }) => void | Promise<void>,
+  ): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -383,7 +409,11 @@ export class Starship {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'NewShipBought') {
-        callback(null);
+        callback(
+          this._program.registry
+            .createType('(String, String, {"player":"[u8;32]","level":"u16"})', message.payload)[2]
+            .toJSON() as unknown as { player: ActorId; level: number },
+        );
       }
     });
   }
@@ -435,7 +465,9 @@ export class Starship {
     });
   }
 
-  public subscribeToNameSetEvent(callback: (data: string) => void | Promise<void>): Promise<() => void> {
+  public subscribeToNameSetEvent(
+    callback: (data: { player: ActorId; name: string }) => void | Promise<void>,
+  ): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -445,8 +477,8 @@ export class Starship {
       if (getServiceNamePrefix(payload) === 'Starship' && getFnNamePrefix(payload) === 'NameSet') {
         callback(
           this._program.registry
-            .createType('(String, String, String)', message.payload)[2]
-            .toString() as unknown as string,
+            .createType('(String, String, {"player":"[u8;32]","name":"String"})', message.payload)[2]
+            .toJSON() as unknown as { player: ActorId; name: string },
         );
       }
     });
