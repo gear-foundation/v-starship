@@ -20,6 +20,7 @@ interface InGameScreenProps {
   onBackToMenu: () => void;
   onReplayGame: () => void;
   playerPTS: number;
+  playerVARA: bigint;
   gamesAvailable: number;
   shipLevel: number;
   boosterCount: number;
@@ -73,6 +74,7 @@ export default function InGameScreen({
   onBackToMenu,
   onReplayGame,
   playerPTS,
+  playerVARA,
   gamesAvailable,
   shipLevel,
   boosterCount,
@@ -1891,7 +1893,7 @@ export default function InGameScreen({
         isVictory={isVictory}
         ptsEarned={ptsEarned}
         playerPTS={playerPTS}
-        playerVARA={0}
+        playerVARA={playerVARA}
         enemiesDefeated={enemiesKilled + asteroidsKilled + minesKilled}
         asteroidsKilled={asteroidsKilled}
         minesKilled={minesKilled}

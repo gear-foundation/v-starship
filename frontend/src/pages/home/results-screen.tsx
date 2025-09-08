@@ -14,7 +14,7 @@ interface ResultsScreenProps {
   isVictory: boolean;
   ptsEarned: number;
   playerPTS: number;
-  playerVARA: number;
+  playerVARA: bigint;
   enemiesDefeated: number;
   asteroidsKilled: number;
   minesKilled: number;

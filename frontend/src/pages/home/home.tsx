@@ -78,6 +78,7 @@ function Home() {
         onBackToMenu={handleBackToMenu}
         onReplayGame={handleReplayGame}
         playerPTS={playerPTS}
+        playerVARA={balance}
         gamesAvailable={gamesAvailable}
         shipLevel={shipLevel}
         boosterCount={boosterCount}
