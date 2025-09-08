@@ -1859,7 +1859,7 @@ export default function InGameScreen({
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
           {bossDataRef.current?.phase === 'active' && (
-            <div className="absolute left-1/2 top-2 -translate-x-1/2 z-50 flex flex-col items-center">
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 z-9 flex flex-col items-center">
               <div className="w-48 h-3 bg-gray-800 rounded-full border border-yellow-400 mt-1 mb-1 flex items-center relative">
                 <div
                   className="h-3 rounded-full bg-gradient-to-r from-yellow-300 to-red-500 absolute left-0 top-0"
