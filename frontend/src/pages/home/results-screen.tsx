@@ -1,4 +1,4 @@
-import { useAlert } from '@gear-js/react-hooks';
+import { useAlert, useBalanceFormat } from '@gear-js/react-hooks';
 import { Trophy, Skull, RotateCcw, Home } from 'lucide-react';
 
 import { useAddPoints } from '@/api/sails';
@@ -34,6 +34,7 @@ export function ResultsScreen({
   minesKilled,
   activatedBoostersCount,
 }: ResultsScreenProps) {
+  const { getFormattedBalance } = useBalanceFormat();
   const alert = useAlert();
   const { sendTransactionAsync: addPlayerPTS, isPending: isAddingPTS } = useAddPoints();
 
@@ -67,7 +68,10 @@ export function ResultsScreen({
         {/* Header */}
         <div className="flex justify-between items-center p-4">
           <div className="text-cyan-400 font-bold text-lg glow-blue">PTS: {playerPTS.toLocaleString()}</div>
-          <div className="text-gray-300 font-bold text-lg glow-white">VARA: {playerVARA.toLocaleString()}</div>
+
+          <div className="text-gray-300 font-bold text-lg glow-white">
+            VARA: {getFormattedBalance(playerVARA).value}
+          </div>
         </div>
 
         {/* Result Banner */}
