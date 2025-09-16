@@ -129,7 +129,7 @@ export default function MainScreen({
 
         <div className="flex flex-col items-center justify-center text-center mt-8">
           <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold text-cyan-400 glow-blue tracking-wider">VARA STARSHIP</h1>
+            <h1 className="text-3xl font-bold text-cyan-400 glow-blue tracking-wider">V-STARSHIP</h1>
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-6">
