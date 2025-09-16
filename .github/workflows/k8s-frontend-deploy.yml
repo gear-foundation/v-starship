@@ -1,4 +1,4 @@
-name: Build and Deploy Vara Starship
+name: Build and Deploy V-Starship
 
 on:
   workflow_dispatch:
