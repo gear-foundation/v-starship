@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 sails-rs = "=0.8.1"
 extended-vft-client = { git = "https://github.com/gear-foundation/standards/"}
-nft-client = { path = "../../nft-showroom/contracts/nft/client"}
+nft-client = { path = "../../../../nft-showroom/contracts/nft/client"}

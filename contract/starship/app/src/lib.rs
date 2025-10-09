@@ -74,13 +74,22 @@ impl StarshipService {
 #[codec(crate = sails_rs::scale_codec)]
 #[scale_info(crate = sails_rs::scale_info)]
 pub enum Event {
-    PointsAdded(u128),
+    PointsAdded{
+        player: ActorId,
+        points: u128,
+    },
     PointsBought(u128),
-    NewShipBought,
+    NewShipBought{
+        player: ActorId,
+        level: u16,
+    },
     ValuesHaveBeenWithdrawn,
     ConfigChanged(Config),
     AdminChanged(ActorId),
-    NameSet(String),
+    NameSet{
+        player: ActorId,
+        name: String,
+    },
     AttemptBought,
     BoosterBought,
 }
@@ -149,7 +158,7 @@ impl StarshipService {
         info.number_of_attempts -= 1;
         info.number_of_boosters = info.number_of_boosters.saturating_sub(num_spent_boosters);
 
-        self.emit_event(Event::PointsAdded(points))
+        self.emit_event(Event::PointsAdded{player: msg_source, points})
             .expect("Event Invocation Error");
     }
 
@@ -157,6 +166,11 @@ impl StarshipService {
         let storage = self.get_mut();
         let msg_source = msg::source();
 
+        let is_new_player = !storage.players_info.contains_key(&msg_source);
+        if is_new_player {
+            mint(storage.config.nft_contract, msg_source, Some(0)).await;
+        }
+        
         storage
             .players_info
             .entry(msg_source)
@@ -173,7 +187,7 @@ impl StarshipService {
                     attempt_timestamp: 0,
                 }
             });
-        self.emit_event(Event::NameSet(name))
+        self.emit_event(Event::NameSet{ player: msg_source, name })
             .expect("Event Invocation Error");
     }
 
@@ -316,7 +330,7 @@ impl StarshipService {
         .await
         .expect("Error in burn Fungible Token");
 
-        match storage.players_info.entry(msg_source) {
+        let level = match storage.players_info.entry(msg_source) {
             Entry::Occupied(mut entry) => {
                 let info = entry.get_mut();
 
@@ -328,24 +342,25 @@ impl StarshipService {
                 .await;
             
                 info.ship_level += 1;
-
+                info.ship_level
             }
             Entry::Vacant(entry) => {
                 mint(storage.config.nft_contract, msg_source, Some(0)).await;
                 mint(storage.config.nft_contract, msg_source, Some(1)).await;
-
+                let ship_level = storage.config.default_level_ship + 1;
                 entry.insert(PlayerInfo {
                     earned_points: 0,
-                    ship_level: storage.config.default_level_ship + 1,
+                    ship_level,
                     player_name: storage.config.default_name.clone(),
                     number_of_attempts: storage.config.default_free_attempts,
                     number_of_boosters: storage.config.default_boosters,
                     attempt_timestamp: timestamp,
                 });
+                ship_level
             }
-        }
+        };
 
-        self.emit_event(Event::NewShipBought)
+        self.emit_event(Event::NewShipBought { player: msg_source, level })
             .expect("Event Invocation Error");
     }
 
