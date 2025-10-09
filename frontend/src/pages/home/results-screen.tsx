@@ -41,7 +41,7 @@ export function ResultsScreen({
   const handleBackToMenu = () => {
     if (IS_DEV_MODE_ENABLED) return onClose();
 
-    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
+    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount], gasLimit: { increaseGas: 10 } })
       .then(() => onClose())
       .catch((error) => alert.error(getErrorMessage(error)));
   };
@@ -49,7 +49,7 @@ export function ResultsScreen({
   const handleReplay = () => {
     if (IS_DEV_MODE_ENABLED) return onReplay?.();
 
-    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount] })
+    addPlayerPTS({ args: [ptsEarned, activatedBoostersCount], gasLimit: { increaseGas: 10 } })
       .then(() => onReplay?.())
       .catch((error) => alert.error(getErrorMessage(error)));
   };

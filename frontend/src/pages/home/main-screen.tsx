@@ -79,7 +79,7 @@ export default function MainScreen({
   const handleSaveName = () => {
     const trimmed = tempName.trim();
     if (trimmed.length > 0 && trimmed.length <= 16) {
-      setPlayerName({ args: [trimmed] })
+      setPlayerName({ args: [trimmed], gasLimit: { increaseGas: 10 } })
         .then(() => setEditingName(false))
         .catch((error) => {
           alert.error(getErrorMessage(error));

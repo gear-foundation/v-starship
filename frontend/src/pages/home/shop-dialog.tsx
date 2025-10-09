@@ -87,7 +87,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
 
   const handlePurchase = () => {
     if (selectedItem === 'extra-game' && selectedItemData && playerPTS >= selectedItemData.cost && gamesAvailable < 3) {
-      return buyAttempt({ args: [] })
+      return buyAttempt({ args: [], gasLimit: { increaseGas: 10 } })
         .then(() => {
           playSound(GAME_CONFIG.SOUND_GAME_PURCHASE, GAME_CONFIG.VOLUME_GAME_PURCHASE);
           onClose();
@@ -98,7 +98,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
     }
 
     if (selectedItem === 'ship-upgrade' && canUpgrade && selectedItemData && playerPTS >= selectedItemData.cost) {
-      return buyShip({ args: [] })
+      return buyShip({ args: [], gasLimit: { increaseGas: 10 } })
         .then(() => {
           playSound(GAME_CONFIG.SOUND_SHIP_LEVEL_UP, GAME_CONFIG.VOLUME_SHIP_LEVEL_UP);
           onClose();
@@ -107,7 +107,7 @@ export default function ShopDialog({ isOpen, onClose, playerPTS, onGetPTS, shipL
     }
 
     if (selectedItem === 'booster' && selectedItemData && playerPTS >= selectedItemData.cost) {
-      return buyBooster({ args: [] })
+      return buyBooster({ args: [], gasLimit: { increaseGas: 10 } })
         .then(() => {
           playSound(GAME_CONFIG.BOOSTER_CONFIG.soundActivate, GAME_CONFIG.VOLUME_BOOSTER_ACTIVATE);
           onClose();
