@@ -53,7 +53,7 @@ export default function TokenExchangeDialog({
 
   const handleConfirm = () => {
     if (isValidAmount && canAfford && isWalletConnected) {
-      buyPoints({ args: [ptsAmount], value: varaCost, gasLimit: { increaseGas: 10 } })
+      buyPoints({ args: [ptsAmount], value: varaCost, gasLimit: { increaseGas: 30 } })
         .then(() => {
           setPtsAmount('');
           onClose();
