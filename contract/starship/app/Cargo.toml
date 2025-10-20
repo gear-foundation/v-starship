@@ -1,0 +1,9 @@
+[package]
+name = "starship-app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sails-rs = "=0.8.1"
+extended-vft-client = { git = "https://github.com/gear-foundation/standards/"}
+nft-client = { path = "../../../../nft-showroom/contracts/nft/client"}
