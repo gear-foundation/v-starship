@@ -49,10 +49,13 @@ export class GameHandler extends BaseHandler {
         const { blockTimestamp: timestamp } = getBlockCommonData(block);
         const playerAddress = String(payload.player);
         const points = Number(payload.points);
+        const boostersCount = Number(payload.num_spent_boosters);
 
-        const game = new Game({ id, timestamp, playerAddress, points });
+        const game = new Game({ id, timestamp, playerAddress, points, boostersCount });
 
-        this._ctx.log.info(`Game recorded for ${playerAddress}: ${points} points at ${timestamp.getTime()}`);
+        this._ctx.log.info(
+          `Game recorded for ${playerAddress}: ${points} points at ${timestamp.getTime()} with ${boostersCount} boosters`
+        );
 
         this._games.push(game);
       }

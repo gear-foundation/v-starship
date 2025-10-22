@@ -10,4 +10,5 @@ type Game @entity {
   timestamp: Date!
   playerAddress: String!
   points: Int!
+  boostersCount: Int!
 }
