@@ -17,7 +17,4 @@ export class Game {
 
   @Column('int4')
   points: number;
-
-  @Column('int2', { name: 'boosters_count' })
-  boostersCount: number;
 }

@@ -53,12 +53,7 @@ export class PlayerHandler extends BaseHandler {
     const game = new Game(props);
 
     this._games.push(game);
-
-    this._ctx.log.info(
-      `Game recorded for ${game.playerAddress}: ${game.points} points at ${game.timestamp.getTime()} with ${
-        game.boostersCount
-      } boosters`
-    );
+    this._ctx.log.info(`Game recorded for ${game.playerAddress}: ${game.points} points at ${game.timestamp.getTime()}`);
   }
 
   public async process(ctx: ProcessorContext) {
@@ -106,18 +101,13 @@ export class PlayerHandler extends BaseHandler {
 
       switch (method) {
         case 'PointsAdded': {
-          if (
-            !this._isValidPayload(payload, 'points', method) ||
-            !this._isValidPayload(payload, 'num_spent_boosters', method)
-          )
-            continue;
+          if (!this._isValidPayload(payload, 'points', method)) continue;
 
           const points = Number(payload.points);
-          const boostersCount = Number(payload.num_spent_boosters);
           const timestamp = getBlockCommonData(block).blockTimestamp;
 
           player.score += points;
-          this._processGame({ id: messageId, playerAddress, points, boostersCount, timestamp });
+          this._processGame({ id: messageId, playerAddress, points, timestamp });
           break;
         }
 
