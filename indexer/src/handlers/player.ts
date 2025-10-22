@@ -1,6 +1,7 @@
+import { Block } from '@subsquid/substrate-processor';
 import { In } from 'typeorm';
-import { isSailsEvent, isUserMessageSentEvent } from '../helpers';
-import { Player } from '../model';
+import { getBlockCommonData, isSailsEvent, isUserMessageSentEvent } from '../helpers';
+import { Game, Player } from '../model';
 import { ProcessorContext } from '../processor';
 import { SailsDecoder } from '../sails-decoder';
 import { BaseHandler } from './base';
@@ -18,21 +19,24 @@ const getPlayerProps = (props: { id: string; score?: number; shipLevel?: number;
 
 export class PlayerHandler extends BaseHandler {
   private _decoder: SailsDecoder;
-  private _data: Map<string, Player>;
+  private _addressToPlayer: Map<string, Player>;
+  private _games: Game[];
 
   public async init() {
     this._decoder = await SailsDecoder.new('assets/starship.idl');
-    this._data = new Map();
+    this._addressToPlayer = new Map();
+    this._games = [];
   }
 
   public clear() {
-    this._data.clear();
+    this._addressToPlayer.clear();
+    this._games = [];
   }
 
   public async save() {
-    const values = this._data.values();
+    const players = Array.from(this._addressToPlayer.values());
 
-    await this._ctx.store.save(Array.from(values));
+    await Promise.all([this._ctx.store.save(players), this._ctx.store.save(this._games)]);
   }
 
   private _isValidPayload(payload: unknown, key: string, method: string): payload is Record<string, unknown> {
@@ -45,11 +49,25 @@ export class PlayerHandler extends BaseHandler {
     return true;
   }
 
+  private _processGame(props: Game) {
+    const game = new Game(props);
+
+    this._games.push(game);
+
+    this._ctx.log.info(
+      `Game recorded for ${game.playerAddress}: ${game.points} points at ${game.timestamp.getTime()} with ${
+        game.boostersCount
+      } boosters`
+    );
+  }
+
   public async process(ctx: ProcessorContext) {
     await super.process(ctx);
 
     const playerAddresses = new Set<string>();
-    const eventsToProcess = <{ event: EventMessage; playerAddress: string }[]>[];
+    const eventsToProcess = <
+      { event: EventMessage; playerAddress: string; messageId: `0x${string}`; block: Block }[]
+    >[];
 
     for (const block of ctx.blocks) {
       for (const event of block.events) {
@@ -68,7 +86,7 @@ export class PlayerHandler extends BaseHandler {
         const playerAddress = String(payload.player);
 
         playerAddresses.add(playerAddress);
-        eventsToProcess.push({ event: decodedEvent, playerAddress });
+        eventsToProcess.push({ event: decodedEvent, playerAddress, messageId: event.args.message.id, block });
       }
     }
 
@@ -76,21 +94,30 @@ export class PlayerHandler extends BaseHandler {
       const ids = Array.from(playerAddresses);
       const storedPlayers = await ctx.store.find(Player, { where: { id: In(ids) } });
 
-      this._data = new Map(storedPlayers.map((player) => [player.id, player]));
+      this._addressToPlayer = new Map(storedPlayers.map((player) => [player.id, player]));
     }
 
-    for (const { event, playerAddress } of eventsToProcess) {
+    for (const { event, playerAddress, messageId, block } of eventsToProcess) {
       const { method, payload } = event;
 
-      const existingPlayer = this._data.get(playerAddress);
+      const existingPlayer = this._addressToPlayer.get(playerAddress);
       const player = existingPlayer || new Player(getPlayerProps({ id: playerAddress }));
       const prevPlayer = { ...player };
 
       switch (method) {
         case 'PointsAdded': {
-          if (!this._isValidPayload(payload, 'points', method)) continue;
+          if (
+            !this._isValidPayload(payload, 'points', method) ||
+            !this._isValidPayload(payload, 'num_spent_boosters', method)
+          )
+            continue;
 
-          player.score += Number(payload.points);
+          const points = Number(payload.points);
+          const boostersCount = Number(payload.num_spent_boosters);
+          const timestamp = getBlockCommonData(block).blockTimestamp;
+
+          player.score += points;
+          this._processGame({ id: messageId, playerAddress, points, boostersCount, timestamp });
           break;
         }
 
@@ -115,7 +142,7 @@ export class PlayerHandler extends BaseHandler {
         ctx.log.info(`New player ${player.id} added: ${JSON.stringify(player)}`);
       }
 
-      this._data.set(playerAddress, player);
+      this._addressToPlayer.set(playerAddress, player);
     }
   }
 }
