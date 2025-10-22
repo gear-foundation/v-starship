@@ -4,3 +4,10 @@ type Player @entity {
   shipLevel: Int!
   name: String
 }
+
+type Game @entity {
+  id: ID!
+  timestamp: Date!
+  playerAddress: String!
+  points: Int!
+}
