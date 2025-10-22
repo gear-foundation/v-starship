@@ -53,7 +53,10 @@ export class PlayerHandler extends BaseHandler {
     const game = new Game(props);
 
     this._games.push(game);
-    this._ctx.log.info(`Game recorded for ${game.playerAddress}: ${game.points} points at ${game.timestamp.getTime()}`);
+
+    this._ctx.log.info(
+      `Game recorded for ${game.playerAddress}: ${game.points} points at ${game.timestamp.toISOString()}`
+    );
   }
 
   public async process(ctx: ProcessorContext) {
