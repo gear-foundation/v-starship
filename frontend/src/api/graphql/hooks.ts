@@ -2,7 +2,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { request } from 'graphql-request';
 
 import { graphql } from './codegen';
-import { PlayersQueryQuery } from './codegen/graphql';
 
 const INDEXER_ADDRESS = import.meta.env.VITE_INDEXER_ADDRESS as string;
 
@@ -21,12 +20,46 @@ const PLAYERS_QUERY = graphql(`
   }
 `);
 
+const GAMES_QUERY = graphql(`
+  query GamesQuery($filter: GameFilter) {
+    allGames(filter: $filter) {
+      nodes {
+        id
+        timestamp
+        points
+      }
+
+      totalCount
+    }
+  }
+`);
+
 const PLAYERS_LIMIT = 20;
 
-const getNextPageParam = (data: PlayersQueryQuery, allPages: PlayersQueryQuery[]) => {
-  if (!data.allPlayers) throw new Error('No players found');
+const getPlayersWithGames = async (pageParam: number) => {
+  const playersQuery = await request(INDEXER_ADDRESS, PLAYERS_QUERY, { first: PLAYERS_LIMIT, offset: pageParam });
+  const players = playersQuery.allPlayers?.nodes ?? [];
 
-  const { totalCount } = data.allPlayers;
+  const playersWithGames = await Promise.all(
+    players.map(async (player) => {
+      const filter = { playerAddress: { equalTo: player.id } };
+
+      const gamesQuery = await request(INDEXER_ADDRESS, GAMES_QUERY, { filter });
+      const games = gamesQuery.allGames?.nodes ?? [];
+
+      return { ...player, games };
+    }),
+  );
+
+  return { playersWithGames, totalCount: playersQuery.allPlayers?.totalCount ?? 0 };
+};
+
+type PlayersWithGames = Awaited<ReturnType<typeof getPlayersWithGames>>;
+
+const getNextPageParam = (data: PlayersWithGames, allPages: PlayersWithGames[]) => {
+  if (!data.playersWithGames) throw new Error('No players found');
+
+  const { totalCount } = data;
   const fetchedCount = allPages.length * PLAYERS_LIMIT;
 
   return fetchedCount < totalCount ? fetchedCount : undefined;
@@ -35,10 +68,13 @@ const getNextPageParam = (data: PlayersQueryQuery, allPages: PlayersQueryQuery[]
 function usePlayers() {
   return useInfiniteQuery({
     queryKey: ['players'],
-    queryFn: ({ pageParam }) => request(INDEXER_ADDRESS, PLAYERS_QUERY, { first: PLAYERS_LIMIT, offset: pageParam }),
+
+    queryFn: async ({ pageParam }) => getPlayersWithGames(pageParam),
+
     initialPageParam: 0,
     getNextPageParam,
-    select: (data) => data.pages.flatMap((page) => page.allPlayers?.nodes ?? []),
+
+    select: (data) => data.pages.flatMap((page) => page.playersWithGames ?? []),
   });
 }
 

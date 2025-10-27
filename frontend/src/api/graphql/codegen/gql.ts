@@ -15,10 +15,13 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 type Documents = {
   '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n': typeof types.PlayersQueryDocument;
+  '\n  query GamesQuery($filter: GameFilter) {\n    allGames(filter: $filter) {\n      nodes {\n        id\n        timestamp\n        points\n      }\n\n      totalCount\n    }\n  }\n': typeof types.GamesQueryDocument;
 };
 const documents: Documents = {
   '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n':
     types.PlayersQueryDocument,
+  '\n  query GamesQuery($filter: GameFilter) {\n    allGames(filter: $filter) {\n      nodes {\n        id\n        timestamp\n        points\n      }\n\n      totalCount\n    }\n  }\n':
+    types.GamesQueryDocument,
 };
 
 /**
@@ -41,6 +44,12 @@ export function graphql(source: string): unknown;
 export function graphql(
   source: '\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n',
 ): (typeof documents)['\n  query PlayersQuery($first: Int!, $offset: Int!) {\n    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {\n      nodes {\n        id\n        name\n        shipLevel\n        score\n      }\n\n      totalCount\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GamesQuery($filter: GameFilter) {\n    allGames(filter: $filter) {\n      nodes {\n        id\n        timestamp\n        points\n      }\n\n      totalCount\n    }\n  }\n',
+): (typeof documents)['\n  query GamesQuery($filter: GameFilter) {\n    allGames(filter: $filter) {\n      nodes {\n        id\n        timestamp\n        points\n      }\n\n      totalCount\n    }\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

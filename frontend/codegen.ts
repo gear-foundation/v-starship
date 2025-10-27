@@ -4,7 +4,14 @@ const config: CodegenConfig = {
   schema: process.env.VITE_INDEXER_ADDRESS, // needs --require dotenv/config
   documents: ['src/**/*.{ts,tsx}'],
   ignoreNoDocuments: true, // for better experience with the watcher
-  generates: { './src/api/graphql/codegen/': { preset: 'client' } },
+  generates: {
+    './src/api/graphql/codegen/': {
+      preset: 'client',
+
+      // custom subsquid scalars
+      config: { scalars: { Datetime: 'string' } },
+    },
+  },
 };
 
 export default config;

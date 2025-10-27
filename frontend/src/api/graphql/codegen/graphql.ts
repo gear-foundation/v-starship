@@ -26,7 +26,7 @@ export type Scalars = {
    * A point in time as described by the [ISO
    * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
    */
-  Datetime: { input: any; output: any };
+  Datetime: { input: string; output: string };
 };
 
 /** A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’ */
@@ -545,6 +545,19 @@ export type PlayersQueryQuery = {
   } | null;
 };
 
+export type GamesQueryQueryVariables = Exact<{
+  filter?: InputMaybe<GameFilter>;
+}>;
+
+export type GamesQueryQuery = {
+  __typename?: 'Query';
+  allGames?: {
+    __typename?: 'GamesConnection';
+    totalCount: number;
+    nodes: Array<{ __typename?: 'Game'; id: string; timestamp: string; points: number }>;
+  } | null;
+};
+
 export const PlayersQueryDocument = {
   kind: 'Document',
   definitions: [
@@ -612,3 +625,54 @@ export const PlayersQueryDocument = {
     },
   ],
 } as unknown as DocumentNode<PlayersQueryQuery, PlayersQueryQueryVariables>;
+export const GamesQueryDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GamesQuery' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'GameFilter' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'allGames' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'nodes' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'points' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalCount' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GamesQueryQuery, GamesQueryQueryVariables>;

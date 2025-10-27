@@ -41,8 +41,10 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
   };
 
   const render = () =>
-    rankedPlayers?.map(({ id, name, rank, shipLevel, score }) => {
+    rankedPlayers?.map(({ id, name, rank, shipLevel, games }) => {
       const isUser = account?.decodedAddress === id;
+      const score = games.reduce((total, game) => total + game.points, 0);
+      const gamesCount = games.length;
 
       return (
         <div
@@ -67,11 +69,15 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
               {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}
             </div>
 
-            <div className="col-span-3 text-center">
+            <div className="col-span-2 text-center">
               <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LVL {shipLevel}</span>
             </div>
 
-            <div className="col-span-3 text-right">
+            <div className="col-span-2 text-center">
+              <span className="text-gray-400 font-bold">{gamesCount}</span>
+            </div>
+
+            <div className="col-span-2 text-right">
               <span className="text-green-400 font-bold glow-green">{score}</span>
             </div>
           </div>
@@ -86,7 +92,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Leaderboard Dialog (рамка и содержимое по центру) */}
-      <div className="relative w-full max-w-lg max-h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
+      <div className="relative w-full max-w-xl max-h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-purple-600/10 rounded-lg blur-xl -z-10"></div>
 
@@ -107,8 +113,9 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
           <div className="grid grid-cols-12 gap-2 text-sm font-bold text-cyan-400 glow-blue">
             <div className="col-span-2 text-center">RANK</div>
             <div className="col-span-4">PLAYER</div>
-            <div className="col-span-3 text-center">SHIP LVL</div>
-            <div className="col-span-3 text-right">PTS</div>
+            <div className="col-span-2 text-center">SHIP LVL</div>
+            <div className="col-span-2 text-center">GAMES</div>
+            <div className="col-span-2 text-right">PTS</div>
           </div>
         </div>
 
