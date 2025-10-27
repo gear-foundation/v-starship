@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { request } from 'graphql-request';
 
 import { graphql } from './codegen';
+import { GameFilter } from './codegen/graphql';
 
 const INDEXER_ADDRESS = import.meta.env.VITE_INDEXER_ADDRESS as string;
 
@@ -37,13 +38,13 @@ const GAMES_QUERY = graphql(`
 
 const PLAYERS_LIMIT = 20;
 
-const getPlayersWithGames = async (pageParam: number) => {
+const getPlayersWithGames = async (pageParam: number, timestampFilters: GameFilter | undefined) => {
   const playersQuery = await request(INDEXER_ADDRESS, PLAYERS_QUERY, { first: PLAYERS_LIMIT, offset: pageParam });
 
   if (!playersQuery.allPlayers) return { playersWithGames: [], totalCount: 0 };
 
   const { nodes: players, totalCount } = playersQuery.allPlayers;
-  const filter = { or: players.map((player) => ({ playerAddress: { equalTo: player.id } })) };
+  const filter = { ...timestampFilters, or: players.map((player) => ({ playerAddress: { equalTo: player.id } })) };
   const gamesQuery = await request(INDEXER_ADDRESS, GAMES_QUERY, { filter });
 
   if (!gamesQuery.allGames) return { playersWithGames: [], totalCount: 0 };
@@ -65,7 +66,7 @@ const getPlayersWithGames = async (pageParam: number) => {
     {} as Record<string, typeof games>,
   );
 
-  const playersWithGames = players.map((player) => ({ ...player, games: playerAddressToGames[player.id] }));
+  const playersWithGames = players.map((player) => ({ ...player, games: playerAddressToGames[player.id] ?? [] }));
 
   return { playersWithGames, totalCount };
 };
@@ -81,10 +82,10 @@ const getNextPageParam = (data: PlayersWithGames, allPages: PlayersWithGames[]) 
   return fetchedCount < totalCount ? fetchedCount : undefined;
 };
 
-function usePlayers() {
+function usePlayers(filters: GameFilter | undefined) {
   return useInfiniteQuery({
-    queryKey: ['players'],
-    queryFn: async ({ pageParam }) => getPlayersWithGames(pageParam),
+    queryKey: ['players', filters],
+    queryFn: async ({ pageParam }) => getPlayersWithGames(pageParam, filters),
     initialPageParam: 0,
     getNextPageParam,
     select: (data) => data.pages.flatMap((page) => page.playersWithGames ?? []),

@@ -1,8 +1,10 @@
 import { useAccount } from '@gear-js/react-hooks';
 import { DatePickerInput } from '@mantine/dates';
 import { X, Trophy, Medal, Award, Loader } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import { usePlayers } from '@/api/graphql';
+import { GameFilter } from '@/api/graphql/codegen/graphql';
 import { Button } from '@/components/ui/button';
 
 import { ScrollObserver } from './scroll-observer';
@@ -14,9 +16,38 @@ interface LeaderboardDialogProps {
 const getTruncatedText = (value: string, prefixLength: number = 6) =>
   `${value.substring(0, prefixLength)}...${value.slice(-prefixLength)}`;
 
+const getEndOfDay = (value: string) => {
+  const date = new Date(value);
+
+  date.setUTCHours(23, 59, 59, 999);
+
+  return date;
+};
+
+const LAUNCH_DATE = new Date('2025-09-30');
+const CURRENT_DATE = new Date();
+
 export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
   const { account } = useAccount();
-  const { data: players, hasNextPage, isFetchingNextPage, fetchNextPage } = usePlayers();
+
+  const [dateValues, setDateValues] = useState<[string | null, string | null]>([null, null]);
+
+  const timestampFilters = useMemo(() => {
+    const [startDate, endDate] = dateValues;
+
+    if (!startDate || !endDate) return;
+
+    const filters: GameFilter = {
+      timestamp: {
+        greaterThanOrEqualTo: new Date(startDate).toISOString(),
+        lessThanOrEqualTo: getEndOfDay(endDate).toISOString(),
+      },
+    };
+
+    return filters;
+  }, [dateValues]);
+
+  const { data: players, hasNextPage, isFetchingNextPage, fetchNextPage } = usePlayers(timestampFilters);
 
   const rankedPlayers = players?.map((player, index) => ({ ...player, rank: index + 1 }));
 
@@ -102,7 +133,38 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-cyan-400 glow-blue">LEADERBOARD</h2>
 
-            <DatePickerInput placeholder="Select Dates" type="range" size="xs" />
+            <DatePickerInput
+              placeholder="Select Dates"
+              minDate={LAUNCH_DATE}
+              maxDate={CURRENT_DATE}
+              type="range"
+              size="xs"
+              valueFormat="DD.MM.YYYY"
+              classNames={{
+                input:
+                  'bg-gray-900/50 border-2 border-gray-600 text-cyan-300 font-["Orbitron"] placeholder:text-gray-500 hover:border-cyan-400/50 focus:border-cyan-400 transition-all glow-blue-border',
+                calendarHeader: 'bg-slate-900/95 border-b border-cyan-400/30 font-["Orbitron"]',
+                calendarHeaderControl:
+                  'text-cyan-400 hover:bg-cyan-400/10 border border-gray-600 hover:border-cyan-400/50 transition-all font-["Orbitron"]',
+                calendarHeaderLevel:
+                  'text-cyan-400 font-bold hover:bg-cyan-400/10 border border-gray-600 hover:border-cyan-400/50 transition-all glow-blue font-["Orbitron"]',
+                day: 'text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-all data-[selected]:bg-cyan-400/30 data-[selected]:text-cyan-400 data-[selected]:font-bold data-[selected]:glow-blue data-[weekend]:text-purple-400 data-[outside]:text-gray-600 font-["Orbitron"]',
+                monthsListControl:
+                  'text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-400 transition-all data-[selected]:bg-cyan-400/30 data-[selected]:text-cyan-400 data-[selected]:font-bold font-["Orbitron"]',
+                yearsListControl:
+                  'text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-400 transition-all data-[selected]:bg-cyan-400/30 data-[selected]:text-cyan-400 data-[selected]:font-bold font-["Orbitron"]',
+                month: 'bg-gradient-to-b from-slate-900/95 to-purple-950/95',
+                weekday: 'font-["Orbitron"]',
+              }}
+              popoverProps={{
+                classNames: {
+                  dropdown:
+                    'bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md shadow-[0_0_30px_rgba(0,188,212,0.3)]',
+                },
+              }}
+              value={dateValues}
+              onChange={setDateValues}
+            />
           </div>
 
           <Button
