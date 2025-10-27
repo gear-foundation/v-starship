@@ -22,6 +22,11 @@ export type Scalars = {
   BigInt: { input: any; output: any };
   /** A location in a connection that can be used for resuming pagination. */
   Cursor: { input: any; output: any };
+  /**
+   * A point in time as described by the [ISO
+   * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
+   */
+  Datetime: { input: any; output: any };
 };
 
 /** A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’ */
@@ -49,6 +54,109 @@ export type BigIntFilter = {
   /** Not included in the specified list. */
   notIn?: InputMaybe<Array<Scalars['BigInt']['input']>>;
 };
+
+/** A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’ */
+export type DatetimeFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<Scalars['Datetime']['input']>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<Scalars['Datetime']['input']>>;
+};
+
+export type Game = Node & {
+  __typename?: 'Game';
+  id: Scalars['String']['output'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID']['output'];
+  playerAddress: Scalars['String']['output'];
+  points: Scalars['Int']['output'];
+  timestamp: Scalars['Datetime']['output'];
+};
+
+/** A condition to be used against `Game` object types. All fields are tested for equality and combined with a logical ‘and.’ */
+export type GameCondition = {
+  /** Checks for equality with the object’s `id` field. */
+  id?: InputMaybe<Scalars['String']['input']>;
+  /** Checks for equality with the object’s `playerAddress` field. */
+  playerAddress?: InputMaybe<Scalars['String']['input']>;
+  /** Checks for equality with the object’s `points` field. */
+  points?: InputMaybe<Scalars['Int']['input']>;
+  /** Checks for equality with the object’s `timestamp` field. */
+  timestamp?: InputMaybe<Scalars['Datetime']['input']>;
+};
+
+/** A filter to be used against `Game` object types. All fields are combined with a logical ‘and.’ */
+export type GameFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<GameFilter>>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<GameFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<GameFilter>>;
+  /** Filter by the object’s `playerAddress` field. */
+  playerAddress?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `points` field. */
+  points?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `timestamp` field. */
+  timestamp?: InputMaybe<DatetimeFilter>;
+};
+
+/** A connection to a list of `Game` values. */
+export type GamesConnection = {
+  __typename?: 'GamesConnection';
+  /** A list of edges which contains the `Game` and cursor to aid in pagination. */
+  edges: Array<GamesEdge>;
+  /** A list of `Game` objects. */
+  nodes: Array<Game>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Game` you could get from the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** A `Game` edge in the connection. */
+export type GamesEdge = {
+  __typename?: 'GamesEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']['output']>;
+  /** The `Game` at the end of the edge. */
+  node: Game;
+};
+
+/** Methods to use when ordering `Game`. */
+export enum GamesOrderBy {
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  PlayerAddressAsc = 'PLAYER_ADDRESS_ASC',
+  PlayerAddressDesc = 'PLAYER_ADDRESS_DESC',
+  PointsAsc = 'POINTS_ASC',
+  PointsDesc = 'POINTS_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  TimestampAsc = 'TIMESTAMP_ASC',
+  TimestampDesc = 'TIMESTAMP_DESC',
+}
 
 /** A filter to be used against Int fields. All fields are combined with a logical ‘and.’ */
 export type IntFilter = {
@@ -248,10 +356,15 @@ export enum PlayersOrderBy {
 /** The root query type which gives access points into the data universe. */
 export type Query = Node & {
   __typename?: 'Query';
+  /** Reads and enables pagination through a set of `Game`. */
+  allGames?: Maybe<GamesConnection>;
   /** Reads and enables pagination through a set of `Migration`. */
   allMigrations?: Maybe<MigrationsConnection>;
   /** Reads and enables pagination through a set of `Player`. */
   allPlayers?: Maybe<PlayersConnection>;
+  /** Reads a single `Game` using its globally unique `ID`. */
+  game?: Maybe<Game>;
+  gameById?: Maybe<Game>;
   /** Reads a single `Migration` using its globally unique `ID`. */
   migration?: Maybe<Migration>;
   migrationById?: Maybe<Migration>;
@@ -267,6 +380,18 @@ export type Query = Node & {
    * which can only query top level fields if they are in a particular form.
    */
   query: Query;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAllGamesArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  condition?: InputMaybe<GameCondition>;
+  filter?: InputMaybe<GameFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<GamesOrderBy>>;
 };
 
 /** The root query type which gives access points into the data universe. */
@@ -291,6 +416,16 @@ export type QueryAllPlayersArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<PlayersOrderBy>>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryGameArgs = {
+  nodeId: Scalars['ID']['input'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryGameByIdArgs = {
+  id: Scalars['String']['input'];
 };
 
 /** The root query type which gives access points into the data universe. */
