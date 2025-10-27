@@ -554,7 +554,7 @@ export type GamesQueryQuery = {
   allGames?: {
     __typename?: 'GamesConnection';
     totalCount: number;
-    nodes: Array<{ __typename?: 'Game'; id: string; timestamp: string; points: number }>;
+    nodes: Array<{ __typename?: 'Game'; id: string; playerAddress: string; timestamp: string; points: number }>;
   } | null;
 };
 
@@ -662,6 +662,7 @@ export const GamesQueryDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'playerAddress' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'points' } },
                     ],

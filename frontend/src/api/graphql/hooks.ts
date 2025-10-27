@@ -25,6 +25,7 @@ const GAMES_QUERY = graphql(`
     allGames(filter: $filter) {
       nodes {
         id
+        playerAddress
         timestamp
         points
       }
@@ -38,20 +39,35 @@ const PLAYERS_LIMIT = 20;
 
 const getPlayersWithGames = async (pageParam: number) => {
   const playersQuery = await request(INDEXER_ADDRESS, PLAYERS_QUERY, { first: PLAYERS_LIMIT, offset: pageParam });
-  const players = playersQuery.allPlayers?.nodes ?? [];
 
-  const playersWithGames = await Promise.all(
-    players.map(async (player) => {
-      const filter = { playerAddress: { equalTo: player.id } };
+  if (!playersQuery.allPlayers) return { playersWithGames: [], totalCount: 0 };
 
-      const gamesQuery = await request(INDEXER_ADDRESS, GAMES_QUERY, { filter });
-      const games = gamesQuery.allGames?.nodes ?? [];
+  const { nodes: players, totalCount } = playersQuery.allPlayers;
+  const filter = { or: players.map((player) => ({ playerAddress: { equalTo: player.id } })) };
+  const gamesQuery = await request(INDEXER_ADDRESS, GAMES_QUERY, { filter });
 
-      return { ...player, games };
-    }),
+  if (!gamesQuery.allGames) return { playersWithGames: [], totalCount: 0 };
+
+  const { nodes: games } = gamesQuery.allGames;
+
+  const playerAddressToGames = games.reduce(
+    (acc, game) => {
+      const { playerAddress } = game;
+
+      if (!acc[playerAddress]) {
+        acc[playerAddress] = [];
+      }
+
+      acc[playerAddress].push(game);
+
+      return acc;
+    },
+    {} as Record<string, typeof games>,
   );
 
-  return { playersWithGames, totalCount: playersQuery.allPlayers?.totalCount ?? 0 };
+  const playersWithGames = players.map((player) => ({ ...player, games: playerAddressToGames[player.id] }));
+
+  return { playersWithGames, totalCount };
 };
 
 type PlayersWithGames = Awaited<ReturnType<typeof getPlayersWithGames>>;
@@ -68,12 +84,9 @@ const getNextPageParam = (data: PlayersWithGames, allPages: PlayersWithGames[]) 
 function usePlayers() {
   return useInfiniteQuery({
     queryKey: ['players'],
-
     queryFn: async ({ pageParam }) => getPlayersWithGames(pageParam),
-
     initialPageParam: 0,
     getNextPageParam,
-
     select: (data) => data.pages.flatMap((page) => page.playersWithGames ?? []),
   });
 }
