@@ -1,4 +1,5 @@
 import { useAccount } from '@gear-js/react-hooks';
+import { DatePickerInput } from '@mantine/dates';
 import { X, Trophy, Medal, Award, Loader } from 'lucide-react';
 
 import { usePlayers } from '@/api/graphql';
@@ -98,7 +99,12 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
 
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyan-400/30">
-          <h2 className="text-2xl font-bold text-cyan-400 glow-blue">LEADERBOARD</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-cyan-400 glow-blue">LEADERBOARD</h2>
+
+            <DatePickerInput placeholder="Select Dates" type="range" size="xs" />
+          </div>
+
           <Button
             variant="ghost"
             size="sm"

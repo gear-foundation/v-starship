@@ -5,6 +5,7 @@ import {
   ProviderProps,
 } from '@gear-js/react-hooks';
 import { Alert, alertStyles } from '@gear-js/vara-ui';
+import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ComponentType } from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -41,7 +42,7 @@ function AccountProvider({ children }: ProviderProps) {
   return <GearAccountProvider appName={appName}>{children}</GearAccountProvider>;
 }
 
-const providers = [BrowserRouter, AlertProvider, ApiProvider, AccountProvider, QueryProvider];
+const providers = [BrowserRouter, AlertProvider, ApiProvider, AccountProvider, QueryProvider, MantineProvider];
 
 function WithProviders(Component: ComponentType) {
   return () => providers.reduceRight((children, Provider) => <Provider>{children}</Provider>, <Component />);
