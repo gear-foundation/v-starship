@@ -15,24 +15,28 @@ module.exports = class View1761151083863 {
         "points" integer,
         "user_id" character varying,
         "user_name" character varying,
+        "ship_level" smallint,
         "games_played" integer
       );`
     );
 
     await queryRunner.query(
       `CREATE FUNCTION leaderboard_by_dates(
-        "from" TIMESTAMP WITH TIME ZONE,
-        "to" TIMESTAMP WITH TIME ZONE
+        "from" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+        "to" TIMESTAMP WITH TIME ZONE DEFAULT NULL
       )
       RETURNS SETOF leaderboard AS $$
         SELECT
-          ROW_NUMBER() OVER (ORDER BY SUM(g.points) DESC) AS points,
+          SUM(g.points) AS points,
           p.id AS user_id,
           p.name AS user_name,
+          p.ship_level as ship_level,
           COUNT(*) AS games_played
           FROM player AS p
           INNER JOIN game AS g ON g.player_address = p.id
-          WHERE g.timestamp >= "from" AND g.timestamp <= "to"
+          WHERE
+            ("from" IS NULL OR g.timestamp >= "from") AND
+            ("to" IS NULL OR g.timestamp <= "to")
           GROUP BY p.id
           ORDER BY points DESC
       $$ LANGUAGE sql STABLE;`
