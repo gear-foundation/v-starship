@@ -47,6 +47,10 @@ module.exports = class View1761151083863 {
   }
 
   async down(queryRunner) {
-    await queryRunner.query(`DROP TABLE "game"`);
+    await queryRunner.query(
+      `DROP FUNCTION IF EXISTS leaderboard_by_dates(TIMESTAMP WITH TIME ZONE, TIMESTAMP WITH TIME ZONE)`
+    );
+
+    await queryRunner.query(`DROP TYPE IF EXISTS leaderboard`);
   }
 };
