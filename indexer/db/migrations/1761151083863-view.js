@@ -38,7 +38,10 @@ module.exports = class View1761151083863 {
             ("from" IS NULL OR g.timestamp >= "from") AND
             ("to" IS NULL OR g.timestamp <= "to")
           GROUP BY p.id
-          ORDER BY points DESC
+          ORDER BY
+            points DESC,
+            games_played DESC,
+            user_id ASC
       $$ LANGUAGE sql STABLE;`
     );
   }

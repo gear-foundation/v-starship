@@ -111,8 +111,6 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
       );
     });
 
-  console.log('hasNextPage: ', hasNextPage);
-
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center min-h-full min-w-full p-4">
       {/* Backdrop */}
