@@ -117,7 +117,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Leaderboard Dialog (рамка и содержимое по центру) */}
-      <div className="relative w-full max-w-xl max-h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
+      <div className="relative w-full max-w-xl h-[90%] flex flex-col bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md font-['Orbitron']">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-purple-600/10 rounded-lg blur-xl -z-10"></div>
 
@@ -181,19 +181,19 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
         </div>
 
         {/* Leaderboard Entries */}
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto flex flex-col flex-1">
           {rankedPlayers &&
             (rankedPlayers.length ? render() : <div className="p-4 text-center text-gray-400">No players found</div>)}
 
           {!rankedPlayers || isFetchingNextPage ? (
-            <Loader className="animate-spin mx-auto my-4" />
+            <Loader className="animate-spin m-auto" />
           ) : (
             hasNextPage && <ScrollObserver onIntersection={fetchNextPage} />
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-cyan-400/20 text-center">
+        <div className="p-4 border-t border-cyan-400/20 text-center mt-auto">
           <div className="text-cyan-400 text-sm mt-1 glow-blue">Compete with players worldwide!</div>
         </div>
       </div>
