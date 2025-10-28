@@ -79,8 +79,8 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
                 px-4 py-3 border-b border-gray-700/30 transition-all duration-200
                 ${isUser ? 'bg-cyan-400/10 border-cyan-400/30 glow-blue-bg' : 'hover:bg-gray-800/30'}
               `}>
-          <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 flex justify-center">{getRankIcon(rank)}</div>
+          <div className="grid grid-cols-16 gap-2 items-center">
+            <div className="col-span-3 flex justify-center">{getRankIcon(rank)}</div>
 
             <div className="col-span-4 flex items-center gap-1">
               <span
@@ -95,21 +95,23 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
               {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}
             </div>
 
-            <div className="col-span-2 text-center">
+            <div className="col-span-3 text-center">
               <span className={`font-bold ${getShipLevelColor(shipLevel!)}`}>LVL {shipLevel}</span>
             </div>
 
-            <div className="col-span-2 text-center">
+            <div className="col-span-3 text-center">
               <span className="text-gray-400 font-bold">{gamesPlayed}</span>
             </div>
 
-            <div className="col-span-2 text-right">
+            <div className="col-span-3 text-right">
               <span className="text-green-400 font-bold glow-green">{points}</span>
             </div>
           </div>
         </div>
       );
     });
+
+  console.log('hasNextPage: ', hasNextPage);
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center min-h-full min-w-full p-4">
@@ -124,7 +126,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
 
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyan-400/30">
-          <div className="flex items-center gap-4">
+          <div className="flex sm:items-center items-start sm:gap-4 gap-2 sm:flex-row flex-col">
             <h2 className="text-2xl font-bold text-cyan-400 glow-blue">LEADERBOARD</h2>
 
             <DatePickerInput
@@ -169,24 +171,22 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
           </Button>
         </div>
 
-        {/* Table Header */}
-        <div className="px-4 py-3 border-b border-cyan-400/20">
-          <div className="grid grid-cols-12 gap-2 text-sm font-bold text-cyan-400 glow-blue">
-            <div className="col-span-2 text-center">RANK</div>
-            <div className="col-span-4">PLAYER</div>
-            <div className="col-span-2 text-center">SHIP LVL</div>
-            <div className="col-span-2 text-center">GAMES</div>
-            <div className="col-span-2 text-right">PTS</div>
-          </div>
+        <div className="px-4 py-3 border-b border-cyan-400/20 grid grid-cols-16 gap-2 sm:text-sm text-[10px] font-bold text-cyan-400 glow-blue">
+          <div className="col-span-3 text-center">RANK</div>
+          <div className="col-span-4">PLAYER</div>
+          <div className="col-span-3 text-center">SHIP LVL</div>
+          <div className="col-span-3 text-center">GAMES</div>
+          <div className="col-span-3 text-right">PTS</div>
         </div>
 
-        {/* Leaderboard Entries */}
-        <div className="overflow-y-auto flex flex-col flex-1">
+        <div className="overflow-y-auto flex flex-col flex-1 sm:text-sm text-[10px]">
           {rankedPlayers &&
             (rankedPlayers.length ? render() : <div className="p-4 text-center text-gray-400">No players found</div>)}
 
           {!rankedPlayers || isFetchingNextPage ? (
-            <Loader className="animate-spin m-auto" />
+            <div className="pb-3 m-auto">
+              <Loader className="animate-spin" />
+            </div>
           ) : (
             hasNextPage && <ScrollObserver onIntersection={fetchNextPage} />
           )}
