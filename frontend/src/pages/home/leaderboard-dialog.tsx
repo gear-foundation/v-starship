@@ -4,7 +4,6 @@ import { X, Trophy, Medal, Award, Loader } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { usePlayers } from '@/api/graphql';
-import { GameFilter } from '@/api/graphql/codegen/graphql';
 import { Button } from '@/components/ui/button';
 
 import { ScrollObserver } from './scroll-observer';
@@ -37,14 +36,10 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
 
     if (!startDate || !endDate) return;
 
-    const filters: GameFilter = {
-      timestamp: {
-        greaterThanOrEqualTo: new Date(startDate).toISOString(),
-        lessThanOrEqualTo: getEndOfDay(endDate).toISOString(),
-      },
+    return {
+      from: new Date(startDate).toISOString(),
+      to: getEndOfDay(endDate).toISOString(),
     };
-
-    return filters;
   }, [dateValues]);
 
   const { data: players, hasNextPage, isFetchingNextPage, fetchNextPage } = usePlayers(timestampFilters);
@@ -73,14 +68,12 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
   };
 
   const render = () =>
-    rankedPlayers?.map(({ id, name, rank, shipLevel, games }) => {
-      const isUser = account?.decodedAddress === id;
-      const score = games.reduce((total, game) => total + game.points, 0);
-      const gamesCount = games.length;
+    rankedPlayers?.map(({ userId, userName, rank, shipLevel, points, gamesPlayed }) => {
+      const isUser = account?.decodedAddress === userId;
 
       return (
         <div
-          key={id}
+          key={userId}
           className={`
                 px-4 py-3 border-b border-gray-700/30 transition-all duration-200
                 ${isUser ? 'bg-cyan-400/10 border-cyan-400/30 glow-blue-bg' : 'hover:bg-gray-800/30'}
@@ -95,22 +88,22 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
                     ${isUser ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
                      break-all
                   `}>
-                {name || getTruncatedText(id)}
+                {userName || getTruncatedText(userId!)}
               </span>
 
               {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}
             </div>
 
             <div className="col-span-2 text-center">
-              <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LVL {shipLevel}</span>
+              <span className={`font-bold ${getShipLevelColor(shipLevel!)}`}>LVL {shipLevel}</span>
             </div>
 
             <div className="col-span-2 text-center">
-              <span className="text-gray-400 font-bold">{gamesCount}</span>
+              <span className="text-gray-400 font-bold">{gamesPlayed}</span>
             </div>
 
             <div className="col-span-2 text-right">
-              <span className="text-green-400 font-bold glow-green">{score}</span>
+              <span className="text-green-400 font-bold glow-green">{points}</span>
             </div>
           </div>
         </div>

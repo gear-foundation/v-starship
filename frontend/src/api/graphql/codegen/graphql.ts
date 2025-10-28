@@ -184,6 +184,57 @@ export type IntFilter = {
   notIn?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
+export type Leaderboard = {
+  __typename?: 'Leaderboard';
+  gamesPlayed?: Maybe<Scalars['Int']['output']>;
+  points?: Maybe<Scalars['Int']['output']>;
+  shipLevel?: Maybe<Scalars['Int']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+  userName?: Maybe<Scalars['String']['output']>;
+};
+
+/** A filter to be used against `Leaderboard` object types. All fields are combined with a logical ‘and.’ */
+export type LeaderboardFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<LeaderboardFilter>>;
+  /** Filter by the object’s `gamesPlayed` field. */
+  gamesPlayed?: InputMaybe<IntFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<LeaderboardFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<LeaderboardFilter>>;
+  /** Filter by the object’s `points` field. */
+  points?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `shipLevel` field. */
+  shipLevel?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `userId` field. */
+  userId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `userName` field. */
+  userName?: InputMaybe<StringFilter>;
+};
+
+/** A connection to a list of `Leaderboard` values. */
+export type LeaderboardsConnection = {
+  __typename?: 'LeaderboardsConnection';
+  /** A list of edges which contains the `Leaderboard` and cursor to aid in pagination. */
+  edges: Array<LeaderboardsEdge>;
+  /** A list of `Leaderboard` objects. */
+  nodes: Array<Leaderboard>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Leaderboard` you could get from the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** A `Leaderboard` edge in the connection. */
+export type LeaderboardsEdge = {
+  __typename?: 'LeaderboardsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']['output']>;
+  /** The `Leaderboard` at the end of the edge. */
+  node: Leaderboard;
+};
+
 export type Migration = Node & {
   __typename?: 'Migration';
   id: Scalars['Int']['output'];
@@ -365,6 +416,8 @@ export type Query = Node & {
   /** Reads a single `Game` using its globally unique `ID`. */
   game?: Maybe<Game>;
   gameById?: Maybe<Game>;
+  /** Reads and enables pagination through a set of `Leaderboard`. */
+  leaderboardByDates?: Maybe<LeaderboardsConnection>;
   /** Reads a single `Migration` using its globally unique `ID`. */
   migration?: Maybe<Migration>;
   migrationById?: Maybe<Migration>;
@@ -426,6 +479,18 @@ export type QueryGameArgs = {
 /** The root query type which gives access points into the data universe. */
 export type QueryGameByIdArgs = {
   id: Scalars['String']['input'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryLeaderboardByDatesArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  filter?: InputMaybe<LeaderboardFilter>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  from?: InputMaybe<Scalars['Datetime']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  to?: InputMaybe<Scalars['Datetime']['input']>;
 };
 
 /** The root query type which gives access points into the data universe. */
@@ -531,40 +596,36 @@ export type StringFilter = {
   startsWithInsensitive?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type PlayersQueryQueryVariables = Exact<{
+export type LeaderboardQueryQueryVariables = Exact<{
   first: Scalars['Int']['input'];
   offset: Scalars['Int']['input'];
+  from?: InputMaybe<Scalars['Datetime']['input']>;
+  to?: InputMaybe<Scalars['Datetime']['input']>;
 }>;
 
-export type PlayersQueryQuery = {
+export type LeaderboardQueryQuery = {
   __typename?: 'Query';
-  allPlayers?: {
-    __typename?: 'PlayersConnection';
+  leaderboardByDates?: {
+    __typename?: 'LeaderboardsConnection';
     totalCount: number;
-    nodes: Array<{ __typename?: 'Player'; id: string; name?: string | null; shipLevel: number; score: number }>;
+    nodes: Array<{
+      __typename?: 'Leaderboard';
+      gamesPlayed?: number | null;
+      points?: number | null;
+      userId?: string | null;
+      userName?: string | null;
+      shipLevel?: number | null;
+    }>;
   } | null;
 };
 
-export type GamesQueryQueryVariables = Exact<{
-  filter?: InputMaybe<GameFilter>;
-}>;
-
-export type GamesQueryQuery = {
-  __typename?: 'Query';
-  allGames?: {
-    __typename?: 'GamesConnection';
-    totalCount: number;
-    nodes: Array<{ __typename?: 'Game'; id: string; playerAddress: string; timestamp: string; points: number }>;
-  } | null;
-};
-
-export const PlayersQueryDocument = {
+export const LeaderboardQueryDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'PlayersQuery' },
+      name: { kind: 'Name', value: 'LeaderboardQuery' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
@@ -576,13 +637,23 @@ export const PlayersQueryDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'offset' } },
           type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Datetime' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Datetime' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'allPlayers' },
+            name: { kind: 'Name', value: 'leaderboardByDates' },
             arguments: [
               {
                 kind: 'Argument',
@@ -596,60 +667,13 @@ export const PlayersQueryDocument = {
               },
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'orderBy' },
-                value: { kind: 'EnumValue', value: 'SCORE_DESC' },
+                name: { kind: 'Name', value: 'from' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
               },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'nodes' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'shipLevel' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'score' } },
-                    ],
-                  },
-                },
-                { kind: 'Field', name: { kind: 'Name', value: 'totalCount' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<PlayersQueryQuery, PlayersQueryQueryVariables>;
-export const GamesQueryDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'GamesQuery' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'GameFilter' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'allGames' },
-            arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'filter' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+                name: { kind: 'Name', value: 'to' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
               },
             ],
             selectionSet: {
@@ -661,10 +685,11 @@ export const GamesQueryDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'playerAddress' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'gamesPlayed' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'points' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'userName' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'shipLevel' } },
                     ],
                   },
                 },
@@ -676,4 +701,4 @@ export const GamesQueryDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GamesQueryQuery, GamesQueryQueryVariables>;
+} as unknown as DocumentNode<LeaderboardQueryQuery, LeaderboardQueryQueryVariables>;
