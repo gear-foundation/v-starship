@@ -1,7 +1,7 @@
 import { useAccount } from '@gear-js/react-hooks';
 import { DatePickerInput } from '@mantine/dates';
 import { X, Trophy, Medal, Award, Loader } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { usePlayers } from '@/api/graphql';
 import { Button } from '@/components/ui/button';
@@ -29,18 +29,19 @@ const CURRENT_DATE = new Date();
 export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
   const { account } = useAccount();
 
-  const [dateValues, setDateValues] = useState<[string | null, string | null]>([null, null]);
+  const [timestampFilters, setTimestampFilters] = useState<{ from: string; to: string }>();
 
-  const timestampFilters = useMemo(() => {
-    const [startDate, endDate] = dateValues;
+  const handleDateChange = (value: [string | null, string | null]) => {
+    const [startDate, endDate] = value;
 
-    if (!startDate || !endDate) return;
+    if (!startDate && !endDate) return setTimestampFilters(undefined);
 
-    return {
-      from: new Date(startDate).toISOString(),
-      to: getEndOfDay(endDate).toISOString(),
-    };
-  }, [dateValues]);
+    if (startDate && endDate)
+      setTimestampFilters({
+        from: new Date(startDate).toISOString(),
+        to: getEndOfDay(endDate).toISOString(),
+      });
+  };
 
   const { data: players, hasNextPage, isFetchingNextPage, fetchNextPage } = usePlayers(timestampFilters);
 
@@ -155,8 +156,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
                     'bg-gradient-to-b from-slate-900/95 to-purple-950/95 border-2 border-cyan-400/50 rounded-lg backdrop-blur-md shadow-[0_0_30px_rgba(0,188,212,0.3)]',
                 },
               }}
-              value={dateValues}
-              onChange={setDateValues}
+              onChange={handleDateChange}
             />
           </div>
 
