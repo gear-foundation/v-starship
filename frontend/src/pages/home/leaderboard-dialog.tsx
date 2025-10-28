@@ -89,22 +89,26 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
                     ${isUser ? 'text-cyan-400 glow-blue' : 'text-white glow-white'}
                      break-all
                   `}>
-                {userName || getTruncatedText(userId!)}
+                {userName || (userId ? getTruncatedText(userId) : 'Unknown')}
               </span>
 
               {isUser && <span className="text-xs text-cyan-300">(YOU)</span>}
             </div>
 
             <div className="col-span-3 text-center">
-              <span className={`font-bold ${getShipLevelColor(shipLevel!)}`}>LVL {shipLevel}</span>
+              {typeof shipLevel === 'number' ? (
+                <span className={`font-bold ${getShipLevelColor(shipLevel)}`}>LVL {shipLevel}</span>
+              ) : (
+                <span className="font-bold">LVL N/A</span>
+              )}
             </div>
 
             <div className="col-span-3 text-center">
-              <span className="text-gray-400 font-bold">{gamesPlayed}</span>
+              <span className="text-gray-400 font-bold">{typeof gamesPlayed === 'number' ? gamesPlayed : 'N/A'}</span>
             </div>
 
             <div className="col-span-3 text-right">
-              <span className="text-green-400 font-bold glow-green">{points}</span>
+              <span className="text-green-400 font-bold glow-green">{typeof points === 'number' ? points : 'N/A'}</span>
             </div>
           </div>
         </div>
