@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
-import { Player } from './entities';
+import { Game, Player } from './entities';
 import { config } from '../config';
 
 dotenv.config();
@@ -11,7 +11,7 @@ const AppDataSource = new DataSource({
   synchronize: false,
   migrationsRun: true,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Player],
+  entities: [Player, Game],
   migrations: ['db/migrations/*.js'],
 });
 
