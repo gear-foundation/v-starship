@@ -106,7 +106,7 @@ export default function MainScreen({
     <>
       <SpaceBackground />
 
-      <div className="flex flex-col p-4 font-['Orbitron']">
+      <div className="flex flex-col p-4 flex-1 font-['Orbitron']">
         <div className="flex flex-col items-center mb-4">
           <div
             className={`w-full flex items-center ${account ? 'justify-between' : 'justify-center'} wallet-custom-styles mb-2`}>

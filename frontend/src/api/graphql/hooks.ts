@@ -2,18 +2,19 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { request } from 'graphql-request';
 
 import { graphql } from './codegen';
-import { PlayersQueryQuery } from './codegen/graphql';
+import { LeaderboardQueryQuery } from './codegen/graphql';
 
 const INDEXER_ADDRESS = import.meta.env.VITE_INDEXER_ADDRESS as string;
 
-const PLAYERS_QUERY = graphql(`
-  query PlayersQuery($first: Int!, $offset: Int!) {
-    allPlayers(first: $first, offset: $offset, orderBy: SCORE_DESC) {
+const LEADERBOARD_QUERY = graphql(`
+  query LeaderboardQuery($first: Int!, $offset: Int!, $from: Datetime, $to: Datetime) {
+    leaderboardByDates(first: $first, offset: $offset, from: $from, to: $to) {
       nodes {
-        id
-        name
+        gamesPlayed
+        points
+        userId
+        userName
         shipLevel
-        score
       }
 
       totalCount
@@ -23,22 +24,25 @@ const PLAYERS_QUERY = graphql(`
 
 const PLAYERS_LIMIT = 20;
 
-const getNextPageParam = (data: PlayersQueryQuery, allPages: PlayersQueryQuery[]) => {
-  if (!data.allPlayers) throw new Error('No players found');
+const getNextPageParam = (data: LeaderboardQueryQuery, allPages: LeaderboardQueryQuery[]) => {
+  if (!data.leaderboardByDates) throw new Error('No players found');
 
-  const { totalCount } = data.allPlayers;
+  const { totalCount } = data.leaderboardByDates;
   const fetchedCount = allPages.length * PLAYERS_LIMIT;
 
   return fetchedCount < totalCount ? fetchedCount : undefined;
 };
 
-function usePlayers() {
+function usePlayers(filters: { from: string; to: string } | undefined) {
   return useInfiniteQuery({
-    queryKey: ['players'],
-    queryFn: ({ pageParam }) => request(INDEXER_ADDRESS, PLAYERS_QUERY, { first: PLAYERS_LIMIT, offset: pageParam }),
+    queryKey: ['players', filters],
+
+    queryFn: async ({ pageParam }) =>
+      request(INDEXER_ADDRESS, LEADERBOARD_QUERY, { ...filters, first: PLAYERS_LIMIT, offset: pageParam }),
+
     initialPageParam: 0,
     getNextPageParam,
-    select: (data) => data.pages.flatMap((page) => page.allPlayers?.nodes ?? []),
+    select: (data) => data.pages.flatMap((page) => page.leaderboardByDates?.nodes ?? []),
   });
 }
 

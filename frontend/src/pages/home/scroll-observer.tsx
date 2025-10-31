@@ -23,7 +23,7 @@ function ScrollObserver({ onIntersection }: Props) {
     };
   }, [onIntersection]);
 
-  return <span ref={observerRef} style={{ display: 'block', height: '1px' }} />;
+  return <span ref={observerRef} style={{ display: 'block', height: '1px', flexShrink: 0 }} />;
 }
 
 export { ScrollObserver };
