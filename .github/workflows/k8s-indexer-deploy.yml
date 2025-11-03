@@ -17,6 +17,7 @@ on:
         options:
           - stg
           - prod
+          - temp
   
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -45,6 +46,8 @@ jobs:
             echo "environment=stg" >> "${GITHUB_OUTPUT}"
           elif [[ "${GITHUB_REF}" == "refs/heads/release" ]]; then
             echo "environment=prod" >> "${GITHUB_OUTPUT}"
+          elif [[ "${GITHUB_REF}" == "refs/heads/temp" ]]; then
+            echo "environment=temp" >> "${GITHUB_OUTPUT}"
           fi
 
   build-image:
