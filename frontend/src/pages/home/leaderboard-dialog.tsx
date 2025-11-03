@@ -132,7 +132,7 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
             <h2 className="text-2xl font-bold text-cyan-400 glow-blue">LEADERBOARD</h2>
 
             <DatePickerInput
-              placeholder="Select Dates"
+              placeholder="Select Period"
               minDate={LAUNCH_DATE}
               maxDate={CURRENT_DATE}
               type="range"
@@ -183,7 +183,11 @@ export default function LeaderboardDialog({ onClose }: LeaderboardDialogProps) {
 
         <div className="overflow-y-auto flex flex-col flex-1 sm:text-sm text-[10px]">
           {rankedPlayers &&
-            (rankedPlayers.length ? render() : <div className="p-4 text-center text-gray-400">No players found</div>)}
+            (rankedPlayers.length ? (
+              render()
+            ) : (
+              <div className="text-center text-gray-400 m-auto">No players found</div>
+            ))}
 
           {!rankedPlayers || isFetchingNextPage ? (
             <div className="pb-3 m-auto">
