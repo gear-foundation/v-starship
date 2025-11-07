@@ -1275,7 +1275,8 @@ export default function InGameScreen({
 
         const BOSS_MUZZLE_SPREAD_STEP = 15; // percent step -> two projectiles => +/-5%
         const lasers = Array.from({ length: bossParams.laserCount }).map((_, i) => {
-          const spread = bossParams.laserCount > 1 ? BOSS_MUZZLE_SPREAD_STEP * (i - (bossParams.laserCount - 1) / 2) : 0;
+          const spread =
+            bossParams.laserCount > 1 ? BOSS_MUZZLE_SPREAD_STEP * (i - (bossParams.laserCount - 1) / 2) : 0;
           const muzzleXAdj = muzzleX + spread;
 
           const dx = playerPositionRef.current.x - muzzleXAdj;
@@ -1324,7 +1325,8 @@ export default function InGameScreen({
 
         const BOSS_MUZZLE_SPREAD_STEP_ROCKETS = 10; // percent step -> two rockets => +/-5%
         const rockets = Array.from({ length: bossParams.rocketCount }).map((_, i) => {
-          const spread = bossParams.rocketCount > 1 ? BOSS_MUZZLE_SPREAD_STEP_ROCKETS * (i - (bossParams.rocketCount - 1) / 2) : 0;
+          const spread =
+            bossParams.rocketCount > 1 ? BOSS_MUZZLE_SPREAD_STEP_ROCKETS * (i - (bossParams.rocketCount - 1) / 2) : 0;
           const muzzleXAdj = muzzleX + spread;
 
           const dx = playerPositionRef.current.x - muzzleXAdj;
