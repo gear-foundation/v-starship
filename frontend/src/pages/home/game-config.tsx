@@ -74,7 +74,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 1,
-    laserRate: 500,
+    laserRate: 400,
     rockets: 1,
     rocketRate: 2000,
     enemyInterval: 3500,
@@ -84,7 +84,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 1,
-    laserRate: 400,
+    laserRate: 300,
     rockets: 1,
     rocketRate: 1600,
     enemyInterval: 3000,
@@ -94,7 +94,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 2,
-    laserRate: 400,
+    laserRate: 420,
     rockets: 1,
     rocketRate: 1500,
     enemyInterval: 2500,
@@ -104,7 +104,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 2,
-    laserRate: 320,
+    laserRate: 370,
     rockets: 1,
     rocketRate: 1300,
     enemyInterval: 2200,
@@ -114,7 +114,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 2,
-    laserRate: 280,
+    laserRate: 320,
     rockets: 1,
     rocketRate: 1100,
     enemyInterval: 2000,
@@ -123,8 +123,8 @@ export const SHIP_LEVELS: ShipLevel[] = [
     boss: { laserCount: 2, laserRate: 750, rocketCount: 1, rocketRate: 1300, bossHP: 70 },
   },
   {
-    lasers: 3,
-    laserRate: 260,
+    lasers: 2,
+    laserRate: 280,
     rockets: 2,
     rocketRate: 1000,
     enemyInterval: 1800,
@@ -134,7 +134,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 3,
-    laserRate: 240,
+    laserRate: 350,
     rockets: 2,
     rocketRate: 950,
     enemyInterval: 1600,
@@ -144,7 +144,7 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 3,
-    laserRate: 220,
+    laserRate: 300,
     rockets: 2,
     rocketRate: 900,
     enemyInterval: 1400,
@@ -154,23 +154,23 @@ export const SHIP_LEVELS: ShipLevel[] = [
   },
   {
     lasers: 4,
-    laserRate: 200,
+    laserRate: 400,
     rockets: 2,
     rocketRate: 850,
     enemyInterval: 1200,
     asteroidInterval: 1100,
     mineInterval: 1700,
-    boss: { laserCount: 2, laserRate: 550, rocketCount: 2, rocketRate: 900, bossHP: 110 },
+    boss: { laserCount: 2, laserRate: 570, rocketCount: 2, rocketRate: 950, bossHP: 110 },
   },
   {
     lasers: 4,
-    laserRate: 180,
-    rockets: 2,
+    laserRate: 350,
+    rockets: 3,
     rocketRate: 800,
     enemyInterval: 1000,
     asteroidInterval: 1000,
     mineInterval: 1600,
-    boss: { laserCount: 2, laserRate: 500, rocketCount: 2, rocketRate: 800, bossHP: 120 },
+    boss: { laserCount: 3, laserRate: 570, rocketCount: 2, rocketRate: 950, bossHP: 120 },
   },
 ];
 
