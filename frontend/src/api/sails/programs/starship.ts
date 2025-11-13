@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { GearApi, BaseGearProgram, HexString, decodeAddress } from '@gear-js/api';
-import { TypeRegistry } from '@polkadot/types';
+/* eslint-disable */
+
 import {
-  TransactionBuilder,
   ActorId,
-  throwOnErrorReply,
+  TransactionBuilder,
+  QueryBuilder,
   getServiceNamePrefix,
   getFnNamePrefix,
   ZERO_ADDRESS,
 } from 'sails-js';
+import { GearApi, BaseGearProgram, HexString } from '@gear-js/api';
+import { TypeRegistry } from '@polkadot/types';
 
 export interface Config {
   ft_contract: ActorId;
@@ -38,7 +38,7 @@ export interface PlayerInfo {
 export class SailsProgram {
   public readonly registry: TypeRegistry;
   public readonly starship: Starship;
-  private _program!: BaseGearProgram;
+  private _program?: BaseGearProgram;
 
   constructor(
     public api: GearApi,
@@ -89,7 +89,7 @@ export class SailsProgram {
       this.api,
       this.registry,
       'upload_program',
-      undefined,
+      null,
       'New',
       config,
       'Config',
@@ -107,7 +107,7 @@ export class SailsProgram {
       this.api,
       this.registry,
       'create_program',
-      undefined,
+      null,
       'New',
       config,
       'Config',
@@ -147,8 +147,8 @@ export class Starship {
       'send_message',
       'Starship',
       'BuyAttempt',
-      undefined,
-      'Null',
+      null,
+      null,
       'Null',
       this._program.programId,
     );
@@ -162,8 +162,8 @@ export class Starship {
       'send_message',
       'Starship',
       'BuyBooster',
-      undefined,
-      'Null',
+      null,
+      null,
       'Null',
       this._program.programId,
     );
@@ -177,8 +177,8 @@ export class Starship {
       'send_message',
       'Starship',
       'BuyNewShip',
-      undefined,
-      'Null',
+      null,
+      null,
       'Null',
       this._program.programId,
     );
@@ -259,108 +259,69 @@ export class Starship {
     );
   }
 
-  public async allPlayersInfo(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Array<[ActorId, PlayerInfo]>> {
-    const payload = this._program.registry.createType('(String, String)', ['Starship', 'AllPlayersInfo']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Vec<([u8;32], PlayerInfo)>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<[ActorId, PlayerInfo]>;
+  public allPlayersInfo(): QueryBuilder<Array<[ActorId, PlayerInfo]>> {
+    return new QueryBuilder<Array<[ActorId, PlayerInfo]>>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Starship',
+      'AllPlayersInfo',
+      null,
+      null,
+      'Vec<([u8;32], PlayerInfo)>',
+    );
   }
 
-  public async config(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Config> {
-    const payload = this._program.registry.createType('(String, String)', ['Starship', 'Config']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Config)', reply.payload);
-    return result[2].toJSON() as unknown as Config;
+  public config(): QueryBuilder<Config> {
+    return new QueryBuilder<Config>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Starship',
+      'Config',
+      null,
+      null,
+      'Config',
+    );
   }
 
-  public async numberOfAttempts(
-    player: ActorId,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<number> {
-    const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Starship', 'NumberOfAttempts', player])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, u16)', reply.payload);
-    return result[2].toNumber() as unknown as number;
+  public numberOfAttempts(player: ActorId): QueryBuilder<number> {
+    return new QueryBuilder<number>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Starship',
+      'NumberOfAttempts',
+      player,
+      '[u8;32]',
+      'u16',
+    );
   }
 
-  public async playerInfo(
-    player: ActorId,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<PlayerInfo> {
-    const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Starship', 'PlayerInfo', player])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, PlayerInfo)', reply.payload);
-    return result[2].toJSON() as unknown as PlayerInfo;
+  public playerInfo(player: ActorId): QueryBuilder<PlayerInfo> {
+    return new QueryBuilder<PlayerInfo>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Starship',
+      'PlayerInfo',
+      player,
+      '[u8;32]',
+      'PlayerInfo',
+    );
   }
 
-  public async timeToFreeAttempts(
-    player: ActorId,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<bigint> {
-    const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Starship', 'TimeToFreeAttempts', player])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, u64)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
+  public timeToFreeAttempts(player: ActorId): QueryBuilder<bigint> {
+    return new QueryBuilder<bigint>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Starship',
+      'TimeToFreeAttempts',
+      player,
+      '[u8;32]',
+      'u64',
+    );
   }
 
   public subscribeToPointsAddedEvent(

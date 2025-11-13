@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { GearApi, BaseGearProgram, HexString, decodeAddress } from '@gear-js/api';
-import { TypeRegistry } from '@polkadot/types';
+/* eslint-disable */
+
 import {
-  TransactionBuilder,
   ActorId,
-  throwOnErrorReply,
+  TransactionBuilder,
+  QueryBuilder,
   getServiceNamePrefix,
   getFnNamePrefix,
   ZERO_ADDRESS,
 } from 'sails-js';
+import { GearApi, BaseGearProgram, HexString } from '@gear-js/api';
+import { TypeRegistry } from '@polkadot/types';
 
 export interface Config {
   name: string;
@@ -73,7 +73,7 @@ export interface TokenInfo {
 export class SailsProgram {
   public readonly registry: TypeRegistry;
   public readonly nft: Nft;
-  private _program!: BaseGearProgram;
+  private _program?: BaseGearProgram;
 
   constructor(
     public api: GearApi,
@@ -158,7 +158,7 @@ export class SailsProgram {
       this.api,
       this.registry,
       'upload_program',
-      undefined,
+      null,
       'New',
       [collection_owner, config, img_links_and_data, permission_to_mint],
       '([u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
@@ -182,7 +182,7 @@ export class SailsProgram {
       this.api,
       this.registry,
       'create_program',
-      undefined,
+      null,
       'New',
       [collection_owner, config, img_links_and_data, permission_to_mint],
       '([u8;32], Config, Vec<(String, ImageData)>, Option<Vec<[u8;32]>>)',
@@ -357,8 +357,8 @@ export class Nft {
       'send_message',
       'Nft',
       'LiftRestrictionsMint',
-      undefined,
-      'Null',
+      null,
+      null,
       'Null',
       this._program.programId,
     );
@@ -409,7 +409,7 @@ export class Nft {
     );
   }
 
-  public transferFrom(from: ActorId, to: ActorId, token_id: number | string | bigint): TransactionBuilder<null> {
+  public transferFrom($from: ActorId, to: ActorId, token_id: number | string | bigint): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
       this._program.api,
@@ -417,305 +417,206 @@ export class Nft {
       'send_message',
       'Nft',
       'TransferFrom',
-      [from, to, token_id],
+      [$from, to, token_id],
       '([u8;32], [u8;32], u64)',
       'Null',
       this._program.programId,
     );
   }
 
-  public async all(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<NftState> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'All']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, NftState)', reply.payload);
-    return result[2].toJSON() as unknown as NftState;
+  public all(): QueryBuilder<NftState> {
+    return new QueryBuilder<NftState>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'All',
+      null,
+      null,
+      'NftState',
+    );
   }
 
-  public async canDelete(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<boolean> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'CanDelete']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, bool)', reply.payload);
-    return result[2].toJSON() as unknown as boolean;
+  public canDelete(): QueryBuilder<boolean> {
+    return new QueryBuilder<boolean>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'CanDelete',
+      null,
+      null,
+      'bool',
+    );
   }
 
-  public async collectionOwner(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<ActorId> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'CollectionOwner']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, [u8;32])', reply.payload);
-    return result[2].toJSON() as unknown as ActorId;
+  public collectionOwner(): QueryBuilder<ActorId> {
+    return new QueryBuilder<ActorId>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'CollectionOwner',
+      null,
+      null,
+      '[u8;32]',
+    );
   }
 
-  public async config(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Config> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'Config']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Config)', reply.payload);
-    return result[2].toJSON() as unknown as Config;
+  public config(): QueryBuilder<Config> {
+    return new QueryBuilder<Config>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'Config',
+      null,
+      null,
+      'Config',
+    );
   }
 
-  public async description(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<string> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'Description']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, String)', reply.payload);
-    return result[2].toString() as unknown as string;
+  public description(): QueryBuilder<string> {
+    return new QueryBuilder<string>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'Description',
+      null,
+      null,
+      'String',
+    );
   }
 
-  public async getPaymentForMint(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'GetPaymentForMint']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, u128)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
+  public getPaymentForMint(): QueryBuilder<bigint> {
+    return new QueryBuilder<bigint>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'GetPaymentForMint',
+      null,
+      null,
+      'u128',
+    );
   }
 
-  public async getTokenInfo(
-    token_id: number | string | bigint,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<TokenInfo> {
-    const payload = this._program.registry
-      .createType('(String, String, u64)', ['Nft', 'GetTokenInfo', token_id])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, TokenInfo)', reply.payload);
-    return result[2].toJSON() as unknown as TokenInfo;
+  public getTokenInfo(token_id: number | string | bigint): QueryBuilder<TokenInfo> {
+    return new QueryBuilder<TokenInfo>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'GetTokenInfo',
+      token_id,
+      'u64',
+      'TokenInfo',
+    );
   }
 
-  public async getTokensIdByOwner(
-    owner_id: ActorId,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Array<number | string | bigint>> {
-    const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Nft', 'GetTokensIdByOwner', owner_id])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Vec<u64>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<number | string | bigint>;
+  public getTokensIdByOwner(owner_id: ActorId): QueryBuilder<Array<number | string | bigint>> {
+    return new QueryBuilder<Array<number | string | bigint>>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'GetTokensIdByOwner',
+      owner_id,
+      '[u8;32]',
+      'Vec<u64>',
+    );
   }
 
-  public async getTokensInfoByOwner(
-    owner_id: ActorId,
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Array<NftData>> {
-    const payload = this._program.registry
-      .createType('(String, String, [u8;32])', ['Nft', 'GetTokensInfoByOwner', owner_id])
-      .toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Vec<NftData>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<NftData>;
+  public getTokensInfoByOwner(owner_id: ActorId): QueryBuilder<Array<NftData>> {
+    return new QueryBuilder<Array<NftData>>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'GetTokensInfoByOwner',
+      owner_id,
+      '[u8;32]',
+      'Vec<NftData>',
+    );
   }
 
-  public async imgLinksAndData(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Array<[string, ImageData]>> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'ImgLinksAndData']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Vec<(String, ImageData)>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<[string, ImageData]>;
+  public imgLinksAndData(): QueryBuilder<Array<[string, ImageData]>> {
+    return new QueryBuilder<Array<[string, ImageData]>>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'ImgLinksAndData',
+      null,
+      null,
+      'Vec<(String, ImageData)>',
+    );
   }
 
-  public async marketplaceAddress(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<ActorId> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'MarketplaceAddress']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, [u8;32])', reply.payload);
-    return result[2].toJSON() as unknown as ActorId;
+  public marketplaceAddress(): QueryBuilder<ActorId> {
+    return new QueryBuilder<ActorId>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'MarketplaceAddress',
+      null,
+      null,
+      '[u8;32]',
+    );
   }
 
-  public async name(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<string> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'Name']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, String)', reply.payload);
-    return result[2].toString() as unknown as string;
+  public name(): QueryBuilder<string> {
+    return new QueryBuilder<string>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'Name',
+      null,
+      null,
+      'String',
+    );
   }
 
-  public async nonce(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'Nonce']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, u64)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
+  public nonce(): QueryBuilder<bigint> {
+    return new QueryBuilder<bigint>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'Nonce',
+      null,
+      null,
+      'u64',
+    );
   }
 
-  public async permissionToMint(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<Array<ActorId> | null> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'PermissionToMint']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Option<Vec<[u8;32]>>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<ActorId> | null;
+  public permissionToMint(): QueryBuilder<Array<ActorId> | null> {
+    return new QueryBuilder<Array<ActorId> | null>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'PermissionToMint',
+      null,
+      null,
+      'Option<Vec<[u8;32]>>',
+    );
   }
 
-  public async totalNumberOfTokens(
-    originAddress?: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`,
-  ): Promise<number | string | bigint | null> {
-    const payload = this._program.registry.createType('(String, String)', ['Nft', 'TotalNumberOfTokens']).toHex();
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: originAddress ? decodeAddress(originAddress) : ZERO_ADDRESS,
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    throwOnErrorReply(reply.code, reply.payload.toU8a(), this._program.api.specVersion, this._program.registry);
-    const result = this._program.registry.createType('(String, String, Option<u64>)', reply.payload);
-    return result[2].toJSON() as unknown as number | string | bigint | null;
+  public totalNumberOfTokens(): QueryBuilder<number | string | bigint | null> {
+    return new QueryBuilder<number | string | bigint | null>(
+      this._program.api,
+      this._program.registry,
+      this._program.programId,
+      'Nft',
+      'TotalNumberOfTokens',
+      null,
+      null,
+      'Option<u64>',
+    );
   }
 
   public subscribeToTransferredEvent(
