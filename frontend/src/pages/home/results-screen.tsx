@@ -101,7 +101,7 @@ export function ResultsScreen({
         </div>
 
         {/* PTS Earned */}
-        <div className="px-6 py-4 text-center flex flex-col items-center justify-center overflow-y-auto">
+        <div className="mb-6 px-6 py-4 text-center overflow-y-auto">
           <div className="text-xl text-gray-300 glow-white mb-2">PTS EARNED</div>
           <div
             className={`
@@ -115,7 +115,7 @@ export function ResultsScreen({
           {/* Total Enemies Defeated */}
           <div className="text-lg text-cyan-300 font-bold mb-1 mt-2">ENEMIES DEFEATED = {enemiesDefeated}</div>
           {/* Подробная строка по типам */}
-          <div className="text-base text-gray-300 mb-6">
+          <div className="text-base text-gray-300">
             Aliens: <span className="text-white font-bold">{enemiesDefeated - asteroidsKilled - minesKilled}</span>
             {'   '}Mines: <span className="text-white font-bold">{minesKilled}</span>
             {'   '}Asteroids: <span className="text-white font-bold">{asteroidsKilled}</span>
