@@ -3,6 +3,7 @@ import { Infinity as InfinityIcon, Heart, Zap } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { disableTelegramMiniAppVerticalSwipes, enableTelegramMiniAppVerticalSwipes } from '@/utils';
 
 import { IS_PLAYER_IMMORTAL } from './dev-config';
 import { FPS } from './fps';
@@ -1826,6 +1827,14 @@ export default function InGameScreen({
   const PLAYER_LASER_COLOR = GAME_CONFIG.PLAYER_LASER_COLOR;
   const PLAYER_LASER_COLOR_BOOST = GAME_CONFIG.PLAYER_LASER_COLOR_BOOST;
   const PLAYER_ROCKET_COLOR = GAME_CONFIG.PLAYER_ROCKET_COLOR;
+
+  useEffect(() => {
+    disableTelegramMiniAppVerticalSwipes();
+
+    return () => {
+      enableTelegramMiniAppVerticalSwipes();
+    };
+  }, []);
 
   return (
     <>
