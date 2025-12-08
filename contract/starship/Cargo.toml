@@ -1,0 +1,28 @@
+[workspace]
+
+members = ["client"]
+
+
+[package]
+name = "starship"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+starship-app = { path = "app" }
+extended-vft = { git = "https://github.com/gear-foundation/standards/"}
+
+[build-dependencies]
+starship-app = { path = "app" }
+sails-rs = { version = "0.8.1", features = ["wasm-builder"] }
+sails-idl-gen = "0.8.1"
+
+[dev-dependencies]
+starship = { path = ".", features = ["wasm-binary"] }
+starship-client = { path = "client" }
+sails-rs = { version = "0.8.1", features = ["gtest"] }
+tokio = { version = "1.41", features = ["rt", "macros"] }
+extended-vft-client = { git = "https://github.com/gear-foundation/standards/"}
+extended-vft = { git = "https://github.com/gear-foundation/standards/", features = ["wasm-binary"]}
+[features]
+wasm-binary = []
